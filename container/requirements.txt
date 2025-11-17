@@ -1,11 +1,11 @@
 # govreposcrape - Container Dependencies
-# Story 2.5: Parallel Execution Support
+# Google Cloud Platform Migration
 
 # Core library for generating LLM-ready code summaries
 gitingest
 
-# AWS S3-compatible client for Cloudflare R2 storage
-boto3>=1.34.0
+# Google Generative AI SDK for File Search API
+google-generativeai>=0.3.0
 
 # HTTP library for fetching repos.json feed
 requests>=2.31.0

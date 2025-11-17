@@ -1,29 +1,30 @@
 #!/usr/bin/env python3
 """
-govreposcrape - Pipeline Orchestrator
-Story 2.6: Ingestion Orchestrator - End-to-End Pipeline Integration
+govreposcrape - Pipeline Orchestrator (Google Cloud Platform)
+Simplified orchestrator for Google File Search integration
 
 Coordinates the complete ingestion pipeline:
-fetch repos.json → check cache → process uncached → upload to R2
+fetch repos.json → gitingest → upload to Google File Search
 
 Usage:
     # Sequential (process all repos)
     python orchestrator.py
 
-    # Parallel (10 containers)
-    python orchestrator.py --batch-size=10 --offset=0  # Container 0
-    python orchestrator.py --batch-size=10 --offset=1  # Container 1
+    # Parallel (40 containers for faster processing)
+    python orchestrator.py --batch-size=40 --offset=0  # Container 0
+    python orchestrator.py --batch-size=40 --offset=1  # Container 1
     ...
-    python orchestrator.py --batch-size=10 --offset=9  # Container 9
+    python orchestrator.py --batch-size=40 --offset=39  # Container 39
 
     # Dry run (test without processing)
     python orchestrator.py --batch-size=10 --offset=0 --dry-run
 
+    # Limit processing (for testing)
+    python orchestrator.py --limit=100
+
 Environment Variables:
-    R2_BUCKET: Cloudflare R2 bucket name
-    R2_ENDPOINT: R2 endpoint URL
-    R2_ACCESS_KEY: R2 access key ID
-    R2_SECRET_KEY: R2 secret access key
+    GOOGLE_GEMINI_API_KEY: Google Gemini API key
+    GOOGLE_FILE_SEARCH_STORE_NAME: File Search Store name (optional, will create if missing)
 """
 
 import sys
@@ -32,7 +33,7 @@ import argparse
 import signal
 import time
 import json
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 from datetime import datetime
 
 # Import from existing modules
@@ -41,28 +42,11 @@ from ingest import (
     filter_repos_for_batch,
     process_repository,
     ProcessingStats,
-    logger,
-    JSONFormatter
+    logger
 )
 
-# Import cache module (Quality Story 1 Fix)
-try:
-    from cache import check_cache, update_cache, get_cache_stats
-    CACHE_AVAILABLE = True
-except ImportError:
-    # Graceful degradation if cache module not available
-    CACHE_AVAILABLE = False
-    check_cache = None
-    update_cache = None
-    get_cache_stats = None
-
-# For R2 cache checking
-try:
-    from r2_client import create_r2_client, R2ConfigError
-except ImportError:
-    # Graceful degradation if R2 not configured
-    create_r2_client = None
-    R2ConfigError = Exception
+# Import Google File Search client
+from google_filesearch_client import GoogleFileSearchClient
 
 
 # Global state for graceful shutdown
@@ -74,88 +58,8 @@ current_state = {
 }
 
 
-def check_cache_status(repos: List[Dict[str, Any]]) -> Dict[str, bool]:
-    """
-    Check cache status for repositories using Workers KV proxy
-
-    Quality Story 1 Fix: Properly integrated cache checking via HTTP proxy to Workers KV
-
-    Args:
-        repos: List of repository objects with url, pushedAt, org, name
-
-    Returns:
-        Dict mapping repo URL to needsProcessing boolean
-    """
-    if not CACHE_AVAILABLE:
-        logger.warning(
-            "Cache module not available - marking all repos as needing processing",
-            extra={"metadata": {
-                "total_repos": len(repos),
-                "cache_mode": "degraded-no-cache"
-            }}
-        )
-        return {repo["url"]: True for repo in repos}
-
-    logger.info(
-        f"Checking cache status for {len(repos)} repositories via Workers KV proxy",
-        extra={"metadata": {
-            "total_repos": len(repos),
-            "cache_mode": "workers-kv-proxy"
-        }}
-    )
-
-    cache_status = {}
-    cache_hits = 0
-    cache_misses = 0
-
-    for repo in repos:
-        repo_url = repo.get("url", "")
-        # repos.json uses "owner" field, not "org"
-        org = repo.get("owner", repo.get("org", ""))
-        name = repo.get("name", "")
-        pushed_at = repo.get("pushedAt", "")
-
-        if not org or not name or not pushed_at:
-            # Missing required fields - mark as needs processing
-            cache_status[repo_url] = True
-            cache_misses += 1
-            continue
-
-        # Check cache via Workers KV proxy
-        result = check_cache(org=org, repo=name, pushed_at=pushed_at)
-
-        if result["needs_processing"]:
-            cache_status[repo_url] = True
-            cache_misses += 1
-        else:
-            cache_status[repo_url] = False
-            cache_hits += 1
-
-    cache_hit_rate = (cache_hits / len(repos) * 100) if repos else 0
-
-    logger.info(
-        f"Cache check complete: {cache_hits} hits ({cache_hit_rate:.1f}%), {cache_misses} misses",
-        extra={"metadata": {
-            "total_repos": len(repos),
-            "cache_hits": cache_hits,
-            "cache_misses": cache_misses,
-            "cache_hit_rate": round(cache_hit_rate, 1)
-        }}
-    )
-
-    return cache_status
-
-
 def format_elapsed_time(seconds: float) -> str:
-    """
-    Format elapsed time as human-readable string
-
-    Args:
-        seconds: Elapsed time in seconds
-
-    Returns:
-        Formatted string (e.g., "5h 47m", "15m", "45s")
-    """
+    """Format elapsed time as human-readable string"""
     hours = int(seconds // 3600)
     minutes = int((seconds % 3600) // 60)
     secs = int(seconds % 60)
@@ -171,28 +75,14 @@ def format_elapsed_time(seconds: float) -> str:
 def log_progress(
     processed: int,
     total: int,
-    cached: int,
     successful: int,
     failed: int,
     elapsed: float,
     batch_size: int = 1,
     offset: int = 0
 ):
-    """
-    Log progress update with statistics
-
-    Args:
-        processed: Number of repos processed so far
-        total: Total number of repos
-        cached: Number of cached (skipped) repos
-        successful: Number of successfully processed repos
-        failed: Number of failed repos
-        elapsed: Elapsed time in seconds
-        batch_size: Batch size for parallel execution
-        offset: Offset for this batch
-    """
+    """Log progress update with statistics"""
     percentage = (processed / total * 100) if total > 0 else 0
-    cache_hit_rate = (cached / processed * 100) if processed > 0 else 0
 
     # Calculate ETA
     if processed > 0:
@@ -207,7 +97,6 @@ def log_progress(
 
     message = (
         f"Processed {processed}/{total} ({percentage:.1f}%), "
-        f"cache hit: {cache_hit_rate:.1f}%, "
         f"elapsed: {elapsed_str}, ETA: {eta_str}"
     )
 
@@ -218,69 +107,16 @@ def log_progress(
             "offset": offset,
             "processed": processed,
             "total": total,
-            "cached": cached,
             "successful": successful,
             "failed": failed,
             "percentage": round(percentage, 1),
-            "cache_hit_rate": round(cache_hit_rate, 1),
-            "elapsed_seconds": round(elapsed, 1),
-            "eta_seconds": round(eta_seconds, 1) if processed > 0 else None
-        }}
-    )
-
-
-def log_final_summary(
-    total_repos: int,
-    cached: int,
-    processed: int,
-    failed: int,
-    elapsed: float,
-    batch_size: int = 1,
-    offset: int = 0
-):
-    """
-    Log final pipeline statistics
-
-    Args:
-        total_repos: Total number of repos in feed
-        cached: Number of cached (skipped) repos
-        processed: Number of successfully processed repos
-        failed: Number of failed repos
-        elapsed: Total elapsed time in seconds
-        batch_size: Batch size for parallel execution
-        offset: Offset for this batch
-    """
-    cache_hit_rate = (cached / total_repos * 100) if total_repos > 0 else 0
-    elapsed_str = format_elapsed_time(elapsed)
-
-    message = (
-        f"Pipeline complete: {total_repos} total, {cached} cached ({cache_hit_rate:.1f}%), "
-        f"{processed} processed, {failed} failed, completed in {elapsed_str}"
-    )
-
-    logger.info(
-        message,
-        extra={"metadata": {
-            "operation": "orchestrator-completion",
-            "batch_size": batch_size,
-            "offset": offset,
-            "total_repos": total_repos,
-            "cached": cached,
-            "processed": processed,
-            "failed": failed,
-            "cache_hit_rate": round(cache_hit_rate, 1),
-            "elapsed_seconds": round(elapsed, 1),
-            "elapsed_formatted": elapsed_str
+            "elapsed_seconds": round(elapsed, 1)
         }}
     )
 
 
 def graceful_shutdown(signum, frame):
-    """
-    Handle SIGTERM for graceful shutdown
-
-    Saves current progress to state file and exits cleanly
-    """
+    """Handle SIGTERM for graceful shutdown"""
     logger.info(
         "Received SIGTERM, shutting down gracefully...",
         extra={"metadata": {
@@ -320,22 +156,8 @@ def main():
 
     # Parse CLI arguments
     parser = argparse.ArgumentParser(
-        description="Orchestrate gitingest pipeline (fetch → cache → process → upload)",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  # Sequential (process all repos)
-  python orchestrator.py
-
-  # Parallel (10 containers)
-  python orchestrator.py --batch-size=10 --offset=0  # Container 0
-  python orchestrator.py --batch-size=10 --offset=1  # Container 1
-  ...
-  python orchestrator.py --batch-size=10 --offset=9  # Container 9
-
-  # Dry run (test without processing)
-  python orchestrator.py --batch-size=10 --offset=0 --dry-run
-        """
+        description="Orchestrate gitingest pipeline with Google File Search",
+        formatter_class=argparse.RawDescriptionHelpFormatter
     )
 
     parser.add_argument(
@@ -353,7 +175,12 @@ Examples:
     parser.add_argument(
         '--dry-run',
         action='store_true',
-        help='Simulate processing without running gitingest or uploading to R2'
+        help='Simulate processing without running gitingest or uploading'
+    )
+    parser.add_argument(
+        '--limit',
+        type=int,
+        help='Limit processing to first N repos (for testing)'
     )
 
     args = parser.parse_args()
@@ -366,6 +193,23 @@ Examples:
     current_state["batch_size"] = args.batch_size
     current_state["offset"] = args.offset
 
+    # Initialize Google File Search client
+    if not args.dry_run:
+        try:
+            google_client = GoogleFileSearchClient()
+            # Get or create File Search Store
+            store_name = google_client.get_or_create_store()
+            logger.info(
+                f"Using Google File Search Store: {store_name}",
+                extra={"metadata": {"store_name": store_name}}
+            )
+        except Exception as e:
+            logger.error(
+                f"Failed to initialize Google File Search client: {str(e)}",
+                extra={"metadata": {"error": str(e)}}
+            )
+            sys.exit(1)
+
     # Log pipeline start
     logger.info(
         f"Starting pipeline orchestrator (batch_size={args.batch_size}, offset={args.offset}, dry_run={args.dry_run})",
@@ -373,7 +217,8 @@ Examples:
             "batch_size": args.batch_size,
             "offset": args.offset,
             "dry_run": args.dry_run,
-            "mode": "orchestrator"
+            "limit": args.limit,
+            "mode": "orchestrator-google"
         }}
     )
 
@@ -383,12 +228,11 @@ Examples:
         # Step 1: Fetch repos.json
         if args.dry_run:
             logger.info("[DRY RUN] Simulating repos.json fetch", extra={"metadata": {}})
-            # Simulate with 100 test repos
             repos = [
                 {
                     "url": f"https://github.com/alphagov/repo{i}",
                     "pushedAt": "2025-01-01T00:00:00Z",
-                    "org": "alphagov",
+                    "owner": "alphagov",
                     "name": f"repo{i}"
                 }
                 for i in range(100)
@@ -404,8 +248,17 @@ Examples:
 
         # Step 2: Filter repos for this batch (parallel execution)
         batch_repos = filter_repos_for_batch(repos, args.batch_size, args.offset)
+
+        # Apply limit if specified
+        if args.limit and args.limit < len(batch_repos):
+            batch_repos = batch_repos[:args.limit]
+            logger.info(
+                f"Limited to {args.limit} repos for testing",
+                extra={"metadata": {"limit": args.limit}}
+            )
+
         logger.info(
-            f"Filtered to {len(batch_repos)} repos for this batch",
+            f"Processing {len(batch_repos)} repos in this batch",
             extra={"metadata": {
                 "batch_repos": len(batch_repos),
                 "batch_size": args.batch_size,
@@ -413,41 +266,23 @@ Examples:
             }}
         )
 
-        # Step 3: Check cache status for batch repos
-        if args.dry_run:
-            logger.info("[DRY RUN] Simulating cache check", extra={"metadata": {}})
-            cache_status = {repo["url"]: False for repo in batch_repos}  # All cached in dry run
-        else:
-            cache_status = check_cache_status(batch_repos)
-
-        # Filter to repos needing processing
-        repos_to_process = [repo for repo in batch_repos if cache_status.get(repo["url"], True)]
-        cached_count = len(batch_repos) - len(repos_to_process)
-
-        logger.info(
-            f"Cache check complete: {cached_count} cached, {len(repos_to_process)} need processing",
-            extra={"metadata": {
-                "cached": cached_count,
-                "needs_processing": len(repos_to_process),
-                "cache_hit_rate": round((cached_count / len(batch_repos) * 100), 1) if batch_repos else 0
-            }}
-        )
-
-        # Step 4: Process each repository
+        # Step 3: Process each repository
         stats = ProcessingStats()
         current_state["stats"] = stats
         processed_count = 0
 
-        for idx, repo in enumerate(repos_to_process):
+        for idx, repo in enumerate(batch_repos):
             repo_url = repo.get("url", "")
+            org = repo.get("owner", repo.get("org", ""))
+            name = repo.get("name", "")
+            pushed_at = repo.get("pushedAt", "")
 
             # Progress reporting (every 100 repos)
             if idx > 0 and idx % 100 == 0:
                 elapsed = time.time() - start_time
                 log_progress(
                     processed=processed_count,
-                    total=len(repos_to_process),
-                    cached=cached_count,
+                    total=len(batch_repos),
                     successful=stats.successful,
                     failed=stats.failed,
                     elapsed=elapsed,
@@ -457,28 +292,46 @@ Examples:
 
             if args.dry_run:
                 logger.info(
-                    f"[DRY RUN] Would process {idx + 1}/{len(repos_to_process)}: {repo_url}",
+                    f"[DRY RUN] Would process {idx + 1}/{len(batch_repos)}: {repo_url}",
                     extra={"metadata": {"repo_url": repo_url, "index": idx + 1}}
                 )
                 time.sleep(0.01)  # Simulate processing time
                 stats.record_success(10)  # Fake 10s processing time
             else:
-                # Process repository with gitingest and upload to R2
-                result = process_repository(repo_url, upload_to_r2=True)
+                # Process repository with gitingest (no R2 upload in this step)
+                result = process_repository(repo_url, upload_to_r2=False)
 
                 if result.get("success"):
-                    stats.record_success(result.get("duration", 0))
-
-                    # Update cache after successful processing (Quality Story 1)
-                    # repos.json uses "owner" field, not "org"
-                    org = repo.get("owner", repo.get("org", ""))
-                    if CACHE_AVAILABLE and org and repo.get("name") and repo.get("pushedAt"):
-                        cache_entry = {
-                            "pushedAt": repo["pushedAt"],
-                            "processedAt": datetime.utcnow().isoformat() + "Z",
-                            "status": "complete"
+                    # Upload to Google File Search
+                    summary_content = result.get("summary", "")
+                    if summary_content:
+                        metadata = {
+                            "url": repo_url,
+                            "pushedAt": pushed_at,
+                            "processedAt": datetime.utcnow().isoformat() + "Z"
                         }
-                        update_cache(org=org, repo=repo["name"], entry=cache_entry)
+
+                        upload_success = google_client.upload_summary(
+                            org=org,
+                            repo=name,
+                            summary_content=summary_content,
+                            metadata=metadata
+                        )
+
+                        if upload_success:
+                            stats.record_success(result.get("duration", 0))
+                        else:
+                            stats.record_failure()
+                            logger.warning(
+                                f"Google File Search upload failed: {repo_url}",
+                                extra={"metadata": {"repo_url": repo_url}}
+                            )
+                    else:
+                        stats.record_failure()
+                        logger.warning(
+                            f"Empty summary returned: {repo_url}",
+                            extra={"metadata": {"repo_url": repo_url}}
+                        )
                 else:
                     stats.record_failure()
                     logger.warning(
@@ -492,17 +345,27 @@ Examples:
             processed_count += 1
             current_state["repos_processed"] = processed_count
 
-        # Step 5: Log final statistics
+        # Step 4: Log final statistics
         elapsed = time.time() - start_time
-        log_final_summary(
-            total_repos=len(batch_repos),
-            cached=cached_count,
-            processed=stats.successful,
-            failed=stats.failed,
-            elapsed=elapsed,
-            batch_size=args.batch_size,
-            offset=args.offset
+        elapsed_str = format_elapsed_time(elapsed)
+
+        logger.info(
+            f"Pipeline complete: {len(batch_repos)} total, {stats.successful} processed, {stats.failed} failed, completed in {elapsed_str}",
+            extra={"metadata": {
+                "operation": "orchestrator-completion",
+                "batch_size": args.batch_size,
+                "offset": args.offset,
+                "total_repos": len(batch_repos),
+                "processed": stats.successful,
+                "failed": stats.failed,
+                "elapsed_seconds": round(elapsed, 1),
+                "elapsed_formatted": elapsed_str
+            }}
         )
+
+        # Print Google File Search stats
+        if not args.dry_run:
+            google_client.print_stats()
 
         # Exit with success
         sys.exit(0)
