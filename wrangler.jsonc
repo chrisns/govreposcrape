@@ -1,0 +1,167 @@
+/**
+ * For more details on how to configure Wrangler, refer to:
+ * https://developers.cloudflare.com/workers/wrangler/configuration/
+ */
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "govreposcrape",
+	"main": "src/index.ts",
+	"compatibility_date": "2025-11-11",
+	"observability": {
+		"enabled": true
+	},
+	/**
+	 * Service Bindings
+	 */
+	"r2_buckets": [
+		{
+			"bucket_name": "govreposcrape-gitingest",
+			"binding": "R2"
+		}
+	],
+	"kv_namespaces": [
+		{
+			"binding": "KV",
+			"id": "REDACTED_CLOUDFLARE_KV_ID"
+		}
+	],
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "govreposcrape-db",
+			"database_id": "REDACTED_CLOUDFLARE_D1_ID"
+		}
+	],
+	"vectorize": [
+		{
+			"binding": "VECTORIZE",
+			"index_name": "govscraperepo-code-index"
+		}
+	],
+	/**
+	 * AI Search binding (Epic 3 Story 3.1)
+	 * Cloudflare AI Search (Preview) - managed RAG service for semantic search
+	 * Binding format: Single object with binding name
+	 * API usage: env.AI.autorag("govreposcrape-search").search({ query, ... })
+	 */
+	"ai": {
+		"binding": "AI"
+	},
+	/**
+	 * Environment-specific configurations
+	 * Staging: For testing and validation before production deployment
+	 * Production: Live environment serving real traffic
+	 */
+	"env": {
+		"staging": {
+			"name": "govreposcrape-staging",
+			"vars": {
+				"ENVIRONMENT": "staging",
+				"LOG_LEVEL": "info"
+			},
+			"r2_buckets": [
+				{
+					"bucket_name": "govreposcrape-gitingest-staging",
+					"binding": "R2"
+				}
+			],
+			"kv_namespaces": [
+				{
+					"binding": "KV",
+					"id": "staging-kv-namespace-id-placeholder"
+				}
+			],
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_name": "govreposcrape-db-staging",
+					"database_id": "staging-d1-database-id-placeholder"
+				}
+			],
+			"vectorize": [
+				{
+					"binding": "VECTORIZE",
+					"index_name": "govscraperepo-code-index-staging"
+				}
+			],
+			"ai": {
+				"binding": "AI"
+			}
+		},
+		"production": {
+			"name": "govreposcrape-production",
+			"routes": [
+				"govreposcrape.cloud.cns.me/*"
+			],
+			"vars": {
+				"ENVIRONMENT": "production",
+				"LOG_LEVEL": "info"
+			},
+			"r2_buckets": [
+				{
+					"bucket_name": "govreposcrape-gitingest",
+					"binding": "R2"
+				}
+			],
+			"kv_namespaces": [
+				{
+					"binding": "KV",
+					"id": "REDACTED_CLOUDFLARE_KV_ID"
+				}
+			],
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_name": "govreposcrape-db",
+					"database_id": "REDACTED_CLOUDFLARE_D1_ID"
+				}
+			],
+			"vectorize": [
+				{
+					"binding": "VECTORIZE",
+					"index_name": "govscraperepo-code-index"
+				}
+			],
+			"ai": {
+				"binding": "AI"
+			}
+		}
+	},
+	/**
+	 * Smart Placement
+	 * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
+	 */
+	// "placement": { "mode": "smart" }
+	/**
+	 * Bindings
+	 * Bindings allow your Worker to interact with resources on the Cloudflare Developer Platform, including
+	 * databases, object storage, AI inference, real-time communication and more.
+	 * https://developers.cloudflare.com/workers/runtime-apis/bindings/
+	 */
+	/**
+	 * Environment Variables
+	 * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
+	 *
+	 * Story 4.3: Log level configuration by environment
+	 * - LOG_LEVEL: Controls logging verbosity (debug|info|warn|error)
+	 * - ENVIRONMENT: Determines runtime environment (development|staging|production)
+	 */
+	"vars": {
+		"ENVIRONMENT": "development",
+		"LOG_LEVEL": "debug"
+	}
+	/**
+	 * Note: Use secrets to store sensitive data.
+	 * https://developers.cloudflare.com/workers/configuration/secrets/
+	 */
+	/**
+	 * Static Assets
+	 * https://developers.cloudflare.com/workers/static-assets/binding/
+	 */
+	// "assets": { "directory": "./public/", "binding": "ASSETS" }
+	/**
+	 * Service Bindings (communicate between multiple Workers)
+	 * https://developers.cloudflare.com/workers/wrangler/configuration/#service-bindings
+	 */
+	// "services": [{ "binding": "MY_SERVICE", "service": "my-service" }]
+}

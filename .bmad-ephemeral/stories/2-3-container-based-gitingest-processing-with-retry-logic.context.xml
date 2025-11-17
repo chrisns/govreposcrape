@@ -1,0 +1,240 @@
+<story-context id="{bmad_folder}/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>3</storyId>
+    <title>Container-Based gitingest Processing with Retry Logic</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-13</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>.bmad-ephemeral/stories/2-3-container-based-gitingest-processing-with-retry-logic.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>data pipeline engineer</asA>
+    <iWant>a containerized environment to run gitingest Python library on repository URLs</iWant>
+    <soThat>we can generate LLM-ready code summaries for semantic search</soThat>
+    <tasks>
+- Task 1: Create Docker container infrastructure (AC: #1, #3)
+  - Create container/Dockerfile with Python 3.11 base image
+  - Install gitingest library via pip
+  - Install boto3 for R2 access
+  - Configure environment variable support (R2_BUCKET, R2_ENDPOINT, R2_ACCESS_KEY, R2_SECRET_KEY)
+  - Add .dockerignore file to exclude unnecessary files
+  - Document build instructions in container/README.md
+
+- Task 2: Implement gitingest processing script (AC: #1, #2, #3)
+  - Create container/ingest.py as main CLI entrypoint
+  - Accept repository URL as command-line argument
+  - Integrate gitingest library to generate code summary
+  - Handle varying repository sizes (10KB to 100MB+)
+  - Implement timeout enforcement (5 minutes max per repo)
+  - Add structured logging for processing events
+  - Generate statistics: successful, failed, average time per repo
+
+- Task 3: Implement retry logic with exponential backoff (AC: #2)
+  - Create retry wrapper function in container/ingest.py
+  - Implement exponential backoff: 3 attempts with delays [1s, 2s, 4s]
+  - Handle timeout errors, network errors, malformed repo errors
+  - Log retry attempts with repo URL and error details
+  - Continue processing on final failure (fail-safe - don't halt pipeline)
+  - Return success/failure status for upstream tracking
+
+- Task 4: Create comprehensive tests (AC: #1, #2, #3)
+  - Create container/test_ingest.py using pytest
+  - Test gitingest processing with valid repository URL
+  - Test timeout enforcement (simulate long-running repo)
+  - Test retry logic with transient failures
+  - Test retry exhaustion after 3 attempts
+  - Test fail-safe behavior (continue on failure)
+  - Test statistics tracking (successful, failed, average time)
+  - Mock gitingest library for controlled testing
+  - Verify all tests pass with `pytest container/test_ingest.py`
+
+- Task 5: Docker build and local testing (AC: #1, #3)
+  - Build Docker image: `docker build -t govreposcrape-ingest ./container`
+  - Test container locally with sample repository URL
+  - Verify environment variable injection works
+  - Test CLI entrypoint: `docker run govreposcrape-ingest python ingest.py <url>`
+  - Verify gitingest summary generation for real repository
+  - Document container usage in container/README.md
+
+- Task 6: Integration preparation for orchestrator (AC: #1, #2, #3)
+  - Design container invocation interface for Worker orchestrator (Story 2.6)
+  - Document expected input format (repository URL)
+  - Document expected output format (gitingest summary)
+  - Document error codes and failure modes
+  - Consider container orchestration platform (Docker on separate compute, not Workers)
+  - Add usage examples to container/README.md
+
+- Task 7: Update documentation (AC: #1, #2, #3)
+  - Document Dockerfile structure and build process
+  - Document ingest.py CLI interface and arguments
+  - Document retry logic and exponential backoff strategy
+  - Document timeout handling (5 minutes max)
+  - Document environment variable configuration
+  - Add troubleshooting section for common errors
+  - Document gitingest library version and dependencies
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+1. **Given** a repository marked as "needs processing" from cache check (Story 2.2)
+   **When** I execute gitingest processing on the repository URL
+   **Then** the container runs Python 3.11 with gitingest library installed
+   **And** gitingest generates a comprehensive code summary (structure, key files, dependencies)
+   **And** processing handles repositories of varying sizes (10KB to 100MB+)
+
+2. **Given** gitingest processing may fail (timeout, network error, malformed repo)
+   **When** processing encounters an error
+   **Then** it retries up to 3 times with exponential backoff
+   **And** timeouts are enforced (5 minutes max per repo)
+   **And** failures are logged with repo URL and error details
+   **And** processing continues with next repository (fail-safe)
+
+3. **Given** container infrastructure requirements
+   **When** container is built and configured
+   **Then** container has Dockerfile with: Python 3.11, gitingest, boto3 for R2 access
+   **And** container accepts environment variables: R2_BUCKET, R2_ENDPOINT, R2_ACCESS_KEY, R2_SECRET_KEY
+   **And** container has CLI entrypoint: `python ingest.py <repo-url>`
+   **And** processing statistics are logged: successful, failed, average time per repo
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR-1.2: gitingest Summary Generation</section>
+        <snippet>Execute gitingest Python library on repository URL to generate comprehensive summaries (code structure, key files, dependencies). Handle varying sizes (10KB-100MB+) with 5-minute timeout. Error logging for failed operations.</snippet>
+      </doc>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR-1.4: Parallel Container Execution</section>
+        <snippet>Docker container with Python 3.11, gitingest, boto3. CLI arguments: --batch-size=N --offset=M for parallel execution. Process every Nth repo starting at offset M.</snippet>
+      </doc>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>NFR-1.3: AI Search Indexing Throughput</section>
+        <snippet>~21,000 repos processed in &lt; 6 hours (initial seeding). Sequential: 21k × 10s avg = 58 hours (unacceptable). Parallel: 10 containers × 6 hours = achievable with modulo arithmetic parallelization.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic Breakdown</title>
+        <section>Epic 2: Data Ingestion Pipeline</section>
+        <snippet>Container-based gitingest processing layer between cache checking (Story 2.2) and R2 storage (Story 2.4). Cloudflare Workers can't run Python - requires separate Docker container. Exponential backoff: 3 attempts with delays [1s, 2s, 4s].</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic Breakdown</title>
+        <section>Story 2.3: Container-Based gitingest Processing</section>
+        <snippet>Python 3.11 base image, gitingest + boto3 dependencies, CLI interface `python ingest.py &lt;repo-url&gt;`. Timeout enforcement: 5 minutes max per repo. Fail-safe: processing continues on failure (don't halt entire pipeline).</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>src/ingestion/repos-fetcher.ts</path>
+        <kind>service</kind>
+        <symbol>fetchReposJson</symbol>
+        <lines>1-50</lines>
+        <reason>Provides repository URLs that will be passed to gitingest container. Story 2.3 container receives these URLs as input for processing.</reason>
+      </artifact>
+      <artifact>
+        <path>src/ingestion/cache.ts</path>
+        <kind>service</kind>
+        <symbol>checkCache, updateCache</symbol>
+        <lines>1-50</lines>
+        <reason>Determines which repositories need processing. Story 2.3 only processes repos marked as "needs processing" by cache check. Story 2.3 must update cache after successful processing.</reason>
+      </artifact>
+      <artifact>
+        <path>src/utils/logger.ts</path>
+        <kind>utility</kind>
+        <symbol>createLogger, Logger interface</symbol>
+        <lines>1-50</lines>
+        <reason>Structured JSON logging pattern. Story 2.3 should adapt this TypeScript pattern to Python for consistent logging across Workers and container.</reason>
+      </artifact>
+      <artifact>
+        <path>src/utils/retry.ts</path>
+        <kind>utility</kind>
+        <symbol>withRetry</symbol>
+        <lines>1-50</lines>
+        <reason>Retry pattern with exponential backoff [1s, 2s, 4s]. Story 2.3 must implement equivalent Python function for gitingest retry logic.</reason>
+      </artifact>
+      <artifact>
+        <path>src/types.ts</path>
+        <kind>types</kind>
+        <symbol>RepoMetadata, CacheEntry</symbol>
+        <lines>all</lines>
+        <reason>Defines repository data structure from repos.json. Story 2.3 container receives URL field from this structure.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <python>
+        <package name="gitingest" version="latest">Core library for generating LLM-ready code summaries</package>
+        <package name="boto3" version="^1.34">AWS S3-compatible client for Cloudflare R2 storage access</package>
+        <package name="pytest" version="^8.0">Testing framework (devDependency)</package>
+      </python>
+      <docker>
+        <base-image>python:3.11-slim</base-image>
+      </docker>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Python 3.11+ required for gitingest library compatibility</constraint>
+    <constraint>Container must be separate from Cloudflare Workers (Workers cannot run Python/Docker)</constraint>
+    <constraint>Retry pattern must match established pattern: 3 attempts with exponential backoff [1s, 2s, 4s]</constraint>
+    <constraint>Structured JSON logging must match TypeScript logger pattern from src/utils/logger.ts for consistency</constraint>
+    <constraint>Timeout enforcement: 5 minutes max per repository (large repos 100MB+ can be slow)</constraint>
+    <constraint>Fail-safe error handling: processing continues on failure (don't halt pipeline for one repo)</constraint>
+    <constraint>CLI interface must accept repository URL as argument for Worker orchestrator invocation</constraint>
+    <constraint>Environment variables: R2_BUCKET, R2_ENDPOINT, R2_ACCESS_KEY, R2_SECRET_KEY</constraint>
+    <constraint>Statistics tracking: successful, failed, average time per repo (for monitoring and optimization)</constraint>
+    <constraint>Testing: pytest framework, 80%+ coverage target, mock gitingest library</constraint>
+  </constraints>
+  <interfaces>
+    <interface>
+      <name>Container CLI Entrypoint</name>
+      <kind>CLI command</kind>
+      <signature>python ingest.py &lt;repo-url&gt; [--batch-size=N] [--offset=M]</signature>
+      <path>container/ingest.py</path>
+    </interface>
+    <interface>
+      <name>gitingest Python Library</name>
+      <kind>External library API</kind>
+      <signature>from gitingest import ingest_repository; summary = ingest_repository(repo_url)</signature>
+      <path>External: pip install gitingest</path>
+    </interface>
+    <interface>
+      <name>R2 Storage (boto3 S3 API)</name>
+      <kind>Storage interface</kind>
+      <signature>boto3.client('s3', endpoint_url=R2_ENDPOINT).put_object(Bucket, Key, Body, Metadata)</signature>
+      <path>External: AWS S3-compatible API via boto3</path>
+    </interface>
+    <interface>
+      <name>Cache Update (Future Integration)</name>
+      <kind>Service integration</kind>
+      <signature>After successful processing, container must signal Worker to update KV cache via updateCache(org, name, pushedAt)</signature>
+      <path>src/ingestion/cache.ts (Story 2.2)</path>
+    </interface>
+  </interfaces>
+  <tests>
+    <standards>Testing framework: pytest (Python testing framework). Test structure: Test classes/functions with descriptive names (test_*). Coverage target: 80%+ on core logic. Mocking strategy: Mock gitingest library using pytest monkeypatch or unittest.mock. Mock boto3 S3 client for R2 interactions. Quality standards: 100% test pass rate (maintain established project standard from Stories 2.1, 2.2).</standards>
+    <locations>
+      <location>container/test_ingest.py</location>
+    </locations>
+    <ideas>
+      <idea criteria="AC1">Test gitingest processing: Mock gitingest library to return sample summary, verify summary generated correctly for valid repository URL</idea>
+      <idea criteria="AC1">Test repository size handling: Verify container handles varying sizes (10KB-100MB+) without errors</idea>
+      <idea criteria="AC2">Test timeout enforcement: Mock gitingest to simulate long-running operation (&gt;5 minutes), verify TimeoutError raised and logged</idea>
+      <idea criteria="AC2">Test retry logic: Mock gitingest to fail twice then succeed on third attempt, verify 3 attempts with exponential backoff delays [1s, 2s, 4s]</idea>
+      <idea criteria="AC2">Test retry exhaustion: Mock gitingest to fail all 3 attempts, verify exception raised after final attempt and error logged with repo URL</idea>
+      <idea criteria="AC2">Test fail-safe behavior: Verify processing continues after failure (no pipeline halt), error logged but processing moves to next repo</idea>
+      <idea criteria="AC3">Test CLI entrypoint: Verify argument parsing for repo URL, verify exit code 0 on success and 1 on failure</idea>
+      <idea criteria="AC3">Test environment variable injection: Verify container reads R2_BUCKET, R2_ENDPOINT, R2_ACCESS_KEY, R2_SECRET_KEY correctly</idea>
+      <idea criteria="AC3">Test statistics tracking: Verify successful count, failed count, average time per repo calculated and logged correctly</idea>
+      <idea criteria="AC2">Test structured logging: Verify JSON-formatted logs match TypeScript logger pattern with timestamp, level, message, context fields</idea>
+    </ideas>
+  </tests>
+</story-context>

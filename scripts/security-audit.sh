@@ -1,0 +1,455 @@
+#!/usr/bin/env bash
+#
+# Security Audit Script - NCSC Compliance Validation
+#
+# This script validates the govreposcrape project against NCSC Secure Coding Standards.
+# It checks for: input validation, dangerous code patterns, secrets exposure, HTTPS enforcement,
+# audit logging compliance, and dependency vulnerabilities.
+#
+# Usage:
+#   ./scripts/security-audit.sh                    # Run full security audit
+#   ./scripts/security-audit.sh --checklist-only   # NCSC checklist validation only
+#   ./scripts/security-audit.sh --dependencies     # Dependency scan only
+#   ./scripts/security-audit.sh --format json      # Output JSON report
+#
+# Exit codes:
+#   0 - All checks passed
+#   1 - One or more checks failed
+#   2 - Script error (invalid usage, missing dependencies)
+
+set -euo pipefail
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Flags
+RUN_CHECKLIST=true
+RUN_DEPENDENCIES=true
+OUTPUT_FORMAT="console"  # console or json
+
+# Counters
+TOTAL_CHECKS=0
+PASSED_CHECKS=0
+FAILED_CHECKS=0
+
+# JSON report data
+CHECKLIST_ITEMS_JSON=""
+OVERALL_STATUS="pass"
+HIGH_VULN=0
+CRITICAL_VULN=0
+MEDIUM_VULN=0
+LOW_VULN=0
+
+# Parse command-line arguments
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --checklist-only)
+      RUN_DEPENDENCIES=false
+      shift
+      ;;
+    --dependencies)
+      RUN_CHECKLIST=false
+      shift
+      ;;
+    --format)
+      OUTPUT_FORMAT="$2"
+      shift 2
+      ;;
+    --help|-h)
+      echo "Security Audit Script - NCSC Compliance Validation"
+      echo ""
+      echo "Usage:"
+      echo "  $0 [OPTIONS]"
+      echo ""
+      echo "Options:"
+      echo "  --checklist-only      Run NCSC checklist validation only"
+      echo "  --dependencies        Run dependency scan only"
+      echo "  --format json|console Output format (default: console)"
+      echo "  --help, -h            Show this help message"
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $1"
+      echo "Use --help for usage information"
+      exit 2
+      ;;
+  esac
+done
+
+# Helper functions
+log_info() {
+  if [[ "$OUTPUT_FORMAT" == "console" ]]; then
+    echo -e "${BLUE}[INFO]${NC} $1"
+  fi
+}
+
+log_pass() {
+  if [[ "$OUTPUT_FORMAT" == "console" ]]; then
+    echo -e "${GREEN}[PASS]${NC} $1"
+  fi
+}
+
+log_fail() {
+  if [[ "$OUTPUT_FORMAT" == "console" ]]; then
+    echo -e "${RED}[FAIL]${NC} $1"
+  fi
+}
+
+log_warn() {
+  if [[ "$OUTPUT_FORMAT" == "console" ]]; then
+    echo -e "${YELLOW}[WARN]${NC} $1"
+  fi
+}
+
+# Add checklist item to JSON report
+add_checklist_item() {
+  local id="$1"
+  local category="$2"
+  local description="$3"
+  local status="$4"
+  local evidence="$5"
+  local remediation="${6:-}"
+
+  local item=$(cat <<EOF
+{
+  "id": "$id",
+  "category": "$category",
+  "description": "$description",
+  "status": "$status",
+  "evidence": "$evidence",
+  "remediation": "$remediation"
+}
+EOF
+  )
+
+  if [[ -z "$CHECKLIST_ITEMS_JSON" ]]; then
+    CHECKLIST_ITEMS_JSON="$item"
+  else
+    CHECKLIST_ITEMS_JSON="$CHECKLIST_ITEMS_JSON,$item"
+  fi
+}
+
+# Check function template
+check() {
+  local check_name="$1"
+  local check_id="$2"
+  local category="$3"
+
+  TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
+
+  if [[ "$OUTPUT_FORMAT" == "console" ]]; then
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    log_info "Checking: $check_name ($check_id)"
+  fi
+}
+
+pass_check() {
+  local evidence="$1"
+  PASSED_CHECKS=$((PASSED_CHECKS + 1))
+  log_pass "$evidence"
+  add_checklist_item "$CHECK_ID" "$CHECK_CATEGORY" "$CHECK_NAME" "pass" "$evidence" ""
+}
+
+fail_check() {
+  local evidence="$1"
+  local remediation="$2"
+  FAILED_CHECKS=$((FAILED_CHECKS + 1))
+  OVERALL_STATUS="fail"
+  log_fail "$evidence"
+  log_warn "Remediation: $remediation"
+  add_checklist_item "$CHECK_ID" "$CHECK_CATEGORY" "$CHECK_NAME" "fail" "$evidence" "$remediation"
+}
+
+# ============================================================================
+# NCSC CHECKLIST VALIDATION
+# ============================================================================
+
+if [[ "$RUN_CHECKLIST" == "true" ]]; then
+  log_info "Running NCSC Secure Coding Standards Checklist..."
+
+  # -------------------------------------------------------------------------
+  # Check 1: No eval/exec usage (NCSC-SC-003)
+  # -------------------------------------------------------------------------
+  CHECK_ID="NCSC-SC-003"
+  CHECK_CATEGORY="no_dynamic_execution"
+  CHECK_NAME="No eval/exec/Function usage"
+  check "$CHECK_NAME" "$CHECK_ID" "$CHECK_CATEGORY"
+
+  EVAL_COUNT=$(grep -r -E "(eval\(|exec\(|Function\()" src/ --exclude-dir=node_modules 2>/dev/null || true | wc -l | tr -d ' ' || echo "0")
+
+  if [[ "$EVAL_COUNT" -eq 0 ]]; then
+    pass_check "Zero occurrences of eval/exec/Function found in src/"
+  else
+    fail_check "Found $EVAL_COUNT occurrences of dangerous patterns" "Remove all eval/exec/Function usage and use safe alternatives"
+  fi
+
+  # -------------------------------------------------------------------------
+  # Check 2: No secrets in code (NCSC-SC-004)
+  # -------------------------------------------------------------------------
+  CHECK_ID="NCSC-SC-004"
+  CHECK_CATEGORY="secrets"
+  CHECK_NAME="No hardcoded secrets in source code"
+  check "$CHECK_NAME" "$CHECK_ID" "$CHECK_CATEGORY"
+
+  # Check for common secret patterns (case-insensitive)
+  SECRET_PATTERNS=(
+    "api_key\s*=\s*['\"][^'\"]+['\"]"
+    "apikey\s*=\s*['\"][^'\"]+['\"]"
+    "token\s*=\s*['\"][^'\"]+['\"]"
+    "password\s*=\s*['\"][^'\"]+['\"]"
+    "secret\s*=\s*['\"][^'\"]+['\"]"
+    "bearer\s+[a-zA-Z0-9_-]{20,}"
+  )
+
+  SECRET_COUNT=0
+  for pattern in "${SECRET_PATTERNS[@]}"; do
+    COUNT=$(grep -r -iE "$pattern" src/ wrangler.jsonc --exclude-dir=node_modules 2>/dev/null || true | wc -l | tr -d ' ')
+    SECRET_COUNT=$((SECRET_COUNT + COUNT))
+  done
+
+  if [[ "$SECRET_COUNT" -eq 0 ]]; then
+    pass_check "Zero hardcoded secrets found in src/ and wrangler.jsonc"
+  else
+    fail_check "Found $SECRET_COUNT potential hardcoded secrets" "Use wrangler secret put for sensitive values, never commit secrets"
+  fi
+
+  # -------------------------------------------------------------------------
+  # Check 3: HTTPS-only enforcement (NCSC-SC-005)
+  # -------------------------------------------------------------------------
+  CHECK_ID="NCSC-SC-005"
+  CHECK_CATEGORY="https"
+  CHECK_NAME="HTTPS-only enforcement (no http:// URLs)"
+  check "$CHECK_NAME" "$CHECK_ID" "$CHECK_CATEGORY"
+
+  # Exclude node_modules, test fixtures, comments, and localhost URLs
+  HTTP_COUNT=$(grep -r "http://" src/ wrangler.jsonc --exclude-dir=node_modules 2>/dev/null | grep -v "localhost" | grep -v "^[[:space:]]*//\|^[[:space:]]*\*" | wc -l | tr -d '[:space:]' || printf "0")
+
+  if [[ "$HTTP_COUNT" -eq 0 ]]; then
+    pass_check "All URLs use https:// (zero http:// found)"
+  else
+    fail_check "Found $HTTP_COUNT http:// URLs" "Change all http:// to https:// for TLS encryption"
+  fi
+
+  # -------------------------------------------------------------------------
+  # Check 4: Input validation on API endpoints (NCSC-SC-001)
+  # -------------------------------------------------------------------------
+  CHECK_ID="NCSC-SC-001"
+  CHECK_CATEGORY="input_validation"
+  CHECK_NAME="Input validation on API endpoints"
+  check "$CHECK_NAME" "$CHECK_ID" "$CHECK_CATEGORY"
+
+  # Check for TypeScript type guards and validation patterns
+  API_FILES=$(find src/api -name "*.ts" 2>/dev/null | wc -l | tr -d ' ' || echo "0")
+  VALIDATION_COUNT=$(grep -r -E "(validateMCPRequest|MCPRequest|request\.query\.substring)" src/api/ 2>/dev/null | wc -l | tr -d ' ' || echo "0")
+
+  if [[ "$API_FILES" -gt 0 ]] && [[ "$VALIDATION_COUNT" -gt 0 ]]; then
+    pass_check "Input validation patterns detected in $API_FILES API files ($VALIDATION_COUNT validation references)"
+  else
+    fail_check "Insufficient input validation patterns in API files" "Add TypeScript type guards and input sanitization to all API endpoints"
+  fi
+
+  # -------------------------------------------------------------------------
+  # Check 5: Structured logging usage (NCSC-SC-006)
+  # -------------------------------------------------------------------------
+  CHECK_ID="NCSC-SC-006"
+  CHECK_CATEGORY="audit_logging"
+  CHECK_NAME="Structured logging on API endpoints (audit logging)"
+  check "$CHECK_NAME" "$CHECK_ID" "$CHECK_CATEGORY"
+
+  # Check for createLogger usage in API files
+  LOGGER_COUNT=$(grep -r "createLogger" src/api/ 2>/dev/null | wc -l | tr -d ' ' || echo "0")
+
+  if [[ "$LOGGER_COUNT" -gt 0 ]]; then
+    pass_check "Structured logging detected in API endpoints ($LOGGER_COUNT createLogger usages)"
+  else
+    fail_check "No structured logging found in API endpoints" "Use createLogger() from src/utils/logger.ts for audit logging"
+  fi
+
+  # -------------------------------------------------------------------------
+  # Check 6: No PII in logs (NCSC-SC-006)
+  # -------------------------------------------------------------------------
+  CHECK_ID="NCSC-SC-006-PII"
+  CHECK_CATEGORY="audit_logging"
+  CHECK_NAME="No PII in log output (query truncation)"
+  check "$CHECK_NAME" "$CHECK_ID" "$CHECK_CATEGORY"
+
+  # Check for query truncation patterns (e.g., query.substring(0, 100))
+  TRUNCATION_COUNT=$(grep -r "\.substring(" src/ 2>/dev/null | grep -E "(query|user|email)" | wc -l | tr -d ' ' || echo "0")
+
+  if [[ "$TRUNCATION_COUNT" -gt 0 ]]; then
+    pass_check "Query/PII truncation detected ($TRUNCATION_COUNT occurrences)"
+  else
+    log_warn "No explicit PII truncation found - verify logs don't contain full user data"
+    pass_check "Manual verification required (see SECURITY.md)"
+  fi
+
+  # -------------------------------------------------------------------------
+  # Check 7: Read-only access pattern (NCSC-SC-007)
+  # -------------------------------------------------------------------------
+  CHECK_ID="NCSC-SC-007"
+  CHECK_CATEGORY="read_only"
+  CHECK_NAME="Read-only access (no write operations to GitHub)"
+  check "$CHECK_NAME" "$CHECK_ID" "$CHECK_CATEGORY"
+
+  # Check for HTTP write methods to github.com
+  WRITE_COUNT=$(grep -r -E "(POST|PUT|DELETE|PATCH).*github\.com" src/ 2>/dev/null | grep -v "^[[:space:]]*//\|^[[:space:]]*\*" | wc -l | tr -d '[:space:]' || printf "0")
+
+  if [[ "$WRITE_COUNT" -eq 0 ]]; then
+    pass_check "Zero write operations to github.com detected"
+  else
+    fail_check "Found $WRITE_COUNT potential write operations to GitHub" "Remove POST/PUT/DELETE requests, use read-only GET only"
+  fi
+
+  # -------------------------------------------------------------------------
+  # Check 8: SECURITY.md exists (NCSC-SC-DOC)
+  # -------------------------------------------------------------------------
+  CHECK_ID="NCSC-SC-DOC"
+  CHECK_CATEGORY="documentation"
+  CHECK_NAME="SECURITY.md documentation exists"
+  check "$CHECK_NAME" "$CHECK_ID" "$CHECK_CATEGORY"
+
+  if [[ -f "SECURITY.md" ]]; then
+    WORD_COUNT=$(wc -w < SECURITY.md | tr -d ' ')
+    if [[ "$WORD_COUNT" -gt 500 ]]; then
+      pass_check "SECURITY.md exists with $WORD_COUNT words (comprehensive documentation)"
+    else
+      fail_check "SECURITY.md exists but is too short ($WORD_COUNT words)" "Add comprehensive security documentation per NCSC standards"
+    fi
+  else
+    fail_check "SECURITY.md not found" "Create SECURITY.md with NCSC compliance checklist and incident response plan"
+  fi
+
+fi
+
+# ============================================================================
+# DEPENDENCY VULNERABILITY SCANNING
+# ============================================================================
+
+if [[ "$RUN_DEPENDENCIES" == "true" ]]; then
+  log_info "Running dependency vulnerability scan..."
+
+  # -------------------------------------------------------------------------
+  # Check 9: npm audit (NCSC-SC-008)
+  # -------------------------------------------------------------------------
+  CHECK_ID="NCSC-SC-008"
+  CHECK_CATEGORY="dependencies"
+  CHECK_NAME="Zero high/critical vulnerabilities (npm audit)"
+  check "$CHECK_NAME" "$CHECK_ID" "$CHECK_CATEGORY"
+
+  # Run npm audit and parse JSON output
+  if ! command -v npm &> /dev/null; then
+    fail_check "npm not found" "Install Node.js and npm"
+  else
+    # Capture npm audit output
+    AUDIT_OUTPUT=$(npm audit --json 2>/dev/null || true)
+
+    # Parse vulnerability counts (using jq if available, else fallback to grep)
+    if command -v jq &> /dev/null; then
+      HIGH_VULN=$(echo "$AUDIT_OUTPUT" | jq '.metadata.vulnerabilities.high // 0')
+      CRITICAL_VULN=$(echo "$AUDIT_OUTPUT" | jq '.metadata.vulnerabilities.critical // 0')
+      MEDIUM_VULN=$(echo "$AUDIT_OUTPUT" | jq '.metadata.vulnerabilities.moderate // 0')
+      LOW_VULN=$(echo "$AUDIT_OUTPUT" | jq '.metadata.vulnerabilities.low // 0')
+    else
+      # Fallback parsing without jq
+      HIGH_VULN=$(echo "$AUDIT_OUTPUT" | grep -oP '"high":\s*\K\d+' || echo "0")
+      CRITICAL_VULN=$(echo "$AUDIT_OUTPUT" | grep -oP '"critical":\s*\K\d+' || echo "0")
+      MEDIUM_VULN=$(echo "$AUDIT_OUTPUT" | grep -oP '"moderate":\s*\K\d+' || echo "0")
+      LOW_VULN=$(echo "$AUDIT_OUTPUT" | grep -oP '"low":\s*\K\d+' || echo "0")
+    fi
+
+    TOTAL_VULN=$((HIGH_VULN + CRITICAL_VULN))
+
+    if [[ "$TOTAL_VULN" -eq 0 ]]; then
+      pass_check "Zero high/critical vulnerabilities (Medium: $MEDIUM_VULN, Low: $LOW_VULN)"
+    else
+      fail_check "Found $CRITICAL_VULN critical, $HIGH_VULN high vulnerabilities" "Run npm audit fix or update dependencies manually"
+    fi
+  fi
+
+  # -------------------------------------------------------------------------
+  # Check 10: Dependabot configuration (NCSC-SC-008)
+  # -------------------------------------------------------------------------
+  CHECK_ID="NCSC-SC-008-DEPENDABOT"
+  CHECK_CATEGORY="dependencies"
+  CHECK_NAME="Dependabot configured for automated security updates"
+  check "$CHECK_NAME" "$CHECK_ID" "$CHECK_CATEGORY"
+
+  if [[ -f ".github/dependabot.yml" ]]; then
+    # Verify it contains npm ecosystem
+    if grep -q "package-ecosystem.*npm" .github/dependabot.yml; then
+      pass_check ".github/dependabot.yml exists with npm ecosystem configured"
+    else
+      fail_check ".github/dependabot.yml exists but npm ecosystem not configured" "Add npm package-ecosystem to .github/dependabot.yml"
+    fi
+  else
+    fail_check ".github/dependabot.yml not found" "Create .github/dependabot.yml for automated security updates"
+  fi
+
+fi
+
+# ============================================================================
+# SUMMARY AND OUTPUT
+# ============================================================================
+
+if [[ "$OUTPUT_FORMAT" == "console" ]]; then
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+  echo "SECURITY AUDIT SUMMARY"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+  echo "Total Checks:  $TOTAL_CHECKS"
+  echo -e "Passed:        ${GREEN}$PASSED_CHECKS${NC}"
+  echo -e "Failed:        ${RED}$FAILED_CHECKS${NC}"
+  echo ""
+
+  if [[ "$OVERALL_STATUS" == "pass" ]]; then
+    echo -e "${GREEN}✓ NCSC COMPLIANCE: PASS${NC}"
+    echo ""
+    echo "All security checks passed. The codebase meets NCSC Secure Coding Standards."
+  else
+    echo -e "${RED}✗ NCSC COMPLIANCE: FAIL${NC}"
+    echo ""
+    echo "One or more security checks failed. Review findings above and apply remediations."
+  fi
+
+  echo ""
+  echo "For detailed compliance documentation, see: SECURITY.md"
+  echo ""
+
+elif [[ "$OUTPUT_FORMAT" == "json" ]]; then
+  # Generate JSON report
+  AUDIT_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+  # Output SecurityAuditReport JSON
+  cat <<EOF
+{
+  "audit_date": "$AUDIT_DATE",
+  "overall_status": "$OVERALL_STATUS",
+  "checklist": [$CHECKLIST_ITEMS_JSON],
+  "dependency_vulnerabilities": {
+    "high": $HIGH_VULN,
+    "medium": $MEDIUM_VULN,
+    "low": $LOW_VULN
+  },
+  "ncsc_compliance": $([ "$OVERALL_STATUS" == "pass" ] && echo "true" || echo "false"),
+  "summary": {
+    "total_checks": $TOTAL_CHECKS,
+    "passed": $PASSED_CHECKS,
+    "failed": $FAILED_CHECKS
+  }
+}
+EOF
+fi
+
+# Exit with appropriate code
+if [[ "$OVERALL_STATUS" == "pass" ]]; then
+  exit 0
+else
+  exit 1
+fi

@@ -1,0 +1,230 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>3</epicId>
+    <storyId>4</storyId>
+    <title>Search Performance Validation and Baseline Metrics</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-14</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>.bmad-ephemeral/stories/3-4-search-performance-validation-and-baseline-metrics.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>performance engineer</asA>
+    <iWant>to validate AI Search performance and establish baseline metrics</iWant>
+    <soThat>we can determine if the managed service meets MVP requirements (&lt;2s query latency)</soThat>
+    <tasks>
+      <task id="1" ac="1,2,3">Create performance validation test script (scripts/validate-ai-search.ts)</task>
+      <task id="2" ac="1,2">Implement performance measurement (p50/p95/p99)</task>
+      <task id="3" ac="2">Measure indexing lag (R2 upload to searchable)</task>
+      <task id="4" ac="2,3">Implement relevance assessment framework</task>
+      <task id="5" ac="2,3">Generate baseline metrics report</task>
+      <task id="6" ac="3">Document test harness usage</task>
+      <task id="7" ac="1">Integration with existing search modules</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="1">
+      Execute test queries representing common use cases (authentication, NHS API, postcode validation) and measure query response time, relevance of top 5 results, and indexing lag
+    </criterion>
+    <criterion id="2">
+      Document p95 response time (&lt;2s end-to-end, &lt;800ms AI Search), assess relevance (80%+ of queries return 80%+ relevant top 5 results), and measure indexing lag (&lt;5 minutes)
+    </criterion>
+    <criterion id="3">
+      Create test suite with representative queries, structured logging (query, response time, top 5 results, relevance score), baseline metrics documentation, and GO/NO-GO decision criteria for AI Search quality
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>NFR-1.1 Query Response Time</section>
+        <snippet>&lt;2 second query response time (p95) for semantic search queries. This is critical for developer workflow integration and user satisfaction.</snippet>
+      </doc>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>NFR-1.2 Search Quality</section>
+        <snippet>Top 5 results relevant for 80%+ of queries. Search relevance is core value proposition - poor results = no adoption.</snippet>
+      </doc>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>Success Criteria - MVP</section>
+        <snippet>Quality Metrics: Top 5 results relevant for 80%+ of queries (user feedback), &lt;2 second query response time (p95), 90%+ cache hit rate on gitingest processing, zero security incidents.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic Breakdown</title>
+        <section>Story 3.4: Search Performance Validation and Baseline Metrics</section>
+        <snippet>Test queries representing common use cases: authentication methods, postcode validation, NHS API integration, tax calculation, benefits validation, HMRC APIs, DWP services, GOV.UK frontend components, API gateway patterns, microservice patterns. Manual relevance assessment initially, automated scoring in Phase 2.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Cloudflare AI Search (Managed RAG)</section>
+        <snippet>Source: R2 bucket auto-monitoring, Embedding: Automatic (managed by Cloudflare), Index: Real-time (minutes after R2 upload), Query: Natural language semantic search. This validates gitingest quality hypothesis before investing in custom infrastructure.</snippet>
+      </doc>
+      <doc>
+        <path>.bmad-ephemeral/stories/3-2-ai-search-query-api-integration-in-workers.md</path>
+        <title>Story 3.2 - AI Search Query API Integration</title>
+        <section>Completion Notes</section>
+        <snippet>searchCode() function implemented in src/search/ai-search-client.ts with query validation, retry logic, structured logging, and performance monitoring. All 176 tests passing. Performance logging pattern established for duration measurement and threshold warnings.</snippet>
+      </doc>
+      <doc>
+        <path>.bmad-ephemeral/stories/3-3-result-enrichment-add-metadata-and-github-links.md</path>
+        <title>Story 3.3 - Result Enrichment</title>
+        <section>Completion Notes</section>
+        <snippet>enrichResults() function implemented with R2 metadata fetch, GitHub link generation, and graceful degradation. 48 tests added, 224 total passing. Performance target: &lt;100ms per result enrichment. AC #2b (snippet context) requires validation - does AI Search provide sufficient context?</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>src/search/ai-search-client.ts</path>
+        <kind>service</kind>
+        <symbol>searchCode</symbol>
+        <lines>124-179</lines>
+        <reason>Primary function for executing semantic search queries - must be called by validation script to test AI Search performance</reason>
+      </artifact>
+      <artifact>
+        <path>src/search/ai-search-client.ts</path>
+        <kind>service</kind>
+        <symbol>validateQuery, validateLimit</symbol>
+        <lines>52-80</lines>
+        <reason>Query validation functions - reuse these patterns in validation script for consistent validation</reason>
+      </artifact>
+      <artifact>
+        <path>src/search/result-enricher.ts</path>
+        <kind>service</kind>
+        <symbol>enrichResults</symbol>
+        <lines>402-434</lines>
+        <reason>Batch enrichment function for parallel processing - must be called after searchCode() to get complete enriched results for testing</reason>
+      </artifact>
+      <artifact>
+        <path>src/search/result-enricher.ts</path>
+        <kind>service</kind>
+        <symbol>enrichResult</symbol>
+        <lines>285-400</lines>
+        <reason>Single result enrichment with performance monitoring - reference for timing patterns and graceful degradation</reason>
+      </artifact>
+      <artifact>
+        <path>src/utils/logger.ts</path>
+        <kind>utility</kind>
+        <symbol>createLogger</symbol>
+        <lines>1-50</lines>
+        <reason>Structured JSON logging utility - use for test result logging with correlation IDs</reason>
+      </artifact>
+      <artifact>
+        <path>src/types.ts</path>
+        <kind>types</kind>
+        <symbol>AISearchResult, EnrichedSearchResult</symbol>
+        <lines>134-223</lines>
+        <reason>Type interfaces for search results - validation script must use these types for type safety</reason>
+      </artifact>
+      <artifact>
+        <path>test/search/ai-search-client.test.ts</path>
+        <kind>test</kind>
+        <symbol>AI Search client tests</symbol>
+        <lines>1-500</lines>
+        <reason>Reference for test patterns, mocking strategies, and performance assertions</reason>
+      </artifact>
+      <artifact>
+        <path>test/search/result-enricher.test.ts</path>
+        <kind>test</kind>
+        <symbol>Result enricher tests</symbol>
+        <lines>1-761</lines>
+        <reason>Reference for R2 mocking patterns and graceful degradation testing</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <ecosystem name="node">
+        <package name="vitest" version="~3.2.0">Test framework with Workers pool support</package>
+        <package name="@cloudflare/vitest-pool-workers" version="^0.8.19">Cloudflare Workers test environment</package>
+        <package name="typescript" version="^5.5.2">TypeScript compiler for type checking</package>
+        <package name="wrangler" version="^4.47.0">Cloudflare Workers CLI for development and deployment</package>
+        <package name="prettier" version="^3.6.2">Code formatting</package>
+        <package name="eslint" version="^9.39.1">Linting for code quality</package>
+      </ecosystem>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Validation script is NOT production code - it's a test harness, so no unit tests required for the script itself</constraint>
+    <constraint>Use existing searchCode() from src/search/ai-search-client.ts - DO NOT reimplement search logic</constraint>
+    <constraint>Use existing enrichResults() from src/search/result-enricher.ts - DO NOT reimplement enrichment logic</constraint>
+    <constraint>Test queries must represent actual government developer use cases from PRD: authentication, NHS APIs, postcode validation, tax calculation, DWP benefits, HMRC services, GOV.UK components</constraint>
+    <constraint>Performance targets: p95 &lt;2s end-to-end, &lt;800ms AI Search component, &lt;5 minutes indexing lag</constraint>
+    <constraint>Relevance target: 80%+ of queries return 80%+ relevant results in top 5 (manual assessment for MVP)</constraint>
+    <constraint>Output structured JSON logs for automated parsing and baseline report in markdown format</constraint>
+    <constraint>Follow established patterns: structured logging with correlation IDs, performance monitoring with duration measurement, warn on threshold violations</constraint>
+    <constraint>Script location: scripts/validate-ai-search.ts (NOT in src/ - this is a validation tool, not production code)</constraint>
+    <constraint>Baseline report location: .bmad-ephemeral/search-performance-baseline-{date}.md</constraint>
+    <constraint>Must validate AC #2b from Story 3.3: assess if AI Search snippets provide adequate context without manual expansion</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>searchCode</name>
+      <kind>function signature</kind>
+      <signature>async function searchCode(env: Env, query: string, limit: number = 5): Promise&lt;AISearchResult[]&gt;</signature>
+      <path>src/search/ai-search-client.ts:124-179</path>
+      <description>Executes semantic search query against AI Search and returns raw results. Includes validation, retry logic, and performance monitoring.</description>
+    </interface>
+    <interface>
+      <name>enrichResults</name>
+      <kind>function signature</kind>
+      <signature>async function enrichResults(env: Env, rawResults: AISearchResult[]): Promise&lt;EnrichedSearchResult[]&gt;</signature>
+      <path>src/search/result-enricher.ts:402-434</path>
+      <description>Enriches multiple AI Search results in parallel with GitHub metadata, links, and R2 custom metadata. Returns array with graceful degradation on failures.</description>
+    </interface>
+    <interface>
+      <name>EnrichedSearchResult</name>
+      <kind>TypeScript interface</kind>
+      <signature>interface EnrichedSearchResult { content: string; score: number; repository: { org: string; name: string; fullName: string }; links: { github: string; codespaces: string; gitpod: string }; metadata?: { pushedAt?: string; url?: string; processedAt?: string }; r2Path: string; }</signature>
+      <path>src/types.ts:183-223</path>
+      <description>Complete enriched search result with all metadata and links. Optional metadata field for graceful degradation.</description>
+    </interface>
+    <interface>
+      <name>createLogger</name>
+      <kind>function signature</kind>
+      <signature>function createLogger(context: Record&lt;string, unknown&gt;): Logger</signature>
+      <path>src/utils/logger.ts</path>
+      <description>Creates structured JSON logger with correlation IDs and context fields. Use for test result logging.</description>
+    </interface>
+    <interface>
+      <name>R2.put</name>
+      <kind>R2 API</kind>
+      <signature>async put(key: string, value: string | ReadableStream, options?: { customMetadata?: Record&lt;string, string&gt; }): Promise&lt;R2Object&gt;</signature>
+      <path>Cloudflare R2 Binding</path>
+      <description>Upload test object to R2 for indexing lag measurement. Use customMetadata for pushedAt, url, processedAt fields.</description>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Testing framework: Vitest with @cloudflare/vitest-pool-workers for Workers environment emulation. Test location: co-located *.test.ts files or test/ directory. Coverage target: 80%+ for production code (NOT applicable to validation scripts). Mocking pattern: Mock Cloudflare Workers bindings (AI_SEARCH, R2, KV) using Vitest vi.fn(). Performance assertions: Measure duration, warn if exceeds thresholds. Structured logging: JSON format with timestamp, level, message, context. Error handling: Graceful degradation with partial results, not failures.
+    </standards>
+    <locations>
+      <location>test/search/*.test.ts - Search module tests (ai-search-client, result-enricher)</location>
+      <location>test/api/*.test.ts - API endpoint tests (health, MCP endpoints)</location>
+      <location>scripts/validate-ai-search.ts - Performance validation script (THIS STORY)</location>
+    </locations>
+    <ideas>
+      <idea ac="1">Test: Execute 10-15 representative queries covering government use cases (auth, NHS, HMRC, DWP, GOV.UK, postcode, tax, benefits)</idea>
+      <idea ac="1">Test: Measure total response time, AI Search component time, enrichment time for each query</idea>
+      <idea ac="2">Test: Calculate p50, p95, p99 percentiles from multiple runs per query (3-5 runs for variance)</idea>
+      <idea ac="2">Test: Validate p95 &lt;2s total, &lt;800ms AI Search - log WARN if exceeded</idea>
+      <idea ac="3">Test: Upload test object to R2 with unique timestamp identifier</idea>
+      <idea ac="3">Test: Poll AI Search every 10 seconds until content searchable, measure time from upload</idea>
+      <idea ac="3">Test: Validate indexing lag &lt;5 minutes, document variance (min, max, avg)</idea>
+      <idea ac="2,3">Test: Manual relevance assessment - display top 5 results per query for scoring (0-3 scale)</idea>
+      <idea ac="2,3">Test: Calculate relevance rate: % of top 5 results scored 2+ (relevant or highly relevant)</idea>
+      <idea ac="2,3">Test: Aggregate relevance: % of queries with 80%+ relevant top 5 results</idea>
+      <idea ac="3">Test: Generate baseline report with all metrics, raw data, and GO/NO-GO decision</idea>
+      <idea ac="1">Test: Validate AC #2b from Story 3.3 - assess if AI Search snippets include adequate context</idea>
+    </ideas>
+  </tests>
+</story-context>

@@ -1,0 +1,265 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>quality</epicId>
+    <storyId>3</storyId>
+    <title>Update Definition of Done with Scale Testing</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-13</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>.bmad-ephemeral/stories/quality-3-update-definition-of-done-with-scale-testing.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>senior quality advocate</asA>
+    <iWant>to update the Definition of Done (DoD) to include integration testing requirements and scale validation criteria</iWant>
+    <soThat>stories cannot be marked "done" without realistic validation at meaningful data volumes</soThat>
+    <tasks>
+- Task 1: Review Existing DoD and Identify Gaps (AC: 1)
+  - Subtask 1.1: Read current DoD document (if exists)
+  - Subtask 1.2: Compare against Epic 2 retrospective findings
+  - Subtask 1.3: Identify gaps: missing integration tests, scale validation, coverage requirements
+  - Subtask 1.4: Document findings for DoD update
+
+- Task 2: Incorporate Integration Testing Standards (AC: 1)
+  - Subtask 2.1: Add integration test requirements from Story Quality-2
+  - Subtask 2.2: Specify minimum test data volumes (100-1000 items)
+  - Subtask 2.3: Clarify unit vs integration test distinction
+  - Subtask 2.4: Document when integration tests are required vs optional
+
+- Task 3: Add Scale Testing Requirements (AC: 2)
+  - Subtask 3.1: Define scale testing criteria (10x MVP scale minimum)
+  - Subtask 3.2: Provide scale testing examples for data pipeline stories
+  - Subtask 3.3: Document acceptable performance ranges
+  - Subtask 3.4: Specify when scale tests are required
+
+- Task 4: Define Test Coverage Requirements (AC: 3)
+  - Subtask 4.1: Set unit test coverage target (80%+ for core logic)
+  - Subtask 4.2: Specify integration test requirements for critical paths
+  - Subtask 4.3: Document manual validation criteria
+  - Subtask 4.4: Add test documentation requirements
+
+- Task 5: Add Validation Checkpoints (AC: 4)
+  - Subtask 5.1: Create developer self-check checklist
+  - Subtask 5.2: Update SM code review checklist with DoD references
+  - Subtask 5.3: Add explicit integration test validation question
+  - Subtask 5.4: Define blocking criteria for data pipeline stories
+
+- Task 6: Document Technical Debt Management (AC: 5)
+  - Subtask 6.1: Add tech debt documentation requirements
+  - Subtask 6.2: Define defer criteria and acceptable conditions
+  - Subtask 6.3: Specify tracking requirements in story completion notes
+  - Subtask 6.4: Document escalation process for P0/P1 tech debt
+
+- Task 7: Update DoD Document and Communicate Changes (AC: All)
+  - Subtask 7.1: Write or update Definition of Done document
+  - Subtask 7.2: Review with team for feedback
+  - Subtask 7.3: Obtain sign-off from stakeholders
+  - Subtask 7.4: Communicate DoD changes to development team
+  - Subtask 7.5: Add DoD to project documentation (README or dedicated file)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+### AC1: Incorporate Integration Testing Standards into DoD
+
+**Given** Story Quality-2 established integration testing standards
+**When** I update the Definition of Done
+**Then** DoD includes: integration tests required for stories touching service bindings (KV, R2, AI Search)
+**And** minimum test data volumes specified: 100-1000 items (not 5)
+**And** distinction clarified: unit tests (fast, mocked) vs integration tests (slower, real services, higher confidence)
+**And** integration test requirements: real service bindings, realistic data volumes, end-to-end workflows
+
+### AC2: Add Scale Testing Requirements
+
+**Given** Epic 2 failures occurred at scale (20k repos) not caught by small tests (5 repos)
+**When** I add scale testing requirements to DoD
+**Then** scale testing criteria defined: test at 10x MVP scale minimum (100-1000 items, not 5)
+**And** scale testing examples provided: ingestion pipeline with 100 repos, cache validation with realistic hit rates
+**And** performance baselines documented: acceptable execution time ranges for integration tests (5-10 minutes)
+**And** clear guidance on when scale tests are required vs optional
+
+### AC3: Define Clear Test Coverage Requirements
+
+**Given** stories were marked done with inadequate test coverage
+**When** I define test coverage requirements in DoD
+**Then** DoD specifies: unit test coverage target (80%+ for core logic)
+**And** integration test requirements: critical user paths must have end-to-end tests
+**And** manual validation criteria: when automated tests insufficient, manual validation steps required
+**And** test documentation requirements: all tests must have clear setup instructions and expected outcomes
+
+### AC4: Add Validation Checkpoints Before "Done" Status
+
+**Given** DoD is updated with testing requirements
+**When** I add validation checkpoints
+**Then** DoD includes: developer self-check before marking "review" status
+**And** SM code review checklist references DoD testing requirements
+**And** explicit question: "Have integration tests been run with realistic data volumes?"
+**And** blocking criteria: stories touching data pipelines MUST have integration tests, not optional
+
+### AC5: Document Technical Debt Management
+
+**Given** Epic 2 deferred critical testing to quality sprint
+**When** I document technical debt management in DoD
+**Then** DoD specifies: technical debt must be explicitly documented in story completion notes
+**And** defer criteria: when technical debt is acceptable to defer (time constraints, scope limits)
+**And** tracking requirement: deferred tech debt must be captured in story file with severity assessment
+**And** escalation: P0/P1 tech debt must be addressed in immediate follow-up story
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>.bmad-ephemeral/stories/quality-2-establish-integration-testing-standards.md</path>
+        <title>Story Quality-2: Integration Testing Standards</title>
+        <section>Full Story</section>
+        <snippet>Defines integration testing standards including minimum data volumes (100-1000 items), real service bindings requirement, and unit vs integration test distinction. This story's standards must be incorporated into the DoD.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic Breakdown</title>
+        <section>Epic Quality: Epic 2 Remediation & Testing Standards</section>
+        <snippet>Quality Sprint added after Epic 2 retrospective identified critical quality gaps. Stories address integration testing, DoD updates, validation automation, and technical debt management.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Testing Stack</section>
+        <snippet>Vitest 4.0+ for Workers tests with @cloudflare/vitest-pool-workers. Co-located *.test.ts files. Coverage target 80%+ for core logic. Python testing with pytest for container/tests/.</snippet>
+      </doc>
+      <doc>
+        <path>container/TESTING_QUICK_REFERENCE.md</path>
+        <title>Testing Quick Reference Guide</title>
+        <section>Test Coverage Goals</section>
+        <snippet>Coverage targets: ingest.py 85%, r2_client.py 82%, truncation logic 100%, env handling 95%. Test structure: container/test/unit/ and container/test/integration/. Markers for unit, integration, network, r2, slow tests.</snippet>
+      </doc>
+      <doc>
+        <path>.bmad/bmm/docs/test-architecture.md</path>
+        <title>Test Architect (TEA) Agent Guide</title>
+        <section>TEA Workflow Lifecycle</section>
+        <snippet>Test infrastructure defined in Phase 3 after architecture. Test design per-epic in Phase 4. Workflows include framework, ci, test-design, atdd, automate, test-review, trace, and nfr-assess for gate decisions.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>vitest.config.mts</path>
+        <kind>config</kind>
+        <symbol>defineWorkersConfig</symbol>
+        <lines>1-11</lines>
+        <reason>Vitest test framework configuration for Cloudflare Workers. Uses @cloudflare/vitest-pool-workers with wrangler.jsonc binding.</reason>
+      </artifact>
+      <artifact>
+        <path>container/pytest.ini</path>
+        <kind>config</kind>
+        <symbol>pytest configuration</symbol>
+        <lines>1-43</lines>
+        <reason>Pytest configuration defining test markers (unit, integration, network, r2, slow) and test discovery patterns. Defines test categorization strategy referenced in DoD.</reason>
+      </artifact>
+      <artifact>
+        <path>test/</path>
+        <kind>directory</kind>
+        <symbol>Workers tests</symbol>
+        <lines>-</lines>
+        <reason>TypeScript test directory structure: test/utils/, test/ingestion/, test/api/, test/deployment/. Co-located *.test.ts pattern following architecture guidelines.</reason>
+      </artifact>
+      <artifact>
+        <path>container/test/</path>
+        <kind>directory</kind>
+        <symbol>Container tests</symbol>
+        <lines>-</lines>
+        <reason>Python test directory with unit/ and integration/ subdirectories. Example test structure for DoD requirements: 64+ tests with markers for categorization.</reason>
+      </artifact>
+      <artifact>
+        <path>package.json</path>
+        <kind>config</kind>
+        <symbol>npm scripts</symbol>
+        <lines>6-18</lines>
+        <reason>Test-related npm scripts: "test" runs vitest, "lint", "lint:fix", "format", "format:check". Pre-commit hooks via husky. Example of test automation patterns for DoD.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <typescript>
+        <package name="vitest" version="~3.2.0" />
+        <package name="@cloudflare/vitest-pool-workers" version="^0.8.19" />
+        <package name="typescript" version="^5.5.2" />
+        <package name="eslint" version="^9.39.1" />
+        <package name="prettier" version="^3.6.2" />
+        <package name="husky" version="^9.1.7" />
+        <package name="lint-staged" version="^16.2.6" />
+      </typescript>
+      <python>
+        <package name="pytest" note="Configured in container/pytest.ini" />
+        <package name="pytest-cov" note="Coverage reporting (optional addon)" />
+      </python>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>MUST reference Story Quality-2 integration testing standards in DoD - do not recreate, reference existing documentation</constraint>
+    <constraint>DoD must be enforceable - criteria must be specific, measurable, and verifiable</constraint>
+    <constraint>Testing requirements must distinguish between required vs optional based on story type (data pipeline stories MUST have integration tests)</constraint>
+    <constraint>Scale testing criteria must be realistic for MVP scope (100-1000 items minimum, not full 20k production scale)</constraint>
+    <constraint>Coverage targets must align with existing project standards: 80%+ for core logic (from architecture.md)</constraint>
+    <constraint>Technical debt management must include severity assessment (P0/P1/P2) and tracking in story completion notes</constraint>
+    <constraint>DoD location: Create as .bmad/definition-of-done.md OR DEFINITION_OF_DONE.md at project root, link from README.md</constraint>
+    <constraint>DoD structure must include: Code Quality, Testing Requirements, Documentation, Validation Checkpoints, Technical Debt Management, Deployment</constraint>
+  </constraints>
+  <interfaces>
+    <interface>
+      <name>Test Markers (pytest)</name>
+      <kind>test categorization</kind>
+      <signature>@pytest.mark.unit, @pytest.mark.integration, @pytest.mark.network, @pytest.mark.r2, @pytest.mark.slow</signature>
+      <path>container/pytest.ini</path>
+      <note>Used to categorize tests for selective execution. DoD should reference these markers for test requirements.</note>
+    </interface>
+    <interface>
+      <name>Test Scripts (npm)</name>
+      <kind>test execution</kind>
+      <signature>npm test, npm run lint, npm run format:check</signature>
+      <path>package.json</path>
+      <note>Standard test execution commands. DoD validation checkpoints should reference these scripts.</note>
+    </interface>
+  </interfaces>
+  <tests>
+    <standards>
+Project uses Vitest 4.0+ for TypeScript Workers tests (@cloudflare/vitest-pool-workers) and pytest for Python container tests. Test files co-located with source using *.test.ts and *test.py patterns. Coverage target: 80%+ for core logic. Test markers categorize tests: unit (fast, mocked), integration (real services), network, r2, slow. Pre-commit hooks enforce linting and formatting via husky. Current test count: 64+ tests across unit and integration categories.</standards>
+    <locations>
+- TypeScript tests: test/**/*.test.ts (Workers, API, utils)
+- Python tests: container/test/unit/*.py and container/test/integration/*.py
+- Test configs: vitest.config.mts, container/pytest.ini
+- Test execution: npm test (vitest), pytest (container/test/)
+    </locations>
+    <ideas>
+### Test Ideas Mapped to Acceptance Criteria:
+
+**AC1: Integration Testing Standards in DoD**
+- Validate DoD references Story Quality-2 correctly
+- Test DoD includes minimum data volume requirements (100-1000 items)
+- Verify DoD distinguishes unit vs integration tests
+
+**AC2: Scale Testing Requirements**
+- Validate DoD includes scale testing criteria (10x MVP scale)
+- Test DoD provides scale testing examples
+- Verify DoD documents acceptable performance ranges
+
+**AC3: Test Coverage Requirements**
+- Validate DoD specifies 80%+ coverage target
+- Test DoD includes integration test requirements for critical paths
+- Verify DoD includes manual validation criteria
+
+**AC4: Validation Checkpoints**
+- Validate DoD includes developer self-check checklist
+- Test DoD references SM code review requirements
+- Verify DoD includes explicit integration test validation question
+
+**AC5: Technical Debt Management**
+- Validate DoD includes tech debt documentation requirements
+- Test DoD defines defer criteria clearly
+- Verify DoD includes escalation process for P0/P1 tech debt
+
+**Manual Validation:**
+- Review DoD with team for completeness
+- Obtain stakeholder sign-off
+- Verify DoD is accessible in project documentation
+    </ideas>
+  </tests>
+</story-context>

@@ -1,0 +1,311 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>5</epicId>
+    <storyId>5.2</storyId>
+    <title>OpenAPI 3.0 Specification</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-14</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>.bmad-ephemeral/stories/5-2-openapi-3-0-specification.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>API consumer</asA>
+    <iWant>a complete OpenAPI 3.0 specification for the MCP API</iWant>
+    <soThat>I can understand the API contract and generate client libraries automatically</soThat>
+    <tasks>
+      - Task 1: Create OpenAPI 3.0 Base Structure (static/openapi.json with metadata, server URL, security section)
+      - Task 2: Document POST /mcp/search Endpoint (request/response schemas, examples, error responses)
+      - Task 3: Document GET /mcp/health Endpoint (success/error response schemas with examples)
+      - Task 4: Align Schemas with TypeScript Types (review src/types.ts, ensure exact match, add descriptions)
+      - Task 5: Validate and Test OpenAPI Spec (openapi-generator validate, Swagger UI, generate TypeScript client, test against production API)
+      - Task 6: Serve OpenAPI Spec from Workers (add GET /openapi.json route handler, CORS headers, optional /docs endpoint)
+      - Task 7: Update Documentation with OpenAPI Links (README.md, API Reference section, client generation examples)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <ac id="AC-5.2.1" title="Complete OpenAPI Spec for All Endpoints">
+      GIVEN the MCP API has endpoints implemented (POST /mcp/search, GET /mcp/health)
+      WHEN the OpenAPI specification is created
+      THEN the spec documents:
+      - POST /mcp/search with full request/response schemas and examples
+      - GET /mcp/health with success/error response schemas
+      - All error responses (400 Bad Request, 500 Internal Server Error, 503 Service Unavailable)
+      - Request/response examples for each endpoint
+      AND spec is available at /openapi.json endpoint or static file
+      PASS CRITERIA: OpenAPI spec validates without errors using openapi-generator
+    </ac>
+
+    <ac id="AC-5.2.2" title="Schema Accuracy and Code Generation">
+      GIVEN the OpenAPI specification exists
+      WHEN developers use OpenAPI tools (Swagger UI, code generators)
+      THEN the spec:
+      - Is valid OpenAPI 3.0 format (passes openapi-generator validate)
+      - Can be rendered in Swagger UI without errors
+      - Generates working TypeScript/Python clients via openapi-generator
+      AND generated clients compile without errors
+      AND generated clients successfully call production API
+      PASS CRITERIA: Generated TypeScript client executes successful query against https://govreposcrape.cloud.cns.me
+    </ac>
+
+    <ac id="AC-5.2.3" title="OpenAPI Metadata and Documentation">
+      GIVEN the OpenAPI specification is complete
+      WHEN developers view the spec
+      THEN the spec includes:
+      - API title: "govscraperepo MCP API"
+      - Description: Clear explanation of UK government code search purpose
+      - Version: "1.0.0"
+      - Contact info: Link to GitHub repository issues
+      - Server URL: https://govreposcrape.cloud.cns.me
+      - Security section: Explicit note that no authentication required
+      AND all schemas have descriptions and examples
+      PASS CRITERIA: Spec provides sufficient context for developers to understand API without external documentation
+    </ac>
+
+    <ac id="AC-5.2.4" title="Interactive Documentation (Optional)">
+      GIVEN OpenAPI spec is available at /openapi.json
+      WHEN developers access /docs endpoint (optional)
+      THEN Swagger UI renders interactive API documentation
+      AND developers can test API calls directly from browser
+      OR if /docs not implemented, documentation clearly links to Swagger Editor or similar tool
+      PASS CRITERIA: Developers can explore API interactively (via hosted /docs or external tool)
+    </ac>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>.bmad-ephemeral/stories/tech-spec-epic-5.md</path>
+        <title>Epic 5 Technical Specification: Developer Experience and Documentation</title>
+        <section>Story 5.2 Acceptance Criteria and Detailed Design</section>
+        <snippet>Complete OpenAPI 3.0 spec requirements including endpoint documentation (AC-5.2.1), schema accuracy with code generation validation (AC-5.2.2), metadata completeness (AC-5.2.3), and optional interactive documentation (AC-5.2.4). Spec must pass openapi-generator validation and generate working TypeScript/Python clients.</snippet>
+      </doc>
+
+      <doc>
+        <path>.bmad-ephemeral/stories/tech-spec-epic-5.md</path>
+        <title>Epic 5 Technical Specification</title>
+        <section>Non-Functional Requirements - Documentation Quality</section>
+        <snippet>NFR-5.1: Documentation Load Time under 1 second. NFR-5.6: HTTPS-Only in Documentation. NFR-5.10: Documentation Accuracy with 100% code examples executing successfully. NFR-5.14: API Spec Versioning - semantic versioning for OpenAPI spec.</snippet>
+      </doc>
+
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epics and Stories</title>
+        <section>Epic 5: Developer Experience and Documentation - Story 5.2</section>
+        <snippet>Story 5.2: OpenAPI 3.0 Specification. Goal: Create complete OpenAPI 3.0 spec for MCP API enabling automated client generation. Deliverables: OpenAPI spec at /openapi.json endpoint, complete schemas for POST /mcp/search and GET /mcp/health, validation with openapi-generator, Swagger UI rendering support.</snippet>
+      </doc>
+
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture</title>
+        <section>Decision Summary and Project Structure</section>
+        <snippet>OpenAPI 3.0 specification for API documentation. TypeScript 5.9+ with strict mode. Cloudflare Workers platform. Static assets in static/ directory. API endpoints: POST /mcp/search (semantic search), GET /mcp/health (health check). File naming: kebab-case.ts for source files.</snippet>
+      </doc>
+
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document - govscraperepo</title>
+        <section>FR-4: Developer Tools and Integration</section>
+        <snippet>FR-4.2: Provide OpenAPI 3.0 specification for the MCP API to enable automated client generation and interactive documentation. Spec must be accessible at /openapi.json endpoint. All endpoints must be documented with request/response schemas and examples.</snippet>
+      </doc>
+
+      <doc>
+        <path>README.md</path>
+        <title>govscraperepo - UK Government Code Discovery via MCP API</title>
+        <section>API Endpoints and Documentation</section>
+        <snippet>Production endpoint: https://govreposcrape.cloud.cns.me. MCP v2 protocol compliant. POST /mcp/search for semantic code search, GET /mcp/health for health checks. No authentication required (open access). Integration guides available in docs/integration/.</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <file>
+        <path>src/types.ts</path>
+        <kind>TypeScript type definitions</kind>
+        <symbol>MCPRequest, MCPResponse, SearchResult, HealthCheckResponse, ErrorResponse</symbol>
+        <lines>All type definitions</lines>
+        <reason>CRITICAL: OpenAPI schemas must match these TypeScript types exactly. MCPRequest defines query and limit parameters. MCPResponse contains results array and took_ms. SearchResult has repo_url, snippet, similarity_score, metadata fields. HealthCheckResponse defines service status structure. ErrorResponse defines error code, message, retry_after format. Review these types before writing OpenAPI schemas to ensure 100% alignment.</reason>
+      </file>
+
+      <file>
+        <path>src/index.ts</path>
+        <kind>Workers entry point and route handler</kind>
+        <symbol>fetch handler, POST /mcp/search route, GET /mcp/health route</symbol>
+        <lines>Complete file</lines>
+        <reason>Main API entry point showing existing routes. Add new route handler for GET /openapi.json in this file. Pattern: Check request.url path, return Response with JSON content and CORS headers. Reference existing health endpoint handler for CORS header pattern (Access-Control-Allow-Origin: *).</reason>
+      </file>
+
+      <file>
+        <path>src/api/search.ts</path>
+        <kind>Search endpoint implementation</kind>
+        <symbol>handleSearch function</symbol>
+        <lines>Complete file</lines>
+        <reason>Actual implementation of POST /mcp/search endpoint. Use this to document real request/response behavior in OpenAPI spec. Validates query length (3-500 chars), limit range (1-20). Returns MCPResponse with SearchResult array. Error responses: 400 for validation errors, 503 for service failures.</reason>
+      </file>
+
+      <file>
+        <path>src/api/health.ts</path>
+        <kind>Health check endpoint implementation</kind>
+        <symbol>handleHealthCheck function</symbol>
+        <lines>Complete file</lines>
+        <reason>Actual implementation of GET /mcp/health endpoint. Returns HealthCheckResponse with status ("healthy"/"unhealthy"), services object (kv, r2, vectorize, d1, ai_search with status for each), and timestamp. Error response: 503 with error details when services fail.</reason>
+      </file>
+
+      <file>
+        <path>wrangler.jsonc</path>
+        <kind>Cloudflare Workers configuration</kind>
+        <symbol>Production environment, service bindings</symbol>
+        <lines>Complete file</lines>
+        <reason>Production configuration showing deployed endpoint URL and service bindings. Use this to confirm server URL in OpenAPI spec: https://govreposcrape.cloud.cns.me. Shows all service bindings (KV, R2, D1, Vectorize, AI) that appear in health check responses.</reason>
+      </file>
+    </code>
+
+    <dependencies>
+      <node>
+        <devDependencies>
+          <wrangler>^4.47.0</wrangler>
+          <typescript>^5.5.2</typescript>
+          <openapi-generator-cli>Will need to add for validation</openapi-generator-cli>
+        </devDependencies>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - **Pure API Documentation Story**: No changes to existing API implementation (src/api/, src/search/). Only create OpenAPI spec file and add route handler to serve it.
+    - **OpenAPI 3.0 Format**: Must use OpenAPI 3.0.x specification format (NOT Swagger 2.0)
+    - **Schema Alignment**: OpenAPI schemas MUST match TypeScript types in src/types.ts exactly - every field, every type, required vs optional
+    - **Validation Required**: Spec must pass `openapi-generator-cli validate` without errors before completion
+    - **Code Generation Test**: Must generate TypeScript client with openapi-generator-cli and verify it compiles
+    - **Production API Test**: Generated client must successfully call production API (https://govreposcrape.cloud.cns.me)
+    - **HTTPS-Only**: Server URL must use HTTPS protocol (per NFR-5.6)
+    - **No Authentication**: Security section must explicitly state "No authentication required" (public API)
+    - **File Locations**: OpenAPI spec → static/openapi.json, Route handler → src/index.ts
+    - **CORS Headers**: /openapi.json endpoint must include CORS headers (Access-Control-Allow-Origin: *)
+    - **Complete Examples**: Every endpoint must have request and response examples with realistic data
+    - **Error Documentation**: All error responses (400, 500, 503) must be documented with schemas and examples
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>POST /mcp/search</name>
+      <kind>REST endpoint</kind>
+      <signature>POST https://govreposcrape.cloud.cns.me/mcp/search
+Request: { query: string (3-500 chars), limit?: number (1-20, default 5) }
+Response 200 OK: { results: SearchResult[], took_ms: number }
+Response 400 Bad Request: { error: { code: "INVALID_QUERY", message: string } }
+Response 503 Service Unavailable: { error: { code: "SEARCH_ERROR", message: string, retry_after: number } }
+SearchResult: { repo_url, repo_org, repo_name, snippet, last_updated, language?, similarity_score, github_link, codespaces_link, metadata }</signature>
+      <path>src/api/search.ts</path>
+    </interface>
+
+    <interface>
+      <name>GET /mcp/health</name>
+      <kind>REST endpoint</kind>
+      <signature>GET https://govreposcrape.cloud.cns.me/mcp/health
+Response 200 OK: { status: "healthy", services: { kv, r2, vectorize, d1, ai_search }, timestamp: string }
+Response 503 Service Unavailable: { error: { code: "SERVICE_UNAVAILABLE", message: string }, details: { status: "unhealthy", services: {...}, timestamp: string } }</signature>
+      <path>src/api/health.ts</path>
+    </interface>
+
+    <interface>
+      <name>GET /openapi.json (to be created)</name>
+      <kind>Static file endpoint</kind>
+      <signature>GET https://govreposcrape.cloud.cns.me/openapi.json
+Response 200 OK: OpenAPI 3.0 specification JSON
+Content-Type: application/json
+CORS: Access-Control-Allow-Origin: *</signature>
+      <path>src/index.ts (add route handler)</path>
+    </interface>
+
+    <interface>
+      <name>TypeScript Type Definitions</name>
+      <kind>Interface definitions</kind>
+      <signature>MCPRequest: { query: string; limit?: number }
+MCPResponse: { results: SearchResult[]; took_ms: number }
+SearchResult: { repo_url: string; repo_org: string; repo_name: string; snippet: string; last_updated: string; language?: string; similarity_score: number; github_link: string; codespaces_link: string; metadata: Record<string, any> }
+HealthCheckResponse: { status: "healthy" | "unhealthy"; services: Record<string, ServiceStatus>; timestamp: string }
+ErrorResponse: { error: { code: string; message: string; retry_after?: number } }</signature>
+      <path>src/types.ts</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      **OpenAPI Specification Validation (No Unit Tests)**
+
+      This story focuses on specification validation rather than traditional unit/integration tests:
+
+      1. **openapi-generator validate**: Command-line validation of OpenAPI 3.0 syntax and structure
+      2. **Swagger UI rendering**: Visual validation by loading spec in https://editor.swagger.io
+      3. **Client generation**: Generate TypeScript client with `openapi-generator-cli generate -g typescript-fetch`
+      4. **Client compilation**: Compile generated TypeScript client to verify type correctness
+      5. **Integration test**: Use generated client to call production API and verify successful response
+
+      **Quality Gates:**
+      - OpenAPI spec must validate without errors
+      - Generated client must compile without TypeScript errors
+      - Generated client must successfully execute query against production API
+      - All schemas must have descriptions and examples
+      - All endpoints must document error responses
+    </standards>
+
+    <locations>
+      **No test files** - Specification validation only:
+      - OpenAPI spec: static/openapi.json
+      - Validation: Run `openapi-generator-cli validate -i static/openapi.json`
+      - Client generation: `/tmp/test-client` (temporary location for generated code)
+    </locations>
+
+    <ideas>
+      <idea ac="AC-5.2.1">
+        Test Idea 1: Validate complete endpoint documentation
+        - Run openapi-generator-cli validate on static/openapi.json
+        - Verify zero errors reported
+        - Check spec includes both POST /mcp/search and GET /mcp/health
+        - Verify all error responses documented (400, 500, 503)
+        - Confirm request/response examples present for each endpoint
+      </idea>
+
+      <idea ac="AC-5.2.2">
+        Test Idea 2: Schema accuracy and code generation
+        - Generate TypeScript client: `openapi-generator-cli generate -i static/openapi.json -g typescript-fetch -o /tmp/test-client`
+        - Compile generated client with tsc
+        - Write test script importing generated client
+        - Execute query: client.search({ query: "authentication", limit: 5 })
+        - Verify response matches SearchResult[] type
+        - Confirm production API call succeeds
+      </idea>
+
+      <idea ac="AC-5.2.3">
+        Test Idea 3: Metadata completeness
+        - Load static/openapi.json and parse JSON
+        - Verify info.title === "govscraperepo MCP API"
+        - Verify info.version === "1.0.0"
+        - Verify info.contact present with link to GitHub issues
+        - Verify servers[0].url === "https://govreposcrape.cloud.cns.me"
+        - Verify security section notes "No authentication required"
+        - Check all schemas have description fields
+      </idea>
+
+      <idea ac="AC-5.2.4">
+        Test Idea 4: Interactive documentation support
+        - Load spec in Swagger Editor (https://editor.swagger.io)
+        - Verify spec renders without errors
+        - Check "Try it out" functionality works for endpoints
+        - OR if /docs not implemented: Verify README links to Swagger Editor
+        - Confirm developers can explore API interactively
+      </idea>
+
+      <idea ac="AC-5.2.1, AC-5.2.2">
+        Test Idea 5: Schema alignment with TypeScript types
+        - Generate TypeScript types from OpenAPI spec
+        - Compare generated types with src/types.ts
+        - Verify MCPRequest fields match (query: string, limit?: number)
+        - Verify MCPResponse fields match (results: SearchResult[], took_ms: number)
+        - Verify SearchResult has all 9 fields with correct types
+        - Confirm required vs optional fields align
+      </idea>
+    </ideas>
+  </tests>
+</story-context>

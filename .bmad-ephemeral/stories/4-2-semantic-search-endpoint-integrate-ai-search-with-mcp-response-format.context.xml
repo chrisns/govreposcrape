@@ -1,0 +1,251 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>4</epicId>
+    <storyId>4.2</storyId>
+    <title>Semantic Search Endpoint - Integrate AI Search with MCP Response Format</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-14</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>.bmad-ephemeral/stories/4-2-semantic-search-endpoint-integrate-ai-search-with-mcp-response-format.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>backend developer</asA>
+    <iWant>to integrate Cloudflare AI Search with the MCP endpoint to return enriched search results</iWant>
+    <soThat>AI assistants can receive relevant code snippets from UK government repositories with actionable metadata</soThat>
+    <tasks>
+      - Task 1: Create search endpoint module (AC: #1, #2, #3) - 6 subtasks
+      - Task 2: Integrate AI Search query (AC: #1, #7) - 5 subtasks
+      - Task 3: Enrich search results with metadata (AC: #2, #3) - 5 subtasks
+      - Task 4: Map enriched results to MCP SearchResult format (AC: #3) - 7 subtasks
+      - Task 5: Build MCPResponse with timing (AC: #3, #7) - 5 subtasks
+      - Task 6: Handle empty results gracefully (AC: #4) - 5 subtasks
+      - Task 7: Handle AI Search failures with ServiceError (AC: #5) - 7 subtasks
+      - Task 8: Update mcp-handler to use search endpoint (AC: #1, #2, #3) - 7 subtasks
+      - Task 9: Unit tests for search endpoint (AC: #1-7) - 12 subtasks
+      - Task 10: Integration tests with mocked dependencies (AC: #1-5) - 7 subtasks
+      - Task 11: Integration with existing modules (AC: #1-3) - 6 subtasks
+      - Task 12: Documentation (AC: #1-3, #7) - 7 subtasks
+      Total: 12 tasks, 83 subtasks
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. AI Search integration - validated MCPRequest calls searchCode() with query and limit
+    2. Result enrichment - AI Search results enriched via enrichResults() with metadata and links
+    3. MCP format mapping - SearchResult includes repository, file_path, match_snippet, relevance_score, metadata
+    4. Empty results handling - empty AI Search results return 200 OK with { results: [], took_ms: N }
+    5. Error handling - AI Search failures return 503 ServiceError with retry_after field
+    6. Default limit - unspecified limit uses default of 5 (from Story 4.1 validation)
+    7. Performance target - total response time (AI Search + enrichment + serialization) meets &lt;2s p95 target from Story 3.4
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>.bmad-ephemeral/stories/tech-spec-epic-4.md</path>
+        <title>Epic Technical Specification: MCP API Server (Read Path)</title>
+        <section>Module Interaction Flow</section>
+        <snippet>search-endpoint calls ai-search-client (Epic 3) → Cloudflare AI Search. AI Search returns results → result-enricher adds metadata. search-endpoint formats MCPResponse → mcp-handler returns HTTP 200 with JSON.</snippet>
+      </doc>
+      <doc>
+        <path>.bmad-ephemeral/stories/tech-spec-epic-4.md</path>
+        <title>Epic Technical Specification: MCP API Server (Read Path)</title>
+        <section>Data Models and Contracts - MCPResponse</section>
+        <snippet>MCPResponse: { results: SearchResult[], took_ms: number }. SearchResult: { repository: string, file_path: string, match_snippet: string, relevance_score: number, metadata: { language, stars, last_updated, github_url } }</snippet>
+      </doc>
+      <doc>
+        <path>.bmad-ephemeral/stories/tech-spec-epic-4.md</path>
+        <title>Epic Technical Specification: MCP API Server (Read Path)</title>
+        <section>Performance Budget Breakdown</section>
+        <snippet>Total &lt;2000ms p95: AI Search &lt;800ms (validated Story 3.4) + enrichment &lt;100ms + serialization &lt;50ms + network &lt;500ms + buffer ~540ms.</snippet>
+      </doc>
+      <doc>
+        <path>.bmad-ephemeral/stories/4-1-mcp-v2-protocol-foundation-request-response-structure.md</path>
+        <title>Story 4.1: MCP v2 Protocol Foundation - Request/Response Structure</title>
+        <section>Completion Notes - Core Implementation</section>
+        <snippet>Story 4.1 provides validateMCPRequest(), formatErrorResponse(), addCORSHeaders(), handleOPTIONS(), handleMCPSearch() in src/api/mcp-handler.ts. handleMCPSearch currently returns mock response { results: [], took_ms: N } - Story 4.2 will replace with executeSearch() call.</snippet>
+      </doc>
+      <doc>
+        <path>.bmad-ephemeral/stories/4-1-mcp-v2-protocol-foundation-request-response-structure.md</path>
+        <title>Story 4.1: MCP v2 Protocol Foundation</title>
+        <section>Learnings - Integration Guidance</section>
+        <snippet>Replace mock response in handleMCPSearch() with call to executeSearch(mcpRequest, env). Remove _env underscore prefix (now actively used). ServiceError already caught and mapped. requestId already generated - pass to executeSearch for correlation.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>src/search/ai-search-client.ts</path>
+        <kind>service</kind>
+        <symbol>searchCode</symbol>
+        <lines>Epic 3 Story 3.2</lines>
+        <reason>Executes AI Search queries with retry logic, returns AISearchResult[] with content, score, metadata.path. Must reuse this - DO NOT recreate AI Search integration.</reason>
+      </artifact>
+      <artifact>
+        <path>src/search/result-enricher.ts</path>
+        <kind>service</kind>
+        <symbol>enrichResults</symbol>
+        <lines>Epic 3 Story 3.3</lines>
+        <reason>Enriches AI Search results with repository metadata, GitHub/Codespaces/Gitpod links, R2 custom metadata. Returns EnrichedSearchResult[]. Must reuse this - DO NOT recreate enrichment logic.</reason>
+      </artifact>
+      <artifact>
+        <path>src/api/mcp-handler.ts</path>
+        <kind>controller</kind>
+        <symbol>handleMCPSearch</symbol>
+        <lines>321-369</lines>
+        <reason>Story 4.1 MCP protocol handler. Currently returns mock response. Story 4.2 will update this to call executeSearch() instead of mock. Provides requestId generation, performance timing, error handling, CORS headers.</reason>
+      </artifact>
+      <artifact>
+        <path>src/api/mcp-handler.ts</path>
+        <kind>service</kind>
+        <symbol>validateMCPRequest</symbol>
+        <lines>62-152</lines>
+        <reason>Validates MCPRequest (query 3-500 chars, limit 1-20 default 5). Story 4.2 receives validated MCPRequest from this function - no additional validation needed.</reason>
+      </artifact>
+      <artifact>
+        <path>src/api/mcp-handler.ts</path>
+        <kind>service</kind>
+        <symbol>formatErrorResponse</symbol>
+        <lines>233-281</lines>
+        <reason>Maps ServiceError → 503 with retry_after. Story 4.2 should throw ServiceError on AI Search failures - this function will handle the HTTP response formatting.</reason>
+      </artifact>
+      <artifact>
+        <path>src/types.ts</path>
+        <kind>types</kind>
+        <symbol>MCPRequest, MCPResponse, SearchResult</symbol>
+        <lines>151-168</lines>
+        <reason>MCP protocol type definitions from Story 4.1. MCPRequest: { query, limit? }, MCPResponse: { results: SearchResult[], took_ms }. Story 4.2 must match these interfaces.</reason>
+      </artifact>
+      <artifact>
+        <path>src/types.ts</path>
+        <kind>types</kind>
+        <symbol>AISearchResult, EnrichedSearchResult</symbol>
+        <lines>174-263</lines>
+        <reason>Epic 3 types. AISearchResult from searchCode(), EnrichedSearchResult from enrichResults(). Story 4.2 maps EnrichedSearchResult → SearchResult for MCP response.</reason>
+      </artifact>
+      <artifact>
+        <path>src/utils/logger.ts</path>
+        <kind>utility</kind>
+        <symbol>createLogger</symbol>
+        <lines>Epic 1</lines>
+        <reason>Structured JSON logging with requestId correlation. Story 4.2 should log AI Search duration, enrichment duration, resultCount using this logger.</reason>
+      </artifact>
+      <artifact>
+        <path>src/utils/error-handler.ts</path>
+        <kind>utility</kind>
+        <symbol>ServiceError</symbol>
+        <lines>Epic 1</lines>
+        <reason>ServiceError class with statusCode, code, retryAfter fields. Throw ServiceError(message, 503, "SEARCH_ERROR", 60) on AI Search failures.</reason>
+      </artifact>
+      <artifact>
+        <path>test/api/mcp-handler.test.ts</path>
+        <kind>test</kind>
+        <symbol>mcp-handler tests</symbol>
+        <lines>1-494</lines>
+        <reason>Story 4.1 test suite (31 tests, 100% coverage). Story 4.2 should follow same testing patterns: try-catch blocks, mocked dependencies, parallel assertions.</reason>
+      </artifact>
+      <artifact>
+        <path>test/search/ai-search-client.test.ts</path>
+        <kind>test</kind>
+        <symbol>ai-search-client tests</symbol>
+        <lines>Epic 3 Story 3.2</lines>
+        <reason>AI Search client test patterns: mocked env.AI_SEARCH.query, retry logic tests, timeout handling. Story 4.2 should mock searchCode() similarly.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <node>
+        <runtime>
+          @cloudflare/workers-types: ^4.20241127.0
+        </runtime>
+        <dev>
+          typescript: ^5.9.0
+          vitest: ^4.0.0
+          @cloudflare/vitest-pool-workers: latest
+          wrangler: ^4.47.0
+          eslint: latest
+          prettier: latest
+        </dev>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - MUST reuse existing modules: searchCode() from src/search/ai-search-client.ts, enrichResults() from src/search/result-enricher.ts (DO NOT recreate Epic 3 functionality)
+    - MUST follow Story 4.1 patterns: requestId correlation via crypto.randomUUID(), performance timing via Date.now(), structured logging via createLogger()
+    - MUST map EnrichedSearchResult fields to SearchResult fields correctly: enriched.repository.fullName → repository, enriched.content → match_snippet, enriched.score → relevance_score, enriched.links.github → metadata.github_url
+    - MUST handle env bindings correctly: pass env.AI_SEARCH to searchCode(), pass env.R2 to enrichResults()
+    - MUST throw ServiceError (not generic Error) on AI Search failures for proper HTTP 503 mapping by formatErrorResponse()
+    - MUST meet performance target: total response time &lt;2s p95 (AI Search &lt;800ms validated in Story 3.4)
+    - MUST use default limit=5 when MCPRequest.limit is undefined (validated in Story 4.1)
+    - MUST return 200 OK with empty results array (not 404) when AI Search returns no matches
+    - MUST remove _env underscore prefix in handleMCPSearch() when updating to use executeSearch()
+    - MUST maintain 80%+ test coverage standard established in Story 4.1 (31 tests, 100% coverage)
+    - MUST follow TypeScript strict mode, ESLint, Prettier standards from Epic 1
+    - File naming: kebab-case (search-endpoint.ts)
+    - Function naming: camelCase (executeSearch, mapToSearchResult)
+    - Interface naming: PascalCase (use existing MCPResponse, SearchResult from src/types.ts)
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>searchCode (from Epic 3 Story 3.2)</name>
+      <kind>function</kind>
+      <signature>async function searchCode(query: string, limit: number, env: Env, requestId: string): Promise&lt;{ results: AISearchResult[], took_ms: number }&gt;</signature>
+      <path>src/search/ai-search-client.ts</path>
+      <notes>Calls env.AI_SEARCH.query() with retry logic (3 attempts, exponential backoff). Throws ServiceError on timeout/failure (503, retry_after: 60). Returns AISearchResult[] with content, score, metadata.path.</notes>
+    </interface>
+    <interface>
+      <name>enrichResults (from Epic 3 Story 3.3)</name>
+      <kind>function</kind>
+      <signature>async function enrichResults(aiResults: AISearchResult[], env: Env, requestId: string): Promise&lt;EnrichedSearchResult[]&gt;</signature>
+      <path>src/search/result-enricher.ts</path>
+      <notes>Parses R2 path, generates GitHub/Codespaces/Gitpod links, fetches R2 custom metadata via env.R2.head(). Uses Promise.all for parallel enrichment (&lt;100ms per batch). Graceful degradation if R2 metadata unavailable.</notes>
+    </interface>
+    <interface>
+      <name>executeSearch (THIS STORY - new module)</name>
+      <kind>function</kind>
+      <signature>async function executeSearch(request: MCPRequest, env: Env): Promise&lt;MCPResponse&gt;</signature>
+      <path>src/api/search-endpoint.ts</path>
+      <notes>Orchestrates: call searchCode() → call enrichResults() → map to SearchResult[] → build MCPResponse with took_ms. Throws ServiceError on AI Search failures.</notes>
+    </interface>
+    <interface>
+      <name>handleMCPSearch (from Story 4.1 - to be updated)</name>
+      <kind>function</kind>
+      <signature>async function handleMCPSearch(request: Request, env: Env): Promise&lt;Response&gt;</signature>
+      <path>src/api/mcp-handler.ts</path>
+      <notes>Current: returns mock response { results: [], took_ms: N }. Story 4.2 update: replace mock with `const mcpResponse = await executeSearch(mcpRequest, env); return addCORSHeaders(new Response(JSON.stringify(mcpResponse), {...}));`</notes>
+    </interface>
+    <interface>
+      <name>POST /mcp/search</name>
+      <kind>REST endpoint</kind>
+      <signature>POST /mcp/search - Request: { query: string, limit?: number }, Response: { results: SearchResult[], took_ms: number }</signature>
+      <path>src/index.ts (routing), src/api/mcp-handler.ts (handler), src/api/search-endpoint.ts (search logic)</path>
+      <notes>Story 4.1 provides protocol/validation layer. Story 4.2 adds actual search integration. Story 4.3 will add health check and error monitoring.</notes>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Framework: Vitest 4.0+ with @cloudflare/vitest-pool-workers for Cloudflare Workers runtime testing. Pattern: Co-located tests (search-endpoint.test.ts next to search-endpoint.ts). Coverage target: 80%+ for core logic. Test structure: try-catch blocks for error cases (avoid Request stream consumption issues from Story 4.1). Mocking: Mock env.AI_SEARCH.query and env.R2.head for unit tests. Use Vitest vi.fn() for mocks. Assertions: Specific and meaningful (verify field mappings, error codes, performance metrics).
+    </standards>
+    <locations>
+      test/api/search-endpoint.test.ts (new - Story 4.2 unit tests)
+      test/api/mcp-handler.test.ts (update - Story 4.2 integration tests with mocked AI Search)
+    </locations>
+    <ideas>
+      AC #1: Test searchCode() called with correct parameters (query, limit, env, requestId)
+      AC #2: Test enrichResults() called with AI Search results (aiResults, env, requestId)
+      AC #3: Test field mapping EnrichedSearchResult → SearchResult (repository, file_path, match_snippet, relevance_score, metadata fields)
+      AC #3: Test metadata object construction (language, stars=0 default, last_updated from pushedAt, github_url from links.github)
+      AC #4: Test empty AI Search results → MCPResponse { results: [], took_ms: N } with 200 OK status
+      AC #5: Test AI Search timeout → ServiceError thrown with code=SEARCH_ERROR, statusCode=503, retry_after=60
+      AC #5: Test AI Search failure → ServiceError propagated to mcp-handler → formatErrorResponse() → 503 JSON response
+      AC #6: Test MCPRequest.limit=undefined → searchCode called with limit=5 (default)
+      AC #7: Test took_ms calculation = Date.now() - startTime includes AI Search duration + enrichment duration
+      AC #7: Test performance logging includes duration, resultCount, query (truncated to 100 chars)
+      Integration: Test POST /mcp/search end-to-end with mocked env.AI_SEARCH → 200 OK with SearchResult[]
+      Integration: Test CORS headers preserved after switching from mock to executeSearch()
+      Integration: Test X-MCP-Version and X-Request-ID headers still present in responses
+    </ideas>
+  </tests>
+</story-context>

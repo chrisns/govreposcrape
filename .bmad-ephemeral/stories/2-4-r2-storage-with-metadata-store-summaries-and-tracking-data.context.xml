@@ -1,0 +1,210 @@
+<story-context id="{bmad_folder}/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>4</storyId>
+    <title>R2 Storage with Metadata - Store Summaries and Tracking Data</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-13</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>.bmad-ephemeral/stories/2-4-r2-storage-with-metadata-store-summaries-and-tracking-data.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>storage engineer</asA>
+    <iWant>to store gitingest summaries in R2 with custom metadata for tracking</iWant>
+    <soThat>AI Search can index the content and we can validate caching logic</soThat>
+    <tasks>
+      - Task 1: Create Python R2 client module for container (AC: #1, #2, #3)
+      - Task 2: Implement retry logic with exponential backoff (AC: #2)
+      - Task 3: Implement upload statistics tracking (AC: #3)
+      - Task 4: Integrate R2 upload into ingest.py pipeline (AC: #1, #2, #3)
+      - Task 5: Create comprehensive tests (AC: #1, #2, #3)
+      - Task 6: Environment variable configuration (AC: #3)
+      - Task 7: Integration testing with actual R2 bucket (AC: #1, #2, #3)
+      - Task 8: Update documentation (AC: #1, #2, #3)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    AC1: Given a gitingest summary has been generated (Story 2.3), When I upload the summary to R2, Then the object is stored at path: `gitingest/{org}/{repo}/summary.txt` And custom metadata is attached: `pushedAt`, `url`, `processedAt` timestamp And content-type is set to `text/plain` for AI Search compatibility
+
+    AC2: Given an R2 upload may fail (network error, service unavailable), When upload encounters an error, Then it retries with exponential backoff (3 attempts) And failure is logged with repo details and error message And failed uploads don't block processing of other repositories
+
+    AC3: R2 module has methods: uploadSummary(org, repo, content, metadata), getSummary(org, repo) And R2 bindings use credentials from environment variables And Upload statistics are logged: total uploaded, failed, total storage size
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR-1.3 Smart Caching via R2 Metadata</section>
+        <snippet>Innovation: Metadata IS the cache - no separate cache database needed. Cache Validation: Compare pushedAt in R2 metadata vs repos.json feed. Cache Hit Rate Target: 90%+ (only re-process when pushedAt changes). Cost Impact: Avoids expensive gitingest regeneration.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic Breakdown</title>
+        <section>Epic 2: Data Ingestion Pipeline - Story 2.4</section>
+        <snippet>Store gitingest summaries in R2 with custom metadata. Object path: gitingest/{org}/{repo}/summary.txt. Custom metadata: pushedAt, url, processedAt. Content-type: text/plain for AI Search compatibility. Retry with exponential backoff (3 attempts).</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>R2 Storage and Cloudflare Services</section>
+        <snippet>Cloudflare R2: Zero egress fees, S3-compatible, free tier: 10GB storage. Use boto3 library for S3-compatible access. R2 bucket binding: govreposcrape-gitingest. Smart caching via R2 metadata eliminates need for separate cache database.</snippet>
+      </doc>
+      <doc>
+        <path>.bmad-ephemeral/stories/2-3-container-based-gitingest-processing-with-retry-logic.md</path>
+        <title>Story 2.3: Container-Based gitingest Processing</title>
+        <section>Dev Notes - Patterns to Reuse</section>
+        <snippet>Retry Logic Pattern: retry_with_backoff function with 3 attempts [1s, 2s, 4s]. Structured JSON Logging: JSONFormatter class. Fail-Safe Error Handling: Continue processing on errors. Statistics Tracking: ProcessingStats class. All patterns established and working in container/ingest.py.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>container/ingest.py</path>
+        <kind>Python module</kind>
+        <symbol>retry_with_backoff</symbol>
+        <lines>112-142</lines>
+        <reason>Reusable retry logic with exponential backoff [1s, 2s, 4s] - must reuse for R2 upload retry</reason>
+      </artifact>
+      <artifact>
+        <path>container/ingest.py</path>
+        <kind>Python module</kind>
+        <symbol>JSONFormatter</symbol>
+        <lines>32-45</lines>
+        <reason>Structured JSON logging pattern matching TypeScript logger - follow same pattern for R2 operations</reason>
+      </artifact>
+      <artifact>
+        <path>container/ingest.py</path>
+        <kind>Python module</kind>
+        <symbol>ProcessingStats</symbol>
+        <lines>57-94</lines>
+        <reason>Statistics tracking pattern - adapt for R2 upload statistics (uploaded, failed, storage size)</reason>
+      </artifact>
+      <artifact>
+        <path>container/Dockerfile</path>
+        <kind>Docker configuration</kind>
+        <symbol>N/A</symbol>
+        <lines>1-35</lines>
+        <reason>Container already includes boto3 dependency for R2 access - no changes needed</reason>
+      </artifact>
+      <artifact>
+        <path>container/requirements.txt</path>
+        <kind>Python dependencies</kind>
+        <symbol>N/A</symbol>
+        <lines>7-8</lines>
+        <reason>boto3>=1.34.0 already installed - ready for R2 client implementation</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <python>
+        <package name="gitingest" version="latest" usage="Code summarization (already installed)" />
+        <package name="boto3" version=">=1.34.0" usage="S3-compatible R2 client (already installed)" />
+        <package name="pytest" version=">=8.0.0" usage="Test framework (already installed)" />
+        <package name="pytest-mock" version=">=3.12.0" usage="Mock fixtures (already installed)" />
+      </python>
+      <cloudflare>
+        <service name="R2" bucket="govreposcrape-gitingest" binding="R2" usage="Object storage for gitingest summaries" />
+      </cloudflare>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - MUST reuse retry_with_backoff function from container/ingest.py:112-142 (3 attempts, delays [1s, 2s, 4s])
+    - MUST follow Python snake_case naming convention: r2_client.py, upload_summary, get_summary (established in Story 2.3)
+    - MUST use JSONFormatter structured logging pattern from container/ingest.py:32-45
+    - MUST use content-type: text/plain for R2 objects (AI Search requirement)
+    - MUST store metadata in R2 object metadata field (no separate database)
+    - MUST use object path structure: gitingest/{org}/{repo}/summary.txt
+    - MUST handle failures gracefully: log error, continue processing other repos (fail-safe pattern)
+    - MUST use boto3 S3 client with R2 endpoint (S3-compatible API)
+    - MUST validate environment variables on startup: R2_BUCKET, R2_ENDPOINT, R2_ACCESS_KEY, R2_SECRET_KEY
+    - MUST integrate with existing container/ingest.py pipeline (import and call after gitingest processing)
+    - MUST track statistics: total_uploaded, total_failed, total_storage_size
+    - R2 metadata keys are lowercase (boto3 S3 API converts automatically): pushedat, url, processedat
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>uploadSummary</name>
+      <kind>Python function</kind>
+      <signature>def upload_summary(org: str, repo: str, content: str, metadata: Dict[str, str]) -> bool</signature>
+      <path>container/r2_client.py</path>
+      <description>Upload gitingest summary to R2 with custom metadata. Returns True on success, False on failure.</description>
+    </interface>
+    <interface>
+      <name>getSummary</name>
+      <kind>Python function</kind>
+      <signature>def get_summary(org: str, repo: str) -> Optional[str]</signature>
+      <path>container/r2_client.py</path>
+      <description>Retrieve gitingest summary from R2. Returns summary text or None if not found.</description>
+    </interface>
+    <interface>
+      <name>uploadWithRetry</name>
+      <kind>Python function</kind>
+      <signature>def upload_with_retry(org: str, repo: str, content: str, metadata: Dict[str, str]) -> bool</signature>
+      <path>container/r2_client.py</path>
+      <description>Upload with retry logic wrapper using retry_with_backoff from ingest.py</description>
+    </interface>
+    <interface>
+      <name>R2 Environment Variables</name>
+      <kind>Environment configuration</kind>
+      <signature>R2_BUCKET, R2_ENDPOINT, R2_ACCESS_KEY, R2_SECRET_KEY</signature>
+      <path>container/.env</path>
+      <description>Required environment variables for R2 access. Validated on container startup.</description>
+    </interface>
+    <interface>
+      <name>R2 Object Metadata Schema</name>
+      <kind>Data schema</kind>
+      <signature>{ "pushedat": "ISO8601", "url": "string", "processedat": "ISO8601" }</signature>
+      <path>R2 object metadata</path>
+      <description>Custom metadata attached to R2 objects. Keys are lowercase (boto3 S3 API convention).</description>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Test Framework: pytest (established in Story 2.3). Test files follow pattern: test_{module}.py using snake_case.
+      Coverage target: 80%+ on core logic. Mocking strategy: Mock boto3 S3 client using pytest monkeypatch or unittest.mock.
+      Test pass rate: 100% (maintain established standard). All acceptance criteria must have corresponding test coverage.
+      Reference existing test patterns from container/test_ingest.py for consistency.
+    </standards>
+    <locations>
+      container/test_r2_client.py (new file to create)
+      container/test_ingest.py (existing - reference for test patterns)
+    </locations>
+    <ideas>
+      <test id="AC1-upload-path-metadata">
+        <ac>AC1</ac>
+        <description>Test successful R2 upload with correct object path (gitingest/{org}/{repo}/summary.txt), custom metadata (pushedAt, url, processedAt), and content-type (text/plain)</description>
+        <approach>Mock boto3 S3 client put_object method. Verify method called with correct Bucket, Key, Body, ContentType, Metadata parameters. Assert Key matches pattern, ContentType='text/plain', Metadata contains all three fields.</approach>
+      </test>
+      <test id="AC2-retry-logic">
+        <ac>AC2</ac>
+        <description>Test retry logic with exponential backoff for network errors</description>
+        <approach>Mock boto3 to raise exception twice, succeed on third attempt. Verify retry_with_backoff called with delays [1, 2, 4]. Verify final result is success. Check logs for retry attempts.</approach>
+      </test>
+      <test id="AC2-retry-exhaustion">
+        <ac>AC2</ac>
+        <description>Test retry exhaustion after 3 failed attempts</description>
+        <approach>Mock boto3 to fail all 3 attempts. Verify function returns False (fail-safe). Verify error logged with repo details. Verify no exception raised (graceful degradation).</approach>
+      </test>
+      <test id="AC3-get-summary">
+        <ac>AC3</ac>
+        <description>Test getSummary retrieval method</description>
+        <approach>Mock boto3 get_object to return summary content. Verify correct bucket and key used. Verify summary content returned correctly.</approach>
+      </test>
+      <test id="AC3-statistics">
+        <ac>AC3</ac>
+        <description>Test upload statistics tracking (total uploaded, failed, storage size)</description>
+        <approach>Create statistics tracking class similar to ProcessingStats. Track successful/failed uploads and total storage size. Verify statistics logged correctly.</approach>
+      </test>
+      <test id="integration-env-vars">
+        <ac>AC3</ac>
+        <description>Test environment variable validation on startup</description>
+        <approach>Test with missing R2_BUCKET, R2_ENDPOINT, R2_ACCESS_KEY, R2_SECRET_KEY. Verify appropriate error raised or logged. Verify validation happens before any R2 operations.</approach>
+      </test>
+    </ideas>
+  </tests>
+</story-context>

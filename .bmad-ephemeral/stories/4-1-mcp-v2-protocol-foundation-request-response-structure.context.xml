@@ -1,0 +1,313 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>4</epicId>
+    <storyId>1</storyId>
+    <title>MCP v2 Protocol Foundation - Request/Response Structure</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-14</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>.bmad-ephemeral/stories/4-1-mcp-v2-protocol-foundation-request-response-structure.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>backend developer</asA>
+    <iWant>to implement MCP v2 protocol-compliant request/response handling with validation</iWant>
+    <soThat>AI assistants (Claude Desktop, GitHub Copilot) can communicate with the search API using a standard protocol</soThat>
+    <tasks>
+      - Task 1: Create MCP request/response type interfaces (AC #1, #3, #5)
+      - Task 2: Implement request validation (AC #1, #2, #5)
+      - Task 3: Implement CORS handling (AC #4)
+      - Task 4: Implement error response formatting (AC #2)
+      - Task 5: Create POST /mcp/search route handler (AC #1, #3, #5)
+      - Task 6: Unit tests for MCP protocol handling (AC #1, #2, #3, #4, #5)
+      - Task 7: Integration with existing modules (AC #1, #5)
+      - Task 8: Documentation (AC #1, #4, #5)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC-1">
+      <given>an HTTP POST request to /mcp/search</given>
+      <when>the request includes a valid JSON body with query (3-500 chars) and optional limit (1-20)</when>
+      <then>the endpoint validates the request and returns X-MCP-Version: 2 header</then>
+    </criterion>
+    <criterion id="AC-2">
+      <given>an invalid request (missing query, query &lt;3 chars, query &gt;500 chars, limit &lt;1, limit &gt;20)</given>
+      <when>validation fails</when>
+      <then>return HTTP 400 Bad Request with structured JSON error: { error: { code, message } }</then>
+    </criterion>
+    <criterion id="AC-3">
+      <given>a valid MCP request</given>
+      <when>the endpoint processes the request</when>
+      <then>response is valid JSON with results array and took_ms number field</then>
+    </criterion>
+    <criterion id="AC-4">
+      <given>CORS requirements for web-based MCP clients</given>
+      <when>OPTIONS preflight request received</when>
+      <then>return appropriate CORS headers: Access-Control-Allow-Origin: *, Access-Control-Allow-Methods, Access-Control-Allow-Headers</then>
+    </criterion>
+    <criterion id="AC-5">
+      <given>protocol version negotiation requirements</given>
+      <when>request includes X-MCP-Version header</when>
+      <then>validate version is "2" and include X-MCP-Version: 2 in response</then>
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>.bmad-ephemeral/stories/tech-spec-epic-4.md</path>
+        <title>Epic 4 Technical Specification: MCP API Server (Read Path)</title>
+        <section>AC-1: MCP v2 Protocol Compliance</section>
+        <snippet>POST /mcp/search endpoint accepts JSON request body with query and optional limit. Request validation returns 400 for missing query, invalid lengths, or out-of-range limits. Response includes X-MCP-Version: 2 header and is valid JSON with results array and took_ms number.</snippet>
+      </doc>
+      <doc>
+        <path>.bmad-ephemeral/stories/tech-spec-epic-4.md</path>
+        <title>Epic 4 Technical Specification: MCP API Server (Read Path)</title>
+        <section>Data Models and Contracts</section>
+        <snippet>MCPRequest interface: { query: string (3-500 chars), limit?: number (1-20, default 5) }. MCPResponse interface: { results: SearchResult[], took_ms: number }. ErrorResponse interface: { error: { code: string, message: string, retry_after?: number } }. Error codes: INVALID_QUERY, INVALID_LIMIT, SEARCH_ERROR, INTERNAL_ERROR.</snippet>
+      </doc>
+      <doc>
+        <path>.bmad-ephemeral/stories/tech-spec-epic-4.md</path>
+        <title>Epic 4 Technical Specification: MCP API Server (Read Path)</title>
+        <section>APIs and Interfaces</section>
+        <snippet>POST /mcp/search endpoint specification with request/response examples. CORS configuration: Access-Control-Allow-Origin: *, Access-Control-Allow-Methods: POST, OPTIONS, GET, Access-Control-Allow-Headers: Content-Type, X-MCP-Version, X-Request-ID. Headers: X-MCP-Version: 2, X-Request-ID (optional correlation), Content-Type: application/json.</snippet>
+      </doc>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR-3.1: MCP v2 Protocol Compliance</section>
+        <snippet>API must implement MCP v2 protocol with JSON request/response format, proper headers (X-MCP-Version: 2), and standard error codes. Supports Claude Desktop, GitHub Copilot, and other MCP-compliant AI assistants.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Read Path Pattern</section>
+        <snippet>Epic 4 implements read path as thin API wrapper over Epic 3 search infrastructure. Stateless Workers deployment with edge optimization. No authentication required (open MCP access per ADR-002). Minimal processing pattern - delegate to AI Search.</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <artifact>
+        <path>src/utils/error-handler.ts</path>
+        <kind>utility</kind>
+        <symbol>ValidationError</symbol>
+        <lines>69-74</lines>
+        <reason>MUST REUSE: ValidationError class for input validation failures. Always returns HTTP 400. Constructor: ValidationError(message, code). Used for query/limit validation errors.</reason>
+      </artifact>
+      <artifact>
+        <path>src/utils/error-handler.ts</path>
+        <kind>utility</kind>
+        <symbol>ServiceError</symbol>
+        <lines>96-125</lines>
+        <reason>MUST REUSE: ServiceError class for service failures. Supports 500/503 status codes with optional retryAfter. Constructor: ServiceError(message, statusCode, code, retryAfter). Used for AI Search failures in Story 4.2.</reason>
+      </artifact>
+      <artifact>
+        <path>src/utils/error-handler.ts</path>
+        <kind>utility</kind>
+        <symbol>toErrorResponse</symbol>
+        <lines>39-46, 111-124</lines>
+        <reason>MUST REUSE: toErrorResponse() method converts errors to PRD-compliant ErrorResponse format: { error: { code, message, retry_after? } }. Both AppError and ServiceError implement this.</reason>
+      </artifact>
+      <artifact>
+        <path>src/utils/logger.ts</path>
+        <kind>utility</kind>
+        <symbol>createLogger</symbol>
+        <lines>87-117</lines>
+        <reason>MUST REUSE: createLogger() function for structured JSON logging. Pass baseContext with operation and optional requestId. Returns logger with debug/info/warn/error methods. Example: createLogger({ operation: 'mcp_search', requestId }).</reason>
+      </artifact>
+      <artifact>
+        <path>src/types.ts</path>
+        <kind>types</kind>
+        <symbol>ErrorResponse</symbol>
+        <lines>67-76</lines>
+        <reason>MUST REUSE: ErrorResponse interface already defined. Follows PRD FR-3 specification. DO NOT recreate - import from src/types.ts.</reason>
+      </artifact>
+      <artifact>
+        <path>src/types.ts</path>
+        <kind>types</kind>
+        <symbol>MCPRequest</symbol>
+        <lines>151-156</lines>
+        <reason>ALREADY EXISTS: MCPRequest interface already defined with query (3-500 chars) and optional limit (1-20, default 5). DO NOT recreate - use existing interface.</reason>
+      </artifact>
+      <artifact>
+        <path>src/types.ts</path>
+        <kind>types</kind>
+        <symbol>SearchResult</symbol>
+        <lines>41-61</lines>
+        <reason>REFERENCE: SearchResult interface for MCP response. Story 4.1 returns mock empty array { results: [], took_ms: N }. Story 4.2 will populate with actual AI Search results.</reason>
+      </artifact>
+      <artifact>
+        <path>src/index.ts</path>
+        <kind>entrypoint</kind>
+        <symbol>fetch</symbol>
+        <lines>21-97</lines>
+        <reason>MUST MODIFY: Add POST /mcp/search route to fetch handler. Follow existing patterns for health check and cache proxy endpoints. Route to new mcp-handler module.</reason>
+      </artifact>
+      <artifact>
+        <path>src/index.ts</path>
+        <kind>entrypoint</kind>
+        <symbol>requestId generation</symbol>
+        <lines>23</lines>
+        <reason>REUSE PATTERN: Use crypto.randomUUID() for X-Request-ID generation. Pattern already established: const requestId = crypto.randomUUID()</reason>
+      </artifact>
+      <artifact>
+        <path>test/api/health.test.ts</path>
+        <kind>test</kind>
+        <symbol>test patterns</symbol>
+        <lines>1-200</lines>
+        <reason>REFERENCE: Test patterns for API endpoints with Vitest and @cloudflare/vitest-pool-workers. Mock env bindings, test request/response, validate status codes and JSON format.</reason>
+      </artifact>
+    </code>
+
+    <dependencies>
+      <runtime>
+        <package name="@cloudflare/workers-types" version="^4.20241127.0" />
+        <note>TypeScript types for Workers runtime - no runtime dependencies (Workers optimized for minimal bundle size)</note>
+      </runtime>
+      <dev>
+        <package name="typescript" version="^5.5.2" />
+        <package name="vitest" version="~3.2.0" />
+        <package name="@cloudflare/vitest-pool-workers" version="^0.8.19" />
+        <package name="wrangler" version="^4.47.0" />
+        <package name="eslint" version="^9.39.1" />
+        <package name="prettier" version="^3.6.2" />
+      </dev>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint id="C-1">
+      <category>architecture</category>
+      <rule>Thin API wrapper pattern - minimal processing, delegate search to Epic 3 modules (Story 4.2)</rule>
+      <rationale>Edge deployment optimization, <200ms cold start requirement</rationale>
+    </constraint>
+    <constraint id="C-2">
+      <category>architecture</category>
+      <rule>Stateless Workers - no session management, all context in request</rule>
+      <rationale>Edge deployment scalability, follows Cloudflare Workers best practices</rationale>
+    </constraint>
+    <constraint id="C-3">
+      <category>validation</category>
+      <rule>Query: required, trim whitespace, 3-500 characters, UTF-8 string</rule>
+      <source>tech-spec-epic-4.md#Validation-Rules</source>
+    </constraint>
+    <constraint id="C-4">
+      <category>validation</category>
+      <rule>Limit: optional, integer 1-20, default to 5 if not provided</rule>
+      <source>tech-spec-epic-4.md#Validation-Rules</source>
+    </constraint>
+    <constraint id="C-5">
+      <category>validation</category>
+      <rule>Request body: valid JSON, max payload 1KB, Content-Type: application/json required</rule>
+      <source>tech-spec-epic-4.md#Validation-Rules</source>
+    </constraint>
+    <constraint id="C-6">
+      <category>error-handling</category>
+      <rule>All errors return structured JSON in PRD format: { error: { code, message, retry_after? } }</rule>
+      <source>PRD FR-3, tech-spec-epic-4.md#Error-Response-Format</source>
+    </constraint>
+    <constraint id="C-7">
+      <category>error-handling</category>
+      <rule>Error messages must be user-friendly without exposing internal implementation details</rule>
+      <source>tech-spec-epic-4.md#NFR-2.1-Security</source>
+    </constraint>
+    <constraint id="C-8">
+      <category>logging</category>
+      <rule>100% of API requests logged with structured JSON: requestId, operation, duration, statusCode, resultCount</rule>
+      <source>tech-spec-epic-4.md#NFR-2.3-Audit-Logging</source>
+    </constraint>
+    <constraint id="C-9">
+      <category>logging</category>
+      <rule>Correlation ID (X-Request-ID) must be tracked through entire request lifecycle</rule>
+      <source>tech-spec-epic-4.md#AC-3-Error-Handling-and-Logging</source>
+    </constraint>
+    <constraint id="C-10">
+      <category>naming</category>
+      <rule>File naming: kebab-case.ts (mcp-handler.ts). Function naming: camelCase (validateMCPRequest). Interface naming: PascalCase (MCPRequest). Error codes: SCREAMING_SNAKE_CASE</rule>
+      <source>architecture.md#Naming-Conventions</source>
+    </constraint>
+    <constraint id="C-11">
+      <category>typescript</category>
+      <rule>TypeScript strict mode compilation required. All types must compile without errors: npm run type-check</rule>
+      <source>tech-spec-epic-4.md#Architecture-Constraints</source>
+    </constraint>
+    <constraint id="C-12">
+      <category>security</category>
+      <rule>No eval(), Function(), or dynamic code execution. Input validation on all parameters. No secrets in logs or error messages.</rule>
+      <source>tech-spec-epic-4.md#NFR-2.1-NCSC-Secure-Coding</source>
+    </constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>ValidationError</name>
+      <kind>class</kind>
+      <signature>class ValidationError extends AppError { constructor(message: string, code = "VALIDATION_ERROR") }</signature>
+      <path>src/utils/error-handler.ts</path>
+      <usage>Throw for input validation failures. Always returns HTTP 400. Example: throw new ValidationError('Query too short', 'INVALID_QUERY')</usage>
+    </interface>
+    <interface>
+      <name>ServiceError</name>
+      <kind>class</kind>
+      <signature>class ServiceError extends AppError { constructor(message: string, statusCode = 500, code = "SERVICE_ERROR", retryAfter?: number) }</signature>
+      <path>src/utils/error-handler.ts</path>
+      <usage>Throw for service failures. Supports 500/503 with optional retryAfter. Story 4.2 will use for AI Search failures.</usage>
+    </interface>
+    <interface>
+      <name>createLogger</name>
+      <kind>function</kind>
+      <signature>function createLogger(baseContext: Partial&lt;LogContext&gt;): Logger</signature>
+      <path>src/utils/logger.ts</path>
+      <usage>Create logger with operation and optional requestId. Returns logger with debug/info/warn/error methods. Example: createLogger({ operation: 'mcp_search', requestId })</usage>
+    </interface>
+    <interface>
+      <name>MCPRequest</name>
+      <kind>interface</kind>
+      <signature>interface MCPRequest { query: string; limit?: number; }</signature>
+      <path>src/types.ts</path>
+      <usage>ALREADY EXISTS - DO NOT recreate. Import from src/types.ts for request validation.</usage>
+    </interface>
+    <interface>
+      <name>ErrorResponse</name>
+      <kind>interface</kind>
+      <signature>interface ErrorResponse { error: { code: string; message: string; retry_after?: number; } }</signature>
+      <path>src/types.ts</path>
+      <usage>ALREADY EXISTS - DO NOT recreate. Import from src/types.ts for error formatting.</usage>
+    </interface>
+    <interface>
+      <name>crypto.randomUUID</name>
+      <kind>web-api</kind>
+      <signature>crypto.randomUUID(): string</signature>
+      <path>Web Crypto API</path>
+      <usage>Generate UUIDs for X-Request-ID correlation. Pattern: const requestId = crypto.randomUUID()</usage>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Test framework: Vitest 4.0+ with @cloudflare/vitest-pool-workers. Coverage target: 80%+ for src/api/mcp-handler.ts. Test location: test/api/mcp-handler.test.ts co-located with source. Mock env bindings (AI_SEARCH, R2, KV) for unit tests. Follow existing patterns from test/api/health.test.ts for API endpoint testing. Test file naming: kebab-case.test.ts. TypeScript strict mode for tests.
+    </standards>
+    <locations>
+      - test/api/mcp-handler.test.ts (NEW - this story)
+      - test/api/health.test.ts (REFERENCE for patterns)
+      - test/utils/error-handler.test.ts (REFERENCE for error handling)
+      - test/utils/logger.test.ts (REFERENCE for logging)
+    </locations>
+    <ideas>
+      <idea ac="AC-1">Test valid request: POST /mcp/search with { query: "test", limit: 5 } → 200 OK with X-MCP-Version: 2 header</idea>
+      <idea ac="AC-2">Test missing query: POST /mcp/search with { limit: 5 } → 400 INVALID_QUERY</idea>
+      <idea ac="AC-2">Test query too short: POST /mcp/search with { query: "ab" } → 400 INVALID_QUERY</idea>
+      <idea ac="AC-2">Test query too long: POST /mcp/search with { query: "a".repeat(501) } → 400 INVALID_QUERY</idea>
+      <idea ac="AC-2">Test limit out of range: POST /mcp/search with { query: "test", limit: 21 } → 400 INVALID_LIMIT</idea>
+      <idea ac="AC-2">Test malformed JSON: POST /mcp/search with invalid JSON → 400 with clear error message</idea>
+      <idea ac="AC-3">Test valid response format: response has results array and took_ms number</idea>
+      <idea ac="AC-4">Test OPTIONS preflight: OPTIONS /mcp/search → 204 No Content with CORS headers</idea>
+      <idea ac="AC-4">Test CORS headers on responses: Access-Control-Allow-Origin: *, Access-Control-Allow-Methods, Access-Control-Allow-Headers</idea>
+      <idea ac="AC-5">Test X-MCP-Version header: request with version "2" → response includes X-MCP-Version: 2</idea>
+      <idea ac="AC-1">Test default limit: POST /mcp/search with { query: "test" } (no limit) → uses limit=5</idea>
+      <idea ac="AC-1">Test query whitespace trimming: POST /mcp/search with { query: "  test  " } → trimmed to "test"</idea>
+      <idea ac="AC-2">Test Content-Type validation: POST /mcp/search without Content-Type header → 400 error</idea>
+    </ideas>
+  </tests>
+</story-context>

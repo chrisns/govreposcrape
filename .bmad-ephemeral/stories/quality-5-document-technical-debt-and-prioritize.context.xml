@@ -1,0 +1,330 @@
+<story-context id="{bmad_folder}/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>quality</epicId>
+    <storyId>5</storyId>
+    <title>Document Technical Debt and Prioritize Remediation</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-14</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>.bmad-ephemeral/stories/quality-5-document-technical-debt-and-prioritize.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>Technical Lead</asA>
+    <iWant>to document all shortcuts and technical debt from Epic 2</iWant>
+    <soThat>we can prioritize remediation and prevent accumulation of debt</soThat>
+    <tasks>
+      - Task 1: Audit Epic 2 Stories and Code (AC: 1)
+        - Review all Epic 2 completed story files (.bmad-ephemeral/stories/2-*.md)
+        - Extract technical shortcuts and compromises from Dev Notes
+        - Review story completion notes for deferred work
+        - Review Sprint Status for skipped stories or partially completed work
+        - Scan codebase for TODO/FIXME/HACK comments
+        - Review retrospective notes (if available) for quality issues
+        - Compile initial technical debt list with descriptions
+
+      - Task 2: Categorize and Prioritize Technical Debt (AC: 2)
+        - Assign severity category to each debt item: critical/high/medium/low
+        - Evaluate impact of each item: production blocker, quality risk, nice-to-have, cosmetic
+        - Estimate remediation effort (hours/days) for each item
+        - Identify dependencies between debt items
+        - Prioritize critical debt for Quality Sprint
+        - Categorize high/medium debt for Phase 2 or future sprints
+        - Validate prioritization with team if needed
+
+      - Task 3: Create Remediation Plan with Assignments (AC: 3)
+        - For each debt item, define remediation approach
+        - Estimate effort and resources required
+        - Identify assigned owner (or mark as unassigned)
+        - Set target completion dates or milestones
+        - Map critical debt to current Quality Sprint stories
+        - Schedule high/medium debt for future sprints or backlog
+        - Document trade-offs and risk of deferring remediation
+
+      - Task 4: Document Technical Debt in docs/technical-debt.md (AC: 4)
+        - Create docs/technical-debt.md file
+        - Document debt catalog with structured format (template provided in epic)
+        - Link each debt item to specific code locations (file:line references)
+        - Include remediation plan with assignments and deadlines
+        - Add metadata: discovered date, epic/story origin, current status
+        - Format for readability: tables, sections by priority, clear headings
+        - Add summary statistics (count by severity, estimated total effort)
+
+      - Task 5: Review and Validate with Team (AC: 4)
+        - Share docs/technical-debt.md with team for review
+        - Gather feedback on prioritization and estimates
+        - Adjust categorization based on team input
+        - Get approval from Tech Lead and Scrum Master
+        - Commit technical-debt.md to repository
+        - Update README.md to link to technical-debt.md (optional)
+        - Communicate critical debt items affecting Epic 3 continuation
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    AC1: Catalog Technical Debt from Epic 2
+    - Technical debt is catalogued: what was skipped, why, impact, remediation effort
+    - Debt items include: integration test gaps, validation script issues, manual infrastructure steps, documented assumptions not validated
+
+    AC2: Prioritize Debt by Severity
+    - Debt is categorized: critical (blocks production), high (quality risk), medium (nice-to-have), low (cosmetic)
+    - Critical debt is scheduled for immediate remediation (this Quality Sprint)
+    - High/medium debt is prioritized for Phase 2 or future sprints
+
+    AC3: Create Remediation Plan with Assignments
+    - Plan includes: debt item, priority, estimated effort, assigned owner, target completion
+    - Critical debt addressed in Quality Sprint
+    - High/medium debt tracked in backlog or technical-debt.md
+
+    AC4: Document and Link Debt to Code Locations
+    - Technical debt document created: docs/technical-debt.md
+    - Debt items linked to specific code locations (file:line)
+    - Remediation plan reviewed and approved by team
+    - Critical debt addressed before Epic 3 continues
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <artifact>
+        <path>.bmad-ephemeral/stories/epic-quality.md</path>
+        <title>Epic Quality: Epic 2 Remediation & Testing Standards</title>
+        <section>Story Quality-5 Definition & Known Technical Debt</section>
+        <snippet>Defines the technical debt documentation story with template format. Lists 7 known debt items from Epic 2 with initial categorization (critical/high/medium/low) and status tracking.</snippet>
+      </artifact>
+      <artifact>
+        <path>.bmad/definition-of-done.md</path>
+        <title>Definition of Done - Quality Standards</title>
+        <section>Section 5: Technical Debt Management</section>
+        <snippet>Defines technical debt severity levels (P0-P3), management practices, and DoD checkpoints for debt tracking. P0 debt blocks story completion, P1 must be scheduled within 2 sprints.</snippet>
+      </artifact>
+      <artifact>
+        <path>CONTRIBUTING.md</path>
+        <title>Development Workflow and Automation Guide</title>
+        <section>Automation Checklist for Story Completion</section>
+        <snippet>Documents validation automation patterns and story completion checklist. Created in Quality-4 story. Includes pre-commit hooks, validation scripts, and testing workflow guidance.</snippet>
+      </artifact>
+      <artifact>
+        <path>TESTING.md</path>
+        <title>Testing Standards and Integration Test Requirements</title>
+        <section>Scale Testing Standards & Integration Test Requirements</section>
+        <snippet>Defines integration testing requirements for service-binding stories (100-1000 item scale testing). Created in Quality-2 story. Documents validation script usage and DoD compliance.</snippet>
+      </artifact>
+      <artifact>
+        <path>.bmad-ephemeral/stories/quality-1-diagnose-and-fix-kv-caching-integration.md</path>
+        <title>Quality-1: KV Caching Fix (RESOLVED Debt)</title>
+        <section>Completion Notes & Technical Learnings</section>
+        <snippet>Critical debt item RESOLVED: KV caching broken in Story 2-2. Cache hit/miss logic fixed, 90%+ cache hit rate achieved. Root cause: cache comparison logic inverted.</snippet>
+      </artifact>
+      <artifact>
+        <path>.bmad-ephemeral/stories/quality-2-establish-integration-testing-standards.md</path>
+        <title>Quality-2: Integration Testing Standards (PARTIALLY RESOLVED Debt)</title>
+        <section>Completion Notes & TESTING.md Creation</section>
+        <snippet>High debt item PARTIALLY RESOLVED: Integration testing standards documented in TESTING.md. Implementation of full integration test suite deferred to Phase 2.</snippet>
+      </artifact>
+      <artifact>
+        <path>.bmad-ephemeral/stories/quality-3-update-definition-of-done-with-scale-testing.md</path>
+        <title>Quality-3: Definition of Done Update</title>
+        <section>Technical Debt Management (Section 5)</section>
+        <snippet>Updated DoD with technical debt tracking requirements. Defines P0-P3 severity levels, management practices, and debt documentation standards that Quality-5 must follow.</snippet>
+      </artifact>
+      <artifact>
+        <path>.bmad-ephemeral/stories/quality-4-add-validation-automation-and-guardrails.md</path>
+        <title>Quality-4: Validation Automation (RESOLVED Debt)</title>
+        <section>Completion Notes & Validation Script Self-Testing</section>
+        <snippet>High debt item RESOLVED: Validation scripts untested. Added --test mode to validation scripts with dependency checks. Pre-commit hooks extended with TypeScript type checking (2.6s execution).</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>NFR-7.1: Cost Monitoring & Transparency</section>
+        <snippet>Cost target <£50/month. Infrastructure cost transparency required. Manual infrastructure provisioning creates cost tracking gaps (unresolved debt item).</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/architecture.md</path>
+        <title>Architecture Decision Document</title>
+        <section>Implementation Patterns & Error Handling Strategy</section>
+        <snippet>Defines retry logic pattern (3 attempts, exponential backoff), structured logging format, and error handling conventions. Container error handling may have gaps (medium debt item).</snippet>
+      </artifact>
+    </docs>
+    <code>
+      <artifact>
+        <path>container/ingest.py</path>
+        <kind>Python script</kind>
+        <symbol>Main ingestion script</symbol>
+        <lines>1-end</lines>
+        <reason>Primary gitingest processing script. Review for error handling gaps (medium debt item). Contains retry logic and R2 upload operations.</reason>
+      </artifact>
+      <artifact>
+        <path>container/orchestrator.py</path>
+        <kind>Python script</kind>
+        <symbol>Batch processing orchestrator</symbol>
+        <lines>1-end</lines>
+        <reason>Parallel ingestion orchestrator. Review for error handling and logging completeness (medium debt item). Handles batch processing with --batch-size and --offset.</reason>
+      </artifact>
+      <artifact>
+        <path>container/cache.py</path>
+        <kind>Python module</kind>
+        <symbol>KV cache wrapper</symbol>
+        <lines>1-end</lines>
+        <reason>Python-side KV cache wrapper. May have inconsistencies with TypeScript cache implementation (potential debt item).</reason>
+      </artifact>
+      <artifact>
+        <path>container/r2_client.py</path>
+        <kind>Python module</kind>
+        <symbol>R2 upload client</symbol>
+        <lines>1-end</lines>
+        <reason>R2 upload wrapper using boto3. Review for error handling and retry logic completeness.</reason>
+      </artifact>
+      <artifact>
+        <path>src/ingestion/cache.ts</path>
+        <kind>TypeScript module</kind>
+        <symbol>KV caching logic</symbol>
+        <lines>1-end</lines>
+        <reason>FIXED in Quality-1: Cache comparison logic inverted. Now validated with 90%+ cache hit rate. Include as example of resolved critical debt.</reason>
+      </artifact>
+      <artifact>
+        <path>scripts/validate-ai-search.sh</path>
+        <kind>Bash script</kind>
+        <symbol>AI Search validation</symbol>
+        <lines>1-end</lines>
+        <reason>FIXED in Quality-4: Added --test mode with dependency checks. Now self-testing with fail-fast error handling. Include as example of resolved high debt.</reason>
+      </artifact>
+      <artifact>
+        <path>scripts/validate-ai-search-baseline.sh</path>
+        <kind>Bash script</kind>
+        <symbol>AI Search baseline validation</symbol>
+        <lines>1-end</lines>
+        <reason>FIXED in Quality-4: Added --test mode. Validates AI Search baseline performance metrics. Part of validation automation resolution.</reason>
+      </artifact>
+      <artifact>
+        <path>scripts/run-parallel-ingestion.sh</path>
+        <kind>Bash script</kind>
+        <symbol>Parallel ingestion execution</symbol>
+        <lines>1-end</lines>
+        <reason>Orchestrates parallel Docker container execution for batch processing. Manual infrastructure provisioning required (unresolved high debt).</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <node>
+        <package>@cloudflare/workers-types</package>
+        <version>^4.0.0</version>
+      </node>
+      <node>
+        <package>vitest</package>
+        <version>^4.0.0</version>
+      </node>
+      <node>
+        <package>@cloudflare/vitest-pool-workers</package>
+        <version>^0.9.1</version>
+      </node>
+      <node>
+        <package>wrangler</package>
+        <version>^4.47.0</version>
+      </node>
+      <python>
+        <package>gitingest</package>
+        <version>latest</version>
+      </python>
+      <python>
+        <package>boto3</package>
+        <version>latest</version>
+      </python>
+      <python>
+        <package>requests</package>
+        <version>latest</version>
+      </python>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Use structured markdown format from epic-quality.md template (lines 446-470) for all debt items</constraint>
+    <constraint>Link all debt items to specific code locations using file:line format (e.g., container/ingest.py:125)</constraint>
+    <constraint>Follow DoD Section 5 severity definitions: P0 (blocks completion), P1 (schedule within 2 sprints), P2 (backlog), P3 (low priority)</constraint>
+    <constraint>Document resolution status for all Quality Sprint stories (Quality-1 through Quality-4)</constraint>
+    <constraint>Include effort estimates in hours/days for remediation planning</constraint>
+    <constraint>Assign owners or mark as unassigned for accountability</constraint>
+    <constraint>Target completion dates or milestones required for P0/P1 debt</constraint>
+    <constraint>Create docs/technical-debt.md in project root docs/ directory (not .bmad-ephemeral/)</constraint>
+    <constraint>Review and approval required from Tech Lead and Scrum Master before story completion</constraint>
+    <constraint>Critical (P0) debt must be addressed before Epic 3 can continue</constraint>
+  </constraints>
+  <interfaces>
+    <interface>
+      <name>Technical Debt Document Structure</name>
+      <kind>Markdown template</kind>
+      <signature>
+## Debt Item: [Description]
+**Category:** Critical / High / Medium / Low
+**Discovered:** [Date]
+**Epic/Story:** [Where introduced]
+**Location:** [file:line or module]
+**Description:** [What was skipped or compromised]
+**Impact:** [Consequences if not addressed]
+**Remediation:** [What needs to be done to fix]
+**Effort Estimate:** [hours/days]
+**Priority:** P0/P1/P2/P3
+**Assigned:** [Owner]
+**Target Completion:** [Date or milestone]
+**Status:** Identified / In Progress / Resolved
+      </signature>
+      <path>.bmad-ephemeral/stories/epic-quality.md</path>
+    </interface>
+    <interface>
+      <name>Definition of Done - Technical Debt Checkpoints</name>
+      <kind>Quality standard</kind>
+      <signature>
+P0 Debt: Blocks story completion - must be resolved immediately
+P1 Debt: High quality risk - must be scheduled within 2 sprints
+P2 Debt: Medium priority - tracked in backlog, addressed when capacity allows
+P3 Debt: Low priority - cosmetic issues, ongoing improvement
+      </signature>
+      <path>.bmad/definition-of-done.md</path>
+    </interface>
+  </interfaces>
+  <tests>
+    <standards>
+This is a documentation and audit story with no code implementation. Validation is performed through:
+1. Document completeness review (all debt items from Epic 2 catalogued)
+2. Team review and approval (Tech Lead + Scrum Master)
+3. Cross-reference validation (debt items match story completion notes and code reality)
+4. Format validation (follows epic-quality.md template and DoD Section 5 requirements)
+
+No unit tests or integration tests required. Definition of Done validation via manual review checklist.
+    </standards>
+    <locations>
+N/A - No automated tests for this story. Validation via team review of docs/technical-debt.md
+    </locations>
+    <ideas>
+      <idea ac="AC1">
+        Validation: Cross-reference all Epic 2 story files (.bmad-ephemeral/stories/2-*.md) completion notes
+        Check: All documented shortcuts are captured in technical-debt.md
+        Method: Manual audit comparing story Dev Notes with debt catalog
+      </idea>
+      <idea ac="AC1">
+        Validation: Scan codebase for TODO/FIXME/HACK comments
+        Check: All code-level debt markers are documented
+        Method: grep -r "TODO\|FIXME\|HACK" container/ src/ scripts/
+      </idea>
+      <idea ac="AC2">
+        Validation: Verify severity categorization matches DoD Section 5 definitions
+        Check: P0 debt blocks completion, P1 scheduled within 2 sprints
+        Method: Review each debt item categorization with Tech Lead
+      </idea>
+      <idea ac="AC3">
+        Validation: Verify remediation plan completeness
+        Check: All debt items have effort estimates, owners, target dates
+        Method: Checklist review of required fields per debt item
+      </idea>
+      <idea ac="AC4">
+        Validation: Verify all code location links are valid
+        Check: file:line references point to existing code
+        Method: Spot-check 5+ links in technical-debt.md
+      </idea>
+      <idea ac="AC4">
+        Validation: Team approval documented
+        Check: Tech Lead and Scrum Master sign-off recorded
+        Method: Story completion notes include approval confirmation
+      </idea>
+    </ideas>
+  </tests>
+</story-context>

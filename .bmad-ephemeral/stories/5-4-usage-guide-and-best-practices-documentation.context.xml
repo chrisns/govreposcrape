@@ -1,0 +1,268 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>5</epicId>
+    <storyId>4</storyId>
+    <title>Usage Guide and Best Practices Documentation</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-14</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>.bmad-ephemeral/stories/5-4-usage-guide-and-best-practices-documentation.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>new user of govscraperepo</asA>
+    <iWant>guidance on effective search queries and best practices</iWant>
+    <soThat>I get relevant results and understand how to use the platform effectively</soThat>
+    <tasks>
+      <task id="1" ac="1,2,3">
+        <title>Create Usage Guide Document</title>
+        <subtasks>
+          <subtask id="1.1">Create docs/usage-guide.md or add "Usage Guide" section to README.md</subtask>
+          <subtask id="1.2">Write "How Semantic Search Works" section (100-150 words)</subtask>
+          <subtask id="1.3">Explain semantic search vs keyword search with examples</subtask>
+          <subtask id="1.4">Document query formulation tips: natural language, context, specificity</subtask>
+          <subtask id="1.5">Include optimal query length guidance (3-20 words, 3-500 chars API constraint)</subtask>
+          <subtask id="1.6">Add "Understanding Results" section explaining relevance scores and metadata</subtask>
+        </subtasks>
+      </task>
+      <task id="2" ac="2">
+        <title>Document Query Best Practices</title>
+        <subtasks>
+          <subtask id="2.1">Create "Query Best Practices" section</subtask>
+          <subtask id="2.2">Add good query examples: "UK government authentication middleware JWT", "NHS FHIR API patient data integration"</subtask>
+          <subtask id="2.3">Add bad query examples: "auth" (too short), "api" (too vague), "code" (too generic)</subtask>
+          <subtask id="2.4">Document natural language vs keywords approach</subtask>
+          <subtask id="2.5">Add domain-specific examples: NHS, HMRC, DWP, CDDO, GDS</subtask>
+          <subtask id="2.6">Include tips for refining queries based on results</subtask>
+        </subtasks>
+      </task>
+      <task id="3" ac="1,2">
+        <title>Document Result Interpretation</title>
+        <subtasks>
+          <subtask id="3.1">Create "Understanding Search Results" section</subtask>
+          <subtask id="3.2">Explain relevance_score meaning and typical ranges</subtask>
+          <subtask id="3.3">Document metadata fields: repository, language, stars, last_updated, github_url</subtask>
+          <subtask id="3.4">Add tips for browsing results: check org, review timestamp, verify license</subtask>
+          <subtask id="3.5">Include example result with annotations explaining each field</subtask>
+          <subtask id="3.6">Document what to do when results aren't relevant (query refinement)</subtask>
+        </subtasks>
+      </task>
+      <task id="4" ac="2,3">
+        <title>Add UK Government-Specific Examples</title>
+        <subtasks>
+          <subtask id="4.1">Document NHS use case: "finding FHIR implementation examples"</subtask>
+          <subtask id="4.2">Document HMRC use case: "tax calculation validation patterns"</subtask>
+          <subtask id="4.3">Document DWP use case: "benefits eligibility rules and validation"</subtask>
+          <subtask id="4.4">Document GDS/CDDO use case: "UK government design patterns and components"</subtask>
+          <subtask id="4.5">Add local authority examples: "postcode validation", "council tax integration"</subtask>
+          <subtask id="4.6">Ensure all examples are realistic and based on PRD use cases</subtask>
+        </subtasks>
+      </task>
+      <task id="5" ac="3">
+        <title>Add Feedback and Support Section</title>
+        <subtasks>
+          <subtask id="5.1">Document how to report issues (GitHub issues link)</subtask>
+          <subtask id="5.2">Add feedback mechanism guidance</subtask>
+          <subtask id="5.3">Link to product brief/PRD for deeper context</subtask>
+          <subtask id="5.4">Add contact information or community links (if applicable)</subtask>
+          <subtask id="5.5">Document contribution guidelines (if open for contributions)</subtask>
+        </subtasks>
+      </task>
+      <task id="6" ac="3">
+        <title>Validate Guide Quality</title>
+        <subtasks>
+          <subtask id="6.1">Verify guide is under 500 words total (concise requirement)</subtask>
+          <subtask id="6.2">Check professional tone appropriate for UK government audience</subtask>
+          <subtask id="6.3">Ensure examples are UK-specific, not generic</subtask>
+          <subtask id="6.4">Verify all links work (README, docs, GitHub)</subtask>
+          <subtask id="6.5">Check accessibility: clear headings, readable language, logical structure</subtask>
+          <subtask id="6.6">Test with example queries from guide against production API</subtask>
+        </subtasks>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="5.4.1" title="Semantic Search Explanation">
+      <given>I'm new to semantic code search</given>
+      <when>I read the usage guide</when>
+      <then>guide explains: how semantic search works, query formulation tips, result interpretation</then>
+      <and>examples show good vs bad queries: "authentication methods" (good) vs "auth" (too vague)</and>
+      <and>guidance on interpreting similarity scores and metadata</and>
+      <pass>New users understand semantic search concepts and how to formulate effective queries</pass>
+    </criterion>
+    <criterion id="5.4.2" title="Query Best Practices">
+      <given>I want to maximize search relevance</given>
+      <when>I follow best practices</when>
+      <then>documentation includes: optimal query length (3-20 words), natural language vs keywords, using context</then>
+      <and>examples of domain-specific queries: "NHS API integration", "HMRC tax calculation", "DWP benefits validation"</and>
+      <and>tips for browsing results: checking org reputation, last updated timestamp, license</and>
+      <pass>Developers can apply best practices to get more relevant search results</pass>
+    </criterion>
+    <criterion id="5.4.3" title="Guide Quality and Accessibility">
+      <and>Usage guide is clear and concise (&lt;500 words)</and>
+      <and>Examples are UK government-specific (not generic)</and>
+      <and>Guide links to PRD/product brief for deeper context</and>
+      <and>Feedback mechanism explained: how to report issues or suggest improvements</and>
+      <pass>Guide is professional, approachable, and accessible to UK government audience</pass>
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>Semantic Search & Usage</section>
+        <snippet>Documents query response time &lt;2s (p95), semantic search validation hypothesis, natural language query examples: "authentication methods", "NHS API integration", "HMRC tax calculation". MVP goal: 80%+ relevance in top 5 results.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic 5: Developer Experience &amp; Documentation</title>
+        <section>Story 5.4: Usage Guide and Best Practices Documentation</section>
+        <snippet>Story goal: Enable new users to formulate effective semantic search queries. Coverage: semantic search explanation, query best practices with UK government examples (NHS, HMRC, DWP), result interpretation with relevance scores. Guide must be &lt;500 words, UK gov-specific examples.</snippet>
+      </doc>
+      <doc>
+        <path>README.md</path>
+        <title>Project README - Integration Examples Section</title>
+        <section>Integration Examples (lines 114-237)</section>
+        <snippet>Establishes documentation pattern: Quick Start → Details → Examples → Troubleshooting. Realistic UK gov queries: "UK government authentication middleware", "Express.js API endpoint", "NHS API integration". Error codes table format. Environment variable support (MCP_API_URL).</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Cloudflare AI Search &amp; Documentation Standards</section>
+        <snippet>Semantic search powered by Cloudflare AI Search (768-dim cosine similarity). Documentation standards: professional but approachable tone for UK government audience, accessibility (clear headings, logical structure), cross-references to related docs.</snippet>
+      </doc>
+      <doc>
+        <path>docs/integration-testing-standards.md</path>
+        <title>Integration Testing Standards</title>
+        <section>Testing Philosophy &amp; Requirements</section>
+        <snippet>Testing approach: integration tests for service bindings (KV, R2, AI Search), realistic data volumes (100+ items minimum), end-to-end workflow validation. Vitest framework, test markers for categorization. Relevant for documenting testing approach in usage guide.</snippet>
+      </doc>
+      <doc>
+        <path>examples/curl.sh</path>
+        <title>cURL Integration Example</title>
+        <section>Working Code Example</section>
+        <snippet>Production-ready example demonstrating realistic query: "UK government authentication middleware JWT". Shows proper headers, error handling, result parsing. Can reference this in usage guide for hands-on demonstration.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>src/api/mcp-handler.ts</path>
+        <kind>validator</kind>
+        <symbol>validateMCPRequest</symbol>
+        <lines>63-153</lines>
+        <reason>Validates MCP search requests. Defines query constraints: 3-500 chars, limit 1-20 (default 5). Critical for documenting API constraints in usage guide.</reason>
+      </artifact>
+      <artifact>
+        <path>src/types.ts</path>
+        <kind>type-definitions</kind>
+        <symbol>SearchResult, MCPSearchResponse</symbol>
+        <lines>38-89</lines>
+        <reason>Defines search result structure returned to users. Essential for documenting result interpretation: relevance_score (0.0-1.0), metadata fields (language, stars, last_updated, github_url). Explains what fields users will see in responses.</reason>
+      </artifact>
+      <artifact>
+        <path>examples/curl.sh</path>
+        <kind>example</kind>
+        <symbol>N/A</symbol>
+        <lines>all</lines>
+        <reason>Working cURL example with realistic UK gov query: "UK government authentication middleware JWT". Can reference this in usage guide for hands-on demonstration of query formulation.</reason>
+      </artifact>
+      <artifact>
+        <path>examples/node.js</path>
+        <kind>example</kind>
+        <symbol>N/A</symbol>
+        <lines>all</lines>
+        <reason>JavaScript/Node.js example demonstrating Express.js API endpoint query. Shows result parsing and metadata handling. Reference for developers integrating with JS/TS applications.</reason>
+      </artifact>
+      <artifact>
+        <path>examples/python.py</path>
+        <kind>example</kind>
+        <symbol>N/A</symbol>
+        <lines>all</lines>
+        <reason>Python example with NHS FHIR integration query. Demonstrates domain-specific query formulation relevant to healthcare/government use cases.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <ecosystem name="node">
+        <package>typescript</package>
+        <package>vitest</package>
+      </ecosystem>
+      <config>
+        <file>package.json</file>
+        <file>README.md</file>
+        <file>docs/</file>
+      </config>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint id="api-query-length">Query must be 3-500 characters (enforced by src/api/mcp-handler.ts:108-120)</constraint>
+    <constraint id="api-limit-range">Limit parameter must be 1-20, default 5 (enforced by src/api/mcp-handler.ts:123-138)</constraint>
+    <constraint id="guide-word-count">Usage guide must be &lt;500 words total per AC-5.4.3 (concise requirement)</constraint>
+    <constraint id="uk-gov-examples">All examples must be UK government-specific, not generic (NHS, HMRC, DWP, GDS, CDDO, local authorities)</constraint>
+    <constraint id="professional-tone">Professional but approachable tone appropriate for UK government audience (from architecture.md)</constraint>
+    <constraint id="accessibility">Clear headings, readable language, logical structure per WCAG principles</constraint>
+    <constraint id="doc-location">Usage guide should be added as section to README.md between "Integration Examples" and "Overview" sections (following existing pattern from Story 5.3)</constraint>
+    <constraint id="cross-reference">Must link to existing integration examples (examples/), OpenAPI spec (static/openapi.json), and integration guides (docs/integration/)</constraint>
+  </constraints>
+  <interfaces>
+    <interface>
+      <name>POST /mcp/search</name>
+      <kind>REST endpoint</kind>
+      <signature>
+        Request: { "query": string (3-500 chars), "limit": number (1-20, default 5) }
+        Response: { "results": SearchResult[], "total": number, "query": string }
+        SearchResult: { repository, file_path, match_snippet, relevance_score (0.0-1.0), metadata { language, stars, last_updated, github_url } }
+      </signature>
+      <path>src/api/mcp-handler.ts</path>
+    </interface>
+    <interface>
+      <name>SearchResult Metadata Fields</name>
+      <kind>response structure</kind>
+      <signature>
+        relevance_score: number (0.0-1.0) - Cosine similarity from AI Search
+        metadata.language: string - Programming language detected
+        metadata.stars: number - GitHub star count
+        metadata.last_updated: string (ISO 8601) - Last commit timestamp
+        metadata.github_url: string - Direct link to repository
+      </signature>
+      <path>src/types.ts:38-61</path>
+    </interface>
+  </interfaces>
+  <tests>
+    <standards>Testing approach for documentation stories: Vitest framework for integration tests, manual validation of guide quality (word count, tone, accessibility). Documentation testing includes: verify all links work, ensure examples are executable, validate guide meets word count limit (&lt;500 words), check professional tone appropriate for UK government audience. Reference: docs/integration-testing-standards.md for overall testing philosophy.</standards>
+    <locations>
+      <location>test/**/*.test.ts</location>
+      <location>Manual validation checklists in story file (Task 6: Validate Guide Quality)</location>
+    </locations>
+    <ideas>
+      <test-idea ac="5.4.3">
+        <id>TEST-1</id>
+        <description>Validate guide word count is under 500 words total (use `wc -w` or manual count)</description>
+        <approach>Script or manual verification of final guide content</approach>
+      </test-idea>
+      <test-idea ac="5.4.1,5.4.2">
+        <id>TEST-2</id>
+        <description>Test example queries from guide against production API to ensure they return relevant results</description>
+        <approach>Run each documented query example through ./examples/curl.sh or ./scripts/test-mcp.sh, verify results are relevant to query intent</approach>
+      </test-idea>
+      <test-idea ac="5.4.3">
+        <id>TEST-3</id>
+        <description>Verify all links in usage guide are accessible (README sections, docs/, examples/, static/openapi.json)</description>
+        <approach>Manual click-through or automated link checker script</approach>
+      </test-idea>
+      <test-idea ac="5.4.3">
+        <id>TEST-4</id>
+        <description>Accessibility validation: check headings hierarchy (h1 → h2 → h3), readable language, logical structure</description>
+        <approach>Manual review against WCAG principles and GDS accessibility guidelines</approach>
+      </test-idea>
+      <test-idea ac="5.4.2">
+        <id>TEST-5</id>
+        <description>Verify examples are UK government-specific, not generic (must mention NHS, HMRC, DWP, GDS, CDDO, or local authorities)</description>
+        <approach>Manual review of all query examples in guide</approach>
+      </test-idea>
+    </ideas>
+  </tests>
+</story-context>

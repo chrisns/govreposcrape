@@ -1,1 +1,14 @@
+# Environment variables and secrets
 .env
+.env.local
+.env.*.local
+.env.staging
+.env.production
+
+# Wrangler secrets
+.dev.vars
+
+node_modules
+*.swp
+.bmad-ephemaral
+logs

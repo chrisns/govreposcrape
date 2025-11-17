@@ -1,0 +1,342 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>5</epicId>
+    <storyId>5.3</storyId>
+    <title>Integration Examples and Testing Tools</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-14</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>.bmad-ephemeral/stories/5-3-integration-examples-and-testing-tools.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer integrating govscraperepo</asA>
+    <iWant>working code examples and testing tools</iWant>
+    <soThat>I can validate my integration and understand best practices</soThat>
+    <tasks>### Task 1: Create cURL Example Script (AC: #1, #3)
+- [ ] 1.1 Create `examples/curl.sh` with executable permissions
+- [ ] 1.2 Add cURL command for POST /mcp/search with authentication query
+- [ ] 1.3 Include comments explaining headers, JSON payload, and endpoint
+- [ ] 1.4 Add example query demonstrating realistic use case (authentication patterns)
+- [ ] 1.5 Include error handling example (invalid query, network error)
+- [ ] 1.6 Test script executes successfully against production API
+
+### Task 2: Create TypeScript/JavaScript Example (AC: #1, #3)
+- [ ] 2.1 Create `examples/node.js` or `examples/typescript.ts`
+- [ ] 2.2 Implement fetch API call to POST /mcp/search
+- [ ] 2.3 Add result handling with type safety (if TypeScript)
+- [ ] 2.4 Include error handling with try-catch and specific error messages
+- [ ] 2.5 Add comments explaining key sections: request, response handling, errors
+- [ ] 2.6 Demonstrate realistic query (API integration, postcode validation)
+- [ ] 2.7 Test script executes successfully with node runtime
+
+### Task 3: Create Python Example (AC: #1, #3)
+- [ ] 3.1 Create `examples/python.py`
+- [ ] 3.2 Implement requests library call to POST /mcp/search
+- [ ] 3.3 Add JSON parsing and result iteration
+- [ ] 3.4 Include error handling with specific exception types
+- [ ] 3.5 Add docstring and inline comments explaining usage
+- [ ] 3.6 Demonstrate realistic query (NHS API patterns)
+- [ ] 3.7 Test script executes successfully with python3
+
+### Task 4: Create Integration Test Script (AC: #2, #4)
+- [ ] 4.1 Create `test-mcp.sh` or `test-mcp.ts` in project root or scripts/
+- [ ] 4.2 Implement connectivity check: ping endpoint or simple query
+- [ ] 4.3 Validate response structure: check for `results` array and `took_ms` field
+- [ ] 4.4 Add result count validation: expect > 0 results for known query
+- [ ] 4.5 Implement clear pass/fail output with emoji indicators
+- [ ] 4.6 Add error reporting: network errors, malformed responses, empty results
+- [ ] 4.7 Include timing information in output (response time ms)
+- [ ] 4.8 Test script against production API and verify all checks pass
+
+### Task 5: Document Examples in README (AC: #3)
+- [ ] 5.1 Update README.md with "Integration Examples" section
+- [ ] 5.2 Link to examples/ directory with brief description of each language
+- [ ] 5.3 Add quick start: "Copy examples/curl.sh and run to test API"
+- [ ] 5.4 Document testing tools: "Run ./test-mcp.sh to validate integration"
+- [ ] 5.5 Add prerequisites for each example (Node.js version, Python version, curl installed)
+- [ ] 5.6 Include expected output examples for each script
+
+### Task 6: Examples Error Handling and Edge Cases (AC: #1, #4)
+- [ ] 6.1 Add example showing query too short error (< 3 chars)
+- [ ] 6.2 Add example showing limit out of range error
+- [ ] 6.3 Add example showing network timeout handling
+- [ ] 6.4 Add example showing empty results case
+- [ ] 6.5 Document error codes and their meanings in each example
+- [ ] 6.6 Test all error scenarios execute correctly
+
+### Task 7: Testing Tools Advanced Validation (AC: #2, #4)
+- [ ] 7.1 Add health endpoint check in test script (GET /mcp/health)
+- [ ] 7.2 Validate health response shows all services healthy
+- [ ] 7.3 Add OpenAPI spec validation check (GET /openapi.json returns valid JSON)
+- [ ] 7.4 Implement verbose mode flag for detailed debugging output
+- [ ] 7.5 Add summary report: endpoints checked, all passed/failed count
+- [ ] 7.6 Test script handles all edge cases gracefully</tasks>
+  </story>
+
+  <acceptanceCriteria>### AC-5.3.1: Code Examples for Multiple Languages
+**GIVEN** I want to test the MCP API directly
+**WHEN** I use provided code examples
+**THEN** examples exist for: cURL, TypeScript/JavaScript, Python
+**AND** each example shows: basic query, handling results, error handling
+**AND** examples are copy-paste ready with real endpoint URL
+
+**PASS CRITERIA:** Developer can copy-paste any example and get working results within 1 minute
+
+### AC-5.3.2: Testing Tools for Integration Validation
+**GIVEN** I want to validate my integration
+**WHEN** I use the testing tools
+**THEN** a simple test script exists to check connectivity: test-mcp.sh or test-mcp.ts
+**AND** test script validates: endpoint reachable, search returns results, response format correct
+**AND** test output is clear: "✅ MCP API working" or "❌ Connection failed: [reason]"
+
+**PASS CRITERIA:** Test script runs successfully and reports connectivity status
+
+### AC-5.3.3: Examples Directory Organization
+**GIVEN** examples exist
+**WHEN** I browse the examples directory
+**THEN** Examples directory contains: examples/curl.sh, examples/node.js, examples/python.py
+**AND** each example includes comments explaining key parts
+**AND** examples demonstrate realistic queries from PRD use cases
+
+**PASS CRITERIA:** Examples directory is well-organized with 3+ language examples
+
+### AC-5.3.4: Testing Tools Output Quality
+**GIVEN** testing tools exist
+**WHEN** I run them
+**THEN** testing tools output structured results for debugging
+**AND** output includes: endpoint URL, response time, result count, error details (if any)
+
+**PASS CRITERIA:** Test output is actionable for debugging integration issues</acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic 5: Developer Experience &amp; Documentation</title>
+        <section>Story 5.3: Integration Examples and Testing Tools</section>
+        <snippet>Story 5.3 requires working code examples (cURL, TypeScript, Python) and testing tools that enable developers to validate MCP API integration. Examples must be copy-paste ready with real endpoint URL and demonstrate realistic use cases from PRD (authentication patterns, API integration).</snippet>
+      </doc>
+      <doc>
+        <path>static/openapi.json</path>
+        <title>OpenAPI 3.0 Specification</title>
+        <section>Request/Response Schemas and Examples</section>
+        <snippet>Complete OpenAPI spec with MCPRequest schema (query 3-500 chars, limit 1-20), MCPResponse schema (results array, took_ms), and example queries for authentication, API endpoints, and data validation. Production server: https://govreposcrape.cloud.cns.me</snippet>
+      </doc>
+      <doc>
+        <path>docs/integration/claude-desktop.md</path>
+        <title>Claude Desktop Integration Guide</title>
+        <section>Configuration Steps and Best Practices</section>
+        <snippet>Demonstrates integration guide pattern: prerequisites, step-by-step instructions, configuration examples, troubleshooting. Target completion time under 5 minutes with copy-paste ready JSON configuration and example queries.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Performance and Deployment</section>
+        <snippet>Response time target &lt;2s end-to-end (p95). Production domain: govreposcrape.cloud.cns.me. Edge deployment on Cloudflare Workers for low latency. Three environments: development (localhost:8787), staging, production.</snippet>
+      </doc>
+      <doc>
+        <path>docs/integration-testing-standards.md</path>
+        <title>Integration Testing Standards</title>
+        <section>Testing Requirements and Quality Gates</section>
+        <snippet>Integration tests verify components work together with real service bindings and realistic data. Quality gates require: all examples execute without errors, testing tools correctly report API health, error handling works for common failure scenarios.</snippet>
+      </doc>
+      <doc>
+        <path>README.md</path>
+        <title>Project README</title>
+        <section>API Reference and Quick Start</section>
+        <snippet>Contains "Quick Start: Integrate with Claude Desktop" section (3 steps), API Reference section with OpenAPI spec link, and client generation examples for TypeScript/JavaScript. Shows established documentation pattern for developer onboarding.</snippet>
+      </doc>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>Use Cases and Performance Requirements</section>
+        <snippet>Defines example queries for authentication patterns, API integration, data validation (postcode), and NHS-specific queries. Performance target: &lt;2 second query response (p95). Public API with no authentication required, CORS enabled.</snippet>
+      </doc>
+      <doc>
+        <path>.bmad-ephemeral/stories/5-2-openapi-3-0-specification.md</path>
+        <title>Story 5.2: OpenAPI Specification (Completed)</title>
+        <section>Learnings and API Details</section>
+        <snippet>Production endpoint verified working at https://govreposcrape.cloud.cns.me. MCP protocol details: POST /mcp/search with query validation (3-500 chars), GET /mcp/health, GET /openapi.json. Error codes: INVALID_QUERY, INVALID_LIMIT, SEARCH_ERROR, INTERNAL_ERROR. HTTPS-only, no authentication, CORS enabled.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>src/api/mcp-handler.ts</path>
+        <kind>API handler</kind>
+        <symbol>handleMCPSearch</symbol>
+        <lines>322-367</lines>
+        <reason>Production MCP search endpoint implementation. Examples should demonstrate calling this endpoint with correct request format (Content-Type: application/json, query validation 3-500 chars, limit 1-20). Error handling patterns show INVALID_QUERY, INVALID_LIMIT, MALFORMED_JSON error codes.</reason>
+      </artifact>
+      <artifact>
+        <path>src/api/mcp-handler.ts</path>
+        <kind>API handler</kind>
+        <symbol>validateMCPRequest</symbol>
+        <lines>63-153</lines>
+        <reason>Request validation logic showing exact validation rules for examples: query trimmed 3-500 chars, limit integer 1-20 default 5, Content-Type application/json required. Error examples should trigger these validation failures.</reason>
+      </artifact>
+      <artifact>
+        <path>src/api/mcp-handler.ts</path>
+        <kind>Constants</kind>
+        <symbol>ERROR_CODES</symbol>
+        <lines>33-41</lines>
+        <reason>Complete list of error codes for integration examples: INVALID_QUERY, INVALID_LIMIT, INVALID_CONTENT_TYPE, MALFORMED_JSON, PAYLOAD_TOO_LARGE, SEARCH_ERROR, INTERNAL_ERROR. Examples must demonstrate handling these error codes.</reason>
+      </artifact>
+      <artifact>
+        <path>src/api/health.ts</path>
+        <kind>API endpoint</kind>
+        <symbol>checkHealth</symbol>
+        <lines>59-241</lines>
+        <reason>Health check endpoint returns service status. Testing tools should validate GET /mcp/health returns 200 OK with all services status "ok". Response format: {status, services, timestamp}.</reason>
+      </artifact>
+      <artifact>
+        <path>src/types.ts</path>
+        <kind>Type definitions</kind>
+        <symbol>SearchResult, MCPSearchResponse, ErrorResponse</symbol>
+        <lines>38-76</lines>
+        <reason>TypeScript type definitions for MCP API request/response formats. TypeScript examples should import and use these types for type safety. Shows exact response structure examples should expect.</reason>
+      </artifact>
+      <artifact>
+        <path>scripts/validate-ai-search.sh</path>
+        <kind>Validation script</kind>
+        <symbol>N/A</symbol>
+        <lines>1-80</lines>
+        <reason>Reference pattern for testing tools: bash script with dependency checks (curl, jq), test mode flag (--test), clear pass/fail output with emoji indicators, HTTP status validation, structured error reporting. New test-mcp.sh should follow similar pattern.</reason>
+      </artifact>
+      <artifact>
+        <path>src/index.ts</path>
+        <kind>Worker entry point</kind>
+        <symbol>N/A</symbol>
+        <lines>N/A</lines>
+        <reason>Main Worker export defining routing: POST /mcp/search, GET /mcp/health, GET /openapi.json. Examples must use correct HTTP methods and paths matching production routing.</reason>
+      </artifact>
+      <artifact>
+        <path>static/openapi.json</path>
+        <kind>OpenAPI specification</kind>
+        <symbol>N/A</symbol>
+        <lines>N/A</lines>
+        <reason>Complete API specification with request/response schemas and example queries. Examples should align with OpenAPI spec examples (authentication, api_endpoints, data_validation). Testing tools can validate against this spec.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <node>
+        <package name="@cloudflare/workers-types" version="^4.x" scope="dev">Cloudflare Workers runtime types for TypeScript examples</package>
+        <package name="vitest" version="~3.2.0" scope="dev">Testing framework used in project (reference for testing patterns)</package>
+        <package name="typescript" version="^5.5.2" scope="dev">TypeScript compiler (examples can use TS with type safety)</package>
+      </node>
+      <python>
+        <package name="requests" version="latest">HTTP library for Python example (pip install requests)</package>
+      </python>
+      <shell>
+        <tool name="curl" version="any">Standard Unix tool for cURL example script</tool>
+        <tool name="jq" version="any">Optional JSON processor for pretty output in testing tools</tool>
+      </shell>
+      <runtime>
+        <requirement>Node.js 18+ for fetch API support in TypeScript/JavaScript example</requirement>
+        <requirement>Python 3.7+ for requests library and f-strings</requirement>
+        <requirement>Bash 4.0+ for testing script compatibility (macOS/Linux)</requirement>
+      </runtime>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Examples must use production endpoint URL: https://govreposcrape.cloud.cns.me (never localhost or .workers.dev)</constraint>
+    <constraint>Each example must be self-contained and runnable without project setup or dependencies installation (except language runtime)</constraint>
+    <constraint>All examples must include comprehensive error handling with clear error messages for common failure scenarios</constraint>
+    <constraint>Testing tools must work cross-platform (macOS and Linux minimum, Windows where applicable)</constraint>
+    <constraint>Examples must demonstrate realistic queries from PRD: authentication patterns, API integration, postcode validation, NHS API</constraint>
+    <constraint>No authentication required - public API with CORS enabled (Access-Control-Allow-Origin: *)</constraint>
+    <constraint>Request validation enforced: query 3-500 characters, limit 1-20, Content-Type application/json required</constraint>
+    <constraint>Examples must be copy-paste ready - developers should get working results within 1 minute (AC-5.3.1 pass criteria)</constraint>
+    <constraint>Testing tools must provide clear pass/fail output with emoji indicators: ✅ or ❌ (AC-5.3.2 requirement)</constraint>
+    <constraint>All code must include explanatory comments - examples are teaching tools not production code</constraint>
+    <constraint>File locations: examples/ directory (new), scripts/ for testing tools, README.md section for documentation</constraint>
+    <constraint>Examples directory organization: examples/curl.sh, examples/node.js (or typescript.ts), examples/python.py</constraint>
+  </constraints>
+  <interfaces>
+    <interface>
+      <name>POST /mcp/search</name>
+      <kind>REST endpoint</kind>
+      <signature>POST https://govreposcrape.cloud.cns.me/mcp/search
+Headers: Content-Type: application/json, X-MCP-Version: 2 (optional)
+Body: { "query": string (3-500 chars), "limit": number (1-20, default 5) }
+Response 200: { "results": SearchResult[], "took_ms": number }
+Response 400: { "error": { "code": string, "message": string } }</signature>
+      <path>src/api/mcp-handler.ts</path>
+    </interface>
+    <interface>
+      <name>GET /mcp/health</name>
+      <kind>REST endpoint</kind>
+      <signature>GET https://govreposcrape.cloud.cns.me/mcp/health
+Response 200: { "status": "healthy", "services": {...}, "timestamp": string }
+Response 503: { "error": {...}, "details": {...} }</signature>
+      <path>src/api/health.ts</path>
+    </interface>
+    <interface>
+      <name>GET /openapi.json</name>
+      <kind>REST endpoint</kind>
+      <signature>GET https://govreposcrape.cloud.cns.me/openapi.json
+Response 200: OpenAPI 3.0 specification JSON</signature>
+      <path>static/openapi.json</path>
+    </interface>
+    <interface>
+      <name>MCPRequest</name>
+      <kind>TypeScript interface</kind>
+      <signature>interface MCPRequest { query: string; limit: number; }</signature>
+      <path>src/types.ts</path>
+    </interface>
+    <interface>
+      <name>SearchResult</name>
+      <kind>TypeScript interface</kind>
+      <signature>interface SearchResult { repository: string; file_path: string; match_snippet: string; relevance_score: number; metadata: { language, stars, last_updated, github_url } }</signature>
+      <path>src/types.ts</path>
+    </interface>
+    <interface>
+      <name>ErrorResponse</name>
+      <kind>TypeScript interface</kind>
+      <signature>interface ErrorResponse { error: { code: string; message: string; retry_after?: number } }</signature>
+      <path>src/types.ts</path>
+    </interface>
+  </interfaces>
+  <tests>
+    <standards>Integration examples and testing tools validation strategy: No traditional unit tests required for this story (examples are not production code). Validation approach: (1) Each example script must execute successfully against production API without errors, (2) Error case examples must demonstrate correct error handling for INVALID_QUERY, INVALID_LIMIT, network failures, (3) Testing tools must correctly identify healthy vs unhealthy API states, (4) Cross-platform compatibility verified on macOS and Linux for bash/node scripts. Quality gates from integration-testing-standards.md: all examples execute without errors, testing tools correctly report API health, examples demonstrate all documented use cases, error handling works for common failure scenarios. Pattern reference: scripts/validate-ai-search.sh demonstrates validation script structure (dependency checks, test mode, clear output, HTTP status validation).</standards>
+    <locations>
+      <location>examples/ directory (new - create this story)</location>
+      <location>scripts/ directory (for test-mcp.sh or test-mcp.ts)</location>
+      <location>No test/ directory files - examples are not production code requiring unit tests</location>
+    </locations>
+    <ideas>
+      <test id="AC-5.3.1" description="Execute each language example against production API">
+        - Run examples/curl.sh and verify 200 OK response with results array
+        - Run examples/node.js with node runtime and verify successful execution
+        - Run examples/python.py with python3 and verify result parsing works
+        - Verify all examples complete within 5 seconds (performance expectation)
+        - Verify examples produce user-friendly output showing query and result count
+      </test>
+      <test id="AC-5.3.2" description="Validate testing tools report correct API status">
+        - Run test-mcp.sh against production API and verify ✅ all checks pass output
+        - Test against invalid endpoint and verify ❌ connection failed output
+        - Verify testing tools check: endpoint reachable, search returns results, response format correct
+        - Verify timing information displayed in milliseconds
+      </test>
+      <test id="AC-5.3.3" description="Verify examples directory structure and documentation">
+        - Confirm examples/curl.sh, examples/node.js, examples/python.py exist and have execute permissions
+        - Verify each example includes explanatory comments for key sections
+        - Check examples use realistic queries from PRD (authentication, API patterns, NHS)
+        - Verify README.md Integration Examples section links to examples with prerequisites
+      </test>
+      <test id="AC-5.3.4" description="Validate testing tools output quality for debugging">
+        - Verify test output includes: endpoint URL, response time ms, result count, error details
+        - Test error scenarios: network timeout, malformed response, empty results
+        - Verify test tools handle all errors gracefully without crashes
+        - Check verbose mode provides detailed debugging information if implemented
+      </test>
+      <test id="error-handling" description="Verify error case examples work correctly">
+        - Test query too short example (query length &lt; 3) returns INVALID_QUERY error
+        - Test limit out of range example (limit &gt; 20) returns INVALID_LIMIT error
+        - Test network timeout handling doesn't crash (use invalid domain or timeout flag)
+        - Test empty results case displays user-friendly message (obscure query that returns no matches)
+      </test>
+    </ideas>
+  </tests>
+</story-context>

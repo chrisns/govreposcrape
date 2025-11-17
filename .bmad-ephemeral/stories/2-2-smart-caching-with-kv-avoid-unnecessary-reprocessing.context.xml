@@ -1,0 +1,269 @@
+<story-context id="{bmad_folder}/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>2.2</storyId>
+    <title>Smart Caching with KV - Avoid Unnecessary Reprocessing</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-12</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>.bmad-ephemeral/stories/2-2-smart-caching-with-kv-avoid-unnecessary-reprocessing.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>cost-conscious engineer</asA>
+    <iWant>to cache repository metadata in KV and only reprocess when pushedAt changes</iWant>
+    <soThat>we achieve 90%+ cache hit rate and keep infrastructure costs minimal</soThat>
+    <tasks>
+      - Task 1: Define TypeScript interfaces for cache operations (AC: #1, #2, #3)
+        - Add CacheEntry interface to src/types.ts (ALREADY EXISTS at lines 95-102)
+        - Add CacheCheckResult interface: { needsProcessing: boolean; reason: string; cachedEntry?: CacheEntry }
+        - Add CacheStats interface: { totalChecks: number; hits: number; misses: number; hitRate: number }
+        - Add JSDoc documentation for all cache-related interfaces
+        - Export interfaces for use across modules
+
+      - Task 2: Implement cache checking logic (AC: #1)
+        - Create src/ingestion/cache.ts
+        - Implement checkCache(repo: RepoMetadata, kv: KVNamespace) function
+        - Generate cache key using pattern: `repo:{org}/{name}`
+        - Query KV for existing cache entry using kv.get(key, 'json')
+        - Compare pushedAt timestamps if cache exists
+        - Return CacheCheckResult with needsProcessing flag and reason
+        - Use createLogger() from src/utils/logger.ts (Story 1.3)
+        - Handle KV read errors gracefully (treat as cache miss, fail-safe)
+        - Log cache decisions: "Cache hit", "Cache miss - no entry", "Cache stale"
+
+      - Task 3: Implement cache update logic (AC: #2)
+        - Implement updateCache(repo: RepoMetadata, kv: KVNamespace) function
+        - Create CacheEntry with pushedAt, processedAt (current timestamp), status="complete"
+        - Write to KV using kv.put(key, JSON.stringify(entry))
+        - Use withRetry() from src/utils/retry.ts for exponential backoff on write failures
+        - Log successful cache updates: "Cache updated for {org}/{name}"
+        - Return success/failure status
+
+      - Task 4: Implement cache statistics tracking (AC: #3)
+        - Implement getCacheStats() function to return current statistics
+        - Track cache operations in-memory: totalChecks, hits, misses
+        - Calculate hit rate percentage: (hits / totalChecks) * 100
+        - Log periodic cache performance reports
+        - Add method to reset statistics (useful for testing)
+
+      - Task 5: Create comprehensive tests (AC: #1, #2, #3)
+        - Create test/ingestion/cache.test.ts
+        - Test checkCache() with cache hit (matching pushedAt)
+        - Test checkCache() with cache miss (no entry)
+        - Test checkCache() with stale cache (different pushedAt)
+        - Test checkCache() with KV read error (treat as miss)
+        - Test updateCache() successful write
+        - Test updateCache() with KV write error and retry
+        - Test cache key generation follows `repo:{org}/{name}` pattern
+        - Test getCacheStats() returns correct statistics
+        - Mock KVNamespace using Vitest vi.fn() with get() and put() methods
+        - Verify 100% test pass rate
+
+      - Task 6: Integration with repos-fetcher and future orchestrator
+        - Export checkCache(), updateCache(), getCacheStats() from cache.ts
+        - Ensure cache module can be imported in orchestrator (Epic 2.6)
+        - Verify integration with logger from Story 1.3
+        - Verify integration with retry utility from Story 1.3
+        - Document usage in module JSDoc with @example blocks
+
+      - Task 7: Update documentation
+        - Add inline JSDoc comments for all public functions
+        - Document cache key pattern and entry structure
+        - Add usage examples in JSDoc @example blocks
+        - Document cache hit rate target (90%+) and rationale
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    AC #1: Cache module queries KV for repo's last processed timestamp, marks as "cached" if pushedAt matches, "needs processing" if differs or no cache exists
+
+    AC #2: KV stores repoKey → { pushedAt, processedAt, status: "complete" }, keys follow pattern `repo:{org}/{name}`, cache writes are atomic and handle failures gracefully
+
+    AC #3: Cache statistics tracked (total checks, hits, misses, hit rate %), logging reports performance, module has checkCache(), updateCache(), getCacheStats() methods
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <artifact>
+        <path>docs/epics.md</path>
+        <title>Epic 2: Data Ingestion Pipeline - Story 2.2</title>
+        <section>Story 2.2</section>
+        <snippet>Smart caching layer to achieve 90%+ hit rate and minimize gitingest regeneration costs. Cache repository metadata in KV, only reprocess when pushedAt timestamp changes. Target: keep costs <£50/month with ~21k repos where only 10-15% update daily.</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/architecture.md</path>
+        <title>Architecture - KV Storage</title>
+        <section>Decision Summary</section>
+        <snippet>KV namespace for caching. Key pattern: `repo:{org}/{name}`. Value: JSON with pushedAt, processedAt, status. Read performance: <10ms globally. Write performance: eventually consistent (1-60s). Cache read failures treated as miss (fail-safe).</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR-1.3</section>
+        <snippet>Smart caching functional requirement: Cache repository metadata to avoid unnecessary reprocessing. Only regenerate summaries when pushedAt timestamp changes. Target 90%+ cache hit rate.</snippet>
+      </artifact>
+    </docs>
+
+    <code>
+      <artifact>
+        <path>src/utils/logger.ts</path>
+        <kind>utility</kind>
+        <symbol>createLogger</symbol>
+        <lines>1-120</lines>
+        <reason>REUSE for all logging in this story. Pattern: const logger = createLogger({ operation: 'cache' }). Log cache hits, misses, stale entries, updates, errors, and periodic statistics.</reason>
+      </artifact>
+      <artifact>
+        <path>src/utils/retry.ts</path>
+        <kind>utility</kind>
+        <symbol>withRetry</symbol>
+        <lines>1-80</lines>
+        <reason>REUSE for KV write retry logic. Apply to updateCache() KV put operations. Default: 3 attempts with delays [1s, 2s, 4s]. Pattern: await withRetry(() => kv.put(key, value), { maxAttempts: 3 })</reason>
+      </artifact>
+      <artifact>
+        <path>src/utils/error-handler.ts</path>
+        <kind>utility</kind>
+        <symbol>ServiceError</symbol>
+        <lines>1-100</lines>
+        <reason>OPTIONAL - Use for KV operation failures if needed. Pattern: throw new ServiceError('KV operation failed', 503). May not be needed if treating errors as cache miss.</reason>
+      </artifact>
+      <artifact>
+        <path>src/types.ts</path>
+        <kind>types</kind>
+        <symbol>CacheEntry, RepoMetadata</symbol>
+        <lines>95-102, 108-117</lines>
+        <reason>Existing CacheEntry interface (pushedAt, processedAt, status) at lines 95-102. RepoMetadata interface (url, pushedAt, org, name) at lines 108-117. Both required for cache operations. Need to add CacheCheckResult and CacheStats interfaces.</reason>
+      </artifact>
+      <artifact>
+        <path>src/ingestion/repos-fetcher.ts</path>
+        <kind>integration</kind>
+        <symbol>fetchReposJson, validateRepository</symbol>
+        <lines>1-280</lines>
+        <reason>Integration point for cache module. fetchReposJson() returns repositories that need cache checking. Cache module will filter based on pushedAt changes. Example integration in future orchestrator (Story 2.6).</reason>
+      </artifact>
+      <artifact>
+        <path>test/ingestion/repos-fetcher.test.ts</path>
+        <kind>test</kind>
+        <symbol>repos-fetcher tests</symbol>
+        <lines>1-387</lines>
+        <reason>Reference for mocking patterns. Shows how to mock external dependencies (fetch API) using vi.fn(). Use similar patterns for mocking KVNamespace methods (get, put) in cache tests.</reason>
+      </artifact>
+    </code>
+
+    <dependencies>
+      <node>
+        <vitest>~3.2.0</vitest>
+        <@cloudflare/vitest-pool-workers>^0.8.19</@cloudflare/vitest-pool-workers>
+        <typescript>^5.5.2</typescript>
+        <wrangler>^4.47.0</wrangler>
+        <eslint>^9.39.1</eslint>
+        <prettier>^3.6.2</prettier>
+        <husky>^9.1.7</husky>
+        <lint-staged>^16.2.6</lint-staged>
+      </node>
+      <cloudflare>
+        <KVNamespace>Workers KV binding from wrangler.toml (Epic 1)</KVNamespace>
+      </cloudflare>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - File naming: kebab-case.ts (cache.ts)
+    - Function naming: camelCase (checkCache, updateCache, getCacheStats)
+    - Type naming: PascalCase (CacheCheckResult, CacheStats)
+    - Module pattern: Named exports only (export function checkCache)
+    - JSDoc required: All public functions need comprehensive documentation with @example blocks
+    - TypeScript strict mode: All code must pass strict type checking
+    - ESLint: Zero errors required (pre-commit hook active)
+    - Prettier: Code formatting enforced (pre-commit hook active)
+    - Test pass rate: 100% (currently 113/113 passing - maintain this standard)
+    - DO NOT recreate utilities: Use existing logger, retry from Story 1.3
+    - Module location: src/ingestion/cache.ts (new module in Epic 2 folder structure)
+    - Test location: test/ingestion/cache.test.ts (new test directory)
+    - Cache key pattern: EXACTLY `repo:{org}/{name}` (e.g., `repo:alphagov/govuk-frontend`)
+    - KV namespace binding: Use KVNamespace from wrangler.toml (provisioned in Epic 1)
+    - Cache read failures: Treat as cache miss (fail-safe, better to reprocess than skip)
+    - Cache write failures: Retry with exponential backoff (3 attempts)
+    - Hit rate target: 90%+ (only 10-15% of repos update daily)
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>createLogger</name>
+      <kind>function</kind>
+      <signature>function createLogger(context: LogContext): Logger</signature>
+      <path>src/utils/logger.ts</path>
+    </interface>
+    <interface>
+      <name>withRetry</name>
+      <kind>function</kind>
+      <signature>async function withRetry&lt;T&gt;(fn: () => Promise&lt;T&gt;, maxRetries?: number, delays?: number[]): Promise&lt;T&gt;</signature>
+      <path>src/utils/retry.ts</path>
+    </interface>
+    <interface>
+      <name>ServiceError</name>
+      <kind>class</kind>
+      <signature>class ServiceError extends AppError { constructor(message: string, statusCode: number, code?: string, retryAfter?: number) }</signature>
+      <path>src/utils/error-handler.ts</path>
+    </interface>
+    <interface>
+      <name>CacheEntry</name>
+      <kind>interface</kind>
+      <signature>interface CacheEntry { pushedAt: string; processedAt: string; status: "complete" }</signature>
+      <path>src/types.ts</path>
+    </interface>
+    <interface>
+      <name>RepoMetadata</name>
+      <kind>interface</kind>
+      <signature>interface RepoMetadata { url: string; pushedAt: string; org: string; name: string }</signature>
+      <path>src/types.ts</path>
+    </interface>
+    <interface>
+      <name>KVNamespace</name>
+      <kind>interface</kind>
+      <signature>interface KVNamespace { get(key: string, options?: { type?: 'text' | 'json' | 'arrayBuffer' | 'stream' }): Promise&lt;any&gt;; put(key: string, value: string | ArrayBuffer | ReadableStream, options?: KVNamespacePutOptions): Promise&lt;void&gt; }</signature>
+      <path>@cloudflare/workers-types</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Test framework: Vitest 3.2.0 with @cloudflare/vitest-pool-workers
+      Test structure: describe() blocks for grouping, it() for test cases
+      Coverage target: 80%+ on core logic
+      Mocking strategy: Mock KVNamespace using Vitest vi.fn() for get() and put() methods, following patterns from test/ingestion/repos-fetcher.test.ts
+      Test organization: test/ingestion/cache.test.ts with describe blocks for checkCache, updateCache, getCacheStats
+      Quality requirements: 100% test pass rate, all tests must use proper mocks, no actual KV operations in unit tests
+    </standards>
+
+    <locations>
+      test/ingestion/cache.test.ts (NEW - create for this story)
+      test/ingestion/repos-fetcher.test.ts (REFERENCE - mocking patterns)
+    </locations>
+
+    <ideas>
+      AC #1 Tests (Cache Checking):
+      - Test checkCache() with cache hit (pushedAt matches cached value)
+      - Test checkCache() with cache miss (no KV entry exists)
+      - Test checkCache() with stale cache (pushedAt differs from cached value)
+      - Test checkCache() with KV read error (should treat as cache miss, fail-safe)
+      - Test checkCache() with malformed cache entry (should treat as cache miss)
+      - Test cache key generation follows exact pattern `repo:{org}/{name}`
+
+      AC #2 Tests (Cache Updates):
+      - Test updateCache() writes correct entry structure to KV
+      - Test updateCache() uses correct cache key pattern
+      - Test updateCache() with KV write error triggers retry logic
+      - Test updateCache() retry exhaustion after 3 attempts
+      - Test updateCache() logs successful cache updates
+
+      AC #3 Tests (Statistics):
+      - Test getCacheStats() returns correct totalChecks, hits, misses
+      - Test getCacheStats() calculates hit rate percentage correctly
+      - Test statistics increment after each cache check (hit or miss)
+      - Test statistics increment after cache updates
+      - Test resetStats() clears all statistics (for testing)
+      - Test hit rate calculation edge cases (0 checks, 100% hit, 0% hit)
+    </ideas>
+  </tests>
+</story-context>

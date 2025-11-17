@@ -1,0 +1,255 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>quality</epicId>
+    <storyId>2</storyId>
+    <title>Establish Integration Testing Standards</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-13</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>.bmad-ephemeral/stories/quality-2-establish-integration-testing-standards.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>quality-focused developer</asA>
+    <iWant>clear integration testing standards and requirements</iWant>
+    <soThat>stories aren't marked done without realistic end-to-end validation</soThat>
+    <tasks>
+- Task 1: Draft Integration Testing Standards Document (AC: 1)
+  - Define what integration tests are vs unit tests
+  - Specify minimum test data sizes (100-1000 items)
+  - Document when integration tests are required
+  - Clarify unit vs integration test distinction
+
+- Task 2: Create Epic 2 Pipeline Integration Test Guidelines (AC: 2)
+  - Document test data sources (repos.json subset)
+  - Define KV/R2 test namespace strategy
+  - Document cleanup procedures
+  - Create sample integration test specification
+  - Document performance expectations (5-10 min acceptable)
+
+- Task 3: Write Sample Integration Test for Epic 2 Pipeline (AC: 2, 3)
+  - Create test/integration/ directory structure
+  - Write sample test: repos.json fetch → cache check → process → R2 upload → verify
+  - Add test data fixtures (first 100 repos from repos.json)
+  - Document test prerequisites and setup
+
+- Task 4: Update Test Documentation (AC: 3)
+  - Create or update TESTING.md with integration test instructions
+  - Document how to run integration tests
+  - List prerequisites (service bindings, test namespaces)
+  - Document expected output format
+  - Add CI/CD guidance (optional for MVP)
+
+- Task 5: Team Review and Approval (AC: 4)
+  - Circulate standards document to team
+  - Conduct team review session
+  - Incorporate feedback
+  - Obtain Dana's sign-off
+  - Prepare standards for DoD incorporation (Story Quality-3)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+### AC1: Define Integration Testing Standards
+
+**Given** Epic 2 stories were marked done with only 5-repo unit tests
+**When** I define integration testing standards
+**Then** standards document specifies: what integration tests are, when they're required, minimum test data sizes
+**And** integration test requirements: 100-1000 repo samples (not 5), real service bindings (not mocks), end-to-end workflows
+**And** distinction clarified: unit tests (mocked, fast) vs integration tests (real services, slower, higher confidence)
+
+### AC2: Create Integration Test Guidelines for Epic 2 Pipeline
+
+**Given** integration testing standards are defined
+**When** I create integration test guidelines for Epic 2 pipeline
+**Then** guidelines include: test data sources (repos.json subset), KV/R2 test namespaces, cleanup procedures
+**And** sample integration test provided: fetch 100 repos → check cache → process uncached → upload to R2 → verify
+**And** performance expectations documented: integration tests may take 5-10 minutes (acceptable for quality)
+
+### AC3: Update Test Documentation
+
+**Given** integration tests are required
+**When** I update the test documentation
+**Then** README or TESTING.md explains: how to run integration tests, prerequisites (service bindings), expected output
+**And** CI/CD guidance provided (optional for MVP, recommended for Phase 2)
+**And** Integration test examples added to test/integration/ directory
+
+### AC4: Team Review and Sign-off
+
+**And** Standards are reviewed and approved by team
+**And** Dana (Quality Advocate) signs off on standards
+**And** Standards are incorporated into Definition of Done (Story Quality-3)
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic Breakdown</title>
+        <section>Epic Quality: Epic 2 Remediation & Testing Standards</section>
+        <snippet>Quality Sprint addresses Epic 2 retrospective findings. Story Quality-2 establishes integration testing standards to prevent stories being marked done with inadequate testing.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Testing Stack</section>
+        <snippet>Vitest 4.0+ for Workers tests with @cloudflare/vitest-pool-workers. Co-located *.test.ts files. Coverage target 80%+ for core logic. Python testing with pytest for container/tests/.</snippet>
+      </doc>
+      <doc>
+        <path>container/TESTING_QUICK_REFERENCE.md</path>
+        <title>Testing Quick Reference Guide</title>
+        <section>Full Guide</section>
+        <snippet>Coverage targets: ingest.py 85%, r2_client.py 82%. Test structure: container/test/unit/ and container/test/integration/. Markers for unit, integration, network, r2, slow tests. Quick start with pytest and run_tests.sh.</snippet>
+      </doc>
+      <doc>
+        <path>.bmad-ephemeral/stories/quality-1-diagnose-and-fix-kv-caching-integration.md</path>
+        <title>Story Quality-1: KV Caching Fix</title>
+        <section>Context from Quality Sprint</section>
+        <snippet>Demonstrates why integration testing is critical. Caching failure not caught by unit tests because: unit tests mocked KV access, only 5 repos tested, no end-to-end workflow validation.</snippet>
+      </doc>
+      <doc>
+        <path>.bmad-ephemeral/stories/quality-3-update-definition-of-done-with-scale-testing.md</path>
+        <title>Story Quality-3: Definition of Done</title>
+        <section>Relationship to Integration Testing Standards</section>
+        <snippet>Quality-3 embeds Quality-2 standards into DoD to make them mandatory. Quality-2 defines WHAT integration tests are, Quality-3 makes them REQUIRED.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>container/test/</path>
+        <kind>directory</kind>
+        <symbol>Container tests</symbol>
+        <lines>-</lines>
+        <reason>Python test directory with unit/ and integration/ subdirectories. Current structure: 64+ tests with markers for categorization. Reference for integration test organization.</reason>
+      </artifact>
+      <artifact>
+        <path>container/pytest.ini</path>
+        <kind>config</kind>
+        <symbol>pytest configuration</symbol>
+        <lines>1-43</lines>
+        <reason>Pytest configuration defining test markers (unit, integration, network, r2, slow). Provides pattern for test categorization that integration testing standards should reference.</reason>
+      </artifact>
+      <artifact>
+        <path>test/</path>
+        <kind>directory</kind>
+        <symbol>Workers tests</symbol>
+        <lines>-</lines>
+        <reason>TypeScript test directory structure: test/utils/, test/ingestion/, test/api/, test/deployment/. Currently unit tests only. Integration test structure should mirror this pattern.</reason>
+      </artifact>
+      <artifact>
+        <path>vitest.config.mts</path>
+        <kind>config</kind>
+        <symbol>defineWorkersConfig</symbol>
+        <lines>1-11</lines>
+        <reason>Vitest test framework configuration for Cloudflare Workers. Integration tests may need similar configuration for service binding access.</reason>
+      </artifact>
+      <artifact>
+        <path>package.json</path>
+        <kind>config</kind>
+        <symbol>npm scripts</symbol>
+        <lines>6-18</lines>
+        <reason>Test-related npm scripts: "test" runs vitest. Integration testing standards should document additional scripts for integration test execution.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <typescript>
+        <package name="vitest" version="~3.2.0" />
+        <package name="@cloudflare/vitest-pool-workers" version="^0.8.19" />
+        <package name="typescript" version="^5.5.2" />
+      </typescript>
+      <python>
+        <package name="pytest" note="Configured in container/pytest.ini" />
+        <package name="pytest-cov" note="Coverage reporting" />
+      </python>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Integration testing standards MUST reference real-world Epic 2 failure: stories marked done with only 5-repo unit tests</constraint>
+    <constraint>Minimum test data sizes MUST be specified: 100-1000 items (not 5)</constraint>
+    <constraint>Standards MUST distinguish unit tests (mocked, fast) from integration tests (real services, slower)</constraint>
+    <constraint>Test infrastructure MUST use separate test namespaces: govscraperepo-test-kv, govscraperepo-test-r2</constraint>
+    <constraint>Performance expectations MUST be documented: 5-10 minutes for 100-item tests is acceptable</constraint>
+    <constraint>Sample integration test MUST demonstrate full pipeline: repos.json fetch → cache check → process → R2 upload → verify</constraint>
+    <constraint>Standards document will be referenced by Story Quality-3 Definition of Done</constraint>
+    <constraint>Documentation MUST be actionable: how to run tests, prerequisites, expected outcomes</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>Test Markers (pytest)</name>
+      <kind>test categorization</kind>
+      <signature>@pytest.mark.unit, @pytest.mark.integration, @pytest.mark.network, @pytest.mark.r2, @pytest.mark.slow</signature>
+      <path>container/pytest.ini</path>
+      <note>Standards should reference these markers for test categorization. Integration tests use @pytest.mark.integration marker.</note>
+    </interface>
+    <interface>
+      <name>Test Namespaces (Cloudflare)</name>
+      <kind>service bindings</kind>
+      <signature>KV: govscraperepo-test-kv, R2: govscraperepo-test-r2</signature>
+      <path>wrangler.jsonc</path>
+      <note>Separate test namespaces required for integration tests to avoid polluting production data.</note>
+    </interface>
+    <interface>
+      <name>Test Data Fixtures</name>
+      <kind>test data</kind>
+      <signature>test/integration/fixtures/test-repos-100.json</signature>
+      <path>test/integration/fixtures/</path>
+      <note>Snapshot of first 100 repos from repos.json for deterministic integration testing.</note>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+Integration testing standards will define:
+1. **What**: Integration tests verify multiple components working together using real service bindings (KV, R2)
+2. **When Required**: Stories touching service bindings, data ingestion pipelines, external API integrations
+3. **Minimum Data Sizes**: 100-1000 items (not 5) to catch real-world behavior
+4. **Test Infrastructure**: Separate test namespaces (govscraperepo-test-kv, govscraperepo-test-r2)
+5. **Performance**: 5-10 minutes for 100-item tests is acceptable (slower than unit tests, higher confidence)
+6. **Test Markers**: Use @pytest.mark.integration for categorization
+7. **Cleanup**: Automated teardown after test runs
+    </standards>
+    <locations>
+- TypeScript integration tests: test/integration/*.test.ts (to be created)
+- Python integration tests: container/test/integration/*.py (directory exists)
+- Test data fixtures: test/integration/fixtures/ (to be created)
+- Test documentation: TESTING.md (to be created)
+- Integration test setup guide: test/integration/README.md (to be created)
+    </locations>
+    <ideas>
+### Test Ideas for Story Quality-2 (Documentation/Standards Story):
+
+**AC1: Define Integration Testing Standards**
+- Manual validation: Review standards document structure
+- Verify: Distinction between unit and integration tests clearly defined
+- Verify: Minimum test data sizes (100-1000) specified
+- Verify: When integration tests are required vs optional
+
+**AC2: Create Integration Test Guidelines for Epic 2 Pipeline**
+- Verify: Test data sources documented (repos.json subset)
+- Verify: KV/R2 test namespace strategy defined
+- Verify: Cleanup procedures documented
+- Verify: Sample integration test specification provided
+- Verify: Performance expectations documented (5-10 min)
+
+**AC3: Update Test Documentation**
+- Verify: TESTING.md created with integration test instructions
+- Verify: Prerequisites documented (service bindings, test namespaces)
+- Verify: How to run integration tests explained
+- Verify: Expected output format documented
+- Verify: CI/CD guidance provided
+
+**AC4: Team Review and Sign-off**
+- Manual validation: Standards reviewed by team
+- Manual validation: Dana's sign-off obtained
+- Verify: Standards prepared for DoD incorporation
+
+**Sample Integration Test (if implementation includes executable test):**
+- Run sample test with 100-repo fixture
+- Verify cache hit rate >= 90% on second run
+- Verify R2 objects created and accessible
+- Verify cleanup procedures work
+    </ideas>
+  </tests>
+</story-context>

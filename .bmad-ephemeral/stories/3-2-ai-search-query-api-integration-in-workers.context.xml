@@ -1,0 +1,318 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>3</epicId>
+    <storyId>3.2</storyId>
+    <title>AI Search Query API Integration in Workers</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-13</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>.bmad-ephemeral/stories/3-2-ai-search-query-api-integration-in-workers.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>backend developer</asA>
+    <iWant>to integrate the AI Search query API into Cloudflare Workers with proper validation and error handling</iWant>
+    <soThat>I can execute semantic search queries and return relevant code results to users</soThat>
+    <tasks>
+- Task 1: Create ai-search-client.ts module with validation (AC: #1, #4)
+  - Subtask 1.1: Create file `src/search/ai-search-client.ts`
+  - Subtask 1.2: Import necessary types: AISearchBinding, AISearchQueryResponse, Env from src/types.ts
+  - Subtask 1.3: Import logger utility from src/utils/logger.ts
+  - Subtask 1.4: Import error classes: ValidationError, ServiceError from src/utils/error-handler.ts
+  - Subtask 1.5: Define searchCode(env: Env, query: string, limit: number) function signature
+  - Subtask 1.6: Implement query validation: length 3-500 chars, throw ValidationError if invalid
+  - Subtask 1.7: Implement limit validation: range 1-20, throw ValidationError if invalid
+  - Subtask 1.8: Add JSDoc comments for all public functions with examples
+
+- Task 2: Implement AI Search query execution (AC: #2)
+  - Subtask 2.1: Call env.AI_SEARCH.query() with validated parameters
+  - Subtask 2.2: Map query parameters: { query: string, top_k: number }
+  - Subtask 2.3: Extract results from response: AISearchQueryResponse.results[]
+  - Subtask 2.4: Verify results are ranked by similarity score (highest first)
+  - Subtask 2.5: Return results as AISearchResult[] array
+  - Subtask 2.6: Handle empty results gracefully (return empty array, not error)
+
+- Task 3: Implement retry logic with exponential backoff (AC: #3)
+  - Subtask 3.1: Create withRetry helper function with exponential backoff
+  - Subtask 3.2: Wrap AI_SEARCH.query() call with retry logic
+  - Subtask 3.3: Configure delays: [1000, 2000, 4000] milliseconds
+  - Subtask 3.4: Log each retry attempt at INFO level
+  - Subtask 3.5: After 3 failures, throw ServiceError with code "SEARCH_ERROR"
+  - Subtask 3.6: Include retry_after: 60 in ServiceError
+  - Subtask 3.7: Test retry logic with mocked AI_SEARCH failures
+
+- Task 4: Implement structured logging (AC: #5)
+  - Subtask 4.1: Generate requestId (UUID v4) for each query
+  - Subtask 4.2: Log query start with operation, query, limit, requestId
+  - Subtask 4.3: Measure response time with Date.now() - startTime
+  - Subtask 4.4: Log query success with duration, resultCount, requestId
+  - Subtask 4.5: Log query failure with error, duration, requestId
+  - Subtask 4.6: Use logger.info() for success, logger.error() for failures
+  - Subtask 4.7: Follow structured logging format from Epic 1
+
+- Task 5: Add performance monitoring (AC: #6)
+  - Subtask 5.1: Measure AI Search query latency with high-precision timer
+  - Subtask 5.2: Log response time in milliseconds for every query
+  - Subtask 5.3: Add conditional WARN log if query >800ms
+  - Subtask 5.4: Include took_ms from AI Search response in logs
+  - Subtask 5.5: Track performance metrics for future optimization
+
+- Task 6: Write comprehensive unit tests (AC: #1-6)
+  - Subtask 6.1: Create test/search/ai-search-client.test.ts
+  - Subtask 6.2-6.5: Test query and limit validation edge cases
+  - Subtask 6.6-6.7: Test valid query execution and empty results
+  - Subtask 6.8-6.9: Test retry logic scenarios
+  - Subtask 6.10-6.11: Test logging and performance monitoring
+  - Subtask 6.12: Achieve 80%+ code coverage
+
+- Task 7: Integration testing with real AI Search binding
+  - Subtask 7.1: Create integration test script scripts/test-ai-search-query.ts
+  - Subtask 7.2-7.7: Execute real queries and validate responses
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+AC #1: AI Search Query Module Implementation
+- Module ai-search-client.ts exports AISearchClient interface implementation in src/search/
+- Accepts natural language query strings (3-500 characters)
+- Validates query length and format before sending to AI Search
+- Queries are sent to AI Search API via AI_SEARCH service binding
+
+AC #2: Semantic Search Query Execution
+- searchCode(query: string, limit: number) sends query to AI_SEARCH.query()
+- API returns top K results with similarity scores and code snippets
+- Response includes: content snippet, similarity score (0.0-1.0), R2 object path
+- Results are ranked by relevance (highest similarity first)
+
+AC #3: Retry Logic and Error Handling
+- Client implements retry logic with exponential backoff (3 attempts: 1s, 2s, 4s delays)
+- After 3 failures, throws ServiceError with retry_after field
+- Error responses follow PRD format: { error: { code, message, retry_after? } }
+- All errors are logged with structured JSON format
+
+AC #4: Query Validation
+- Queries <3 chars throw ValidationError with code "QUERY_TOO_SHORT"
+- Queries >500 chars throw ValidationError with code "QUERY_TOO_LONG"
+- Limit out of range (not 1-20) throws ValidationError with code "INVALID_LIMIT"
+- Validation errors thrown before AI Search API is called
+
+AC #5: Structured Logging
+- Structured log entry created for every query with: timestamp, level, query text, result count, response time, requestId
+- Query logging uses existing logger utility from Epic 1
+- Logs include correlation ID for distributed tracing
+- Sensitive data is not logged (only query text, no secrets)
+
+AC #6: Performance Monitoring
+- Response time is <800ms (p95) for AI Search retrieval
+- Response time is measured and logged for every query
+- Slow queries (>800ms) are logged at WARN level for investigation
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/tech-spec-epic-3.md</path>
+        <title>Epic 3 Technical Specification: AI Search Integration</title>
+        <section>AC-3.2: AI Search Query API Integration</section>
+        <snippet>Story 3.2 implements the core search functionality - query API integration with validation and error handling. Module location: src/search/ai-search-client.ts. Service binding: env.AI_SEARCH from wrangler.jsonc. Query method: AI_SEARCH.query({ query: string, top_k: number }). Response format: { results: AISearchResult[], took_ms: number }. Performance target: <800ms (p95) for AI Search retrieval.</snippet>
+      </doc>
+      <doc>
+        <path>docs/tech-spec-epic-3.md</path>
+        <title>Epic 3 Technical Specification: AI Search Integration</title>
+        <section>APIs and Interfaces - AISearchClient Interface</section>
+        <snippet>AISearchClient interface defines searchCode(query: string, limit: number): Promise<AISearchResult[]> for executing semantic search queries against indexed gitingest summaries. Throws ValidationError if query/limit invalid. Throws ServiceError if AI Search unavailable after retries. Example: const results = await searchCode(env, 'authentication methods', 5);</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Project Architecture</title>
+        <section>Error Handling Patterns</section>
+        <snippet>ValidationError: 400 Bad Request - input validation failures. ServiceError: 500 Internal Server Error - AI Search unavailable. Retry Logic: 3 attempts with exponential backoff [1s, 2s, 4s]. Error Response Format: { error: { code, message, retry_after? } }. Example retry pattern: async function withRetry(fn, maxRetries, delays) implementing exponential backoff with structured logging.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Project Architecture</title>
+        <section>Logging Strategy</section>
+        <snippet>Structured log format: { timestamp: ISO8601, level: debug|info|warn|error, message: string, context: { requestId: UUID, operation: string, duration?: number, metadata?: Record } }. Log levels by environment: Development (debug), Production (info). Logger usage: logger.info('Query processed', { requestId, operation: 'search', duration, metadata: { query, resultCount } }).</snippet>
+      </doc>
+      <doc>
+        <path>.bmad-ephemeral/stories/3-1-cloudflare-ai-search-configuration-and-r2-bucket-connection.md</path>
+        <title>Story 3.1: Cloudflare AI Search Configuration and R2 Bucket Connection</title>
+        <section>Completion Notes - AI Search Service Configured</section>
+        <snippet>AI_SEARCH binding added to wrangler.jsonc as "ai": { "binding": "AI_SEARCH" } (object format, not array). TypeScript interfaces: AISearchResult, AISearchQueryResponse, AISearchBinding defined. Query method signature: query({ query: string, top_k?: number, filters?: Record }). Health check validates AI_SEARCH connectivity at src/api/health.ts:166-191. Dashboard configuration: @cf/baai/bge-large-en-v1.5 embedding model, 384 tokens chunking, 15% overlap, Strong similarity caching.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>src/utils/logger.ts</path>
+        <kind>utility</kind>
+        <symbol>createLogger</symbol>
+        <lines>1-118</lines>
+        <reason>Structured JSON logging utility from Epic 1. Use createLogger({ operation: string, requestId?: string }) to create logger instance with bound context. Supports debug, info, warn, error methods. Outputs JSON format compatible with Cloudflare Workers log streaming.</reason>
+      </artifact>
+      <artifact>
+        <path>src/utils/error-handler.ts</path>
+        <kind>utility</kind>
+        <symbol>ValidationError, ServiceError, APIError</symbol>
+        <lines>1-152</lines>
+        <reason>Custom error classes for structured error handling. ValidationError (400) for input validation failures. ServiceError (500/503) for service unavailability with optional retryAfter field. All errors implement toErrorResponse() method following PRD format: { error: { code, message, retry_after? } }.</reason>
+      </artifact>
+      <artifact>
+        <path>src/api/health.ts</path>
+        <kind>endpoint</kind>
+        <symbol>checkHealth</symbol>
+        <lines>166-191</lines>
+        <reason>Example of AI_SEARCH.query() usage from Story 3.1. Shows correct pattern: env.AI_SEARCH.query({ query: "test", top_k: 1 }) wrapped in try-catch for error handling. Demonstrates structured logging with logger.debug() and logger.error(). Pattern to follow for AI Search integration.</reason>
+      </artifact>
+      <artifact>
+        <path>src/types.ts</path>
+        <kind>type definitions</kind>
+        <symbol>Repository, SearchResult, ErrorResponse, MCPRequest, CacheEntry, RepoMetadata</symbol>
+        <lines>1-129</lines>
+        <reason>Shared TypeScript types for govreposcrape. Contains ErrorResponse interface for API error format. Story 3.2 will add AISearchResult, AISearchQueryResponse, and AISearchBinding interfaces here (referenced but not yet implemented based on grep search).</reason>
+      </artifact>
+      <artifact>
+        <path>worker-configuration.d.ts</path>
+        <kind>type definitions</kind>
+        <symbol>Env</symbol>
+        <lines>17</lines>
+        <reason>Workers environment type definition includes AI_SEARCH: import("./src/types").AISearchBinding binding. This enables TypeScript type checking for env.AI_SEARCH.query() calls. All new modules must import Env type from this file or src/types.ts.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <node>
+        <package>@cloudflare/vitest-pool-workers</package>
+        <version>^0.8.19</version>
+        <purpose>Workers-specific test environment for vitest. Required for testing AI_SEARCH binding mocks and Workers runtime behavior.</purpose>
+      </node>
+      <package>vitest</package>
+        <version>~3.2.0</version>
+        <purpose>Test framework for unit and integration tests. Use with @cloudflare/vitest-pool-workers for Workers compatibility.</purpose>
+      </node>
+      <node>
+        <package>typescript</package>
+        <version>^5.5.2</version>
+        <purpose>TypeScript compiler with strict mode enabled. Required for type-safe AI Search integration.</purpose>
+      </node>
+      <node>
+        <package>wrangler</package>
+        <version>^4.47.0</version>
+        <purpose>Cloudflare Workers CLI for deployment and local development. Provides AI_SEARCH service binding via wrangler.jsonc configuration.</purpose>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+- File naming: kebab-case.ts (ai-search-client.ts not aiSearchClient.ts)
+- Function naming: camelCase (searchCode not search_code)
+- Export pattern: Named exports only (export { searchCode } not export default)
+- Co-located tests: test/search/ai-search-client.test.ts next to source file
+- Query validation: Min 3 chars, max 500 chars (throw ValidationError before API call)
+- Limit validation: Range 1-20 (throw ValidationError before API call)
+- Retry logic: Exactly 3 attempts with delays [1000, 2000, 4000] milliseconds
+- Error format: Must follow PRD spec { error: { code, message, retry_after? } }
+- Logging: Every query must log start, completion/failure, and performance metrics
+- Performance: Target <800ms p95 for AI Search retrieval, WARN log if exceeded
+- AI Search is Preview service: Expect occasional failures, implement graceful degradation
+- TypeScript strict mode: All code must pass strict type checking with noImplicitAny
+- Test coverage: Minimum 80% code coverage on ai-search-client.ts module
+- No hardcoded secrets: Use env bindings only (env.AI_SEARCH)
+- Correlation IDs: Generate unique requestId (UUID v4) for every query using crypto.randomUUID()
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>AISearchBinding</name>
+      <kind>CloudflareWorkersBinding</kind>
+      <signature>
+interface AISearchBinding {
+  query(request: {
+    query: string;
+    top_k?: number;
+    filters?: Record<string, any>;
+  }): Promise<AISearchQueryResponse>;
+}
+      </signature>
+      <path>worker-configuration.d.ts (references src/types.ts)</path>
+    </interface>
+    <interface>
+      <name>AISearchQueryResponse</name>
+      <kind>ResponseType</kind>
+      <signature>
+interface AISearchQueryResponse {
+  results: AISearchResult[];
+  took_ms: number;
+}
+      </signature>
+      <path>src/types.ts (to be added in Story 3.2)</path>
+    </interface>
+    <interface>
+      <name>AISearchResult</name>
+      <kind>DataModel</kind>
+      <signature>
+interface AISearchResult {
+  content: string;       // Code snippet from indexed file
+  score: number;         // Similarity score (0.0-1.0)
+  metadata: {
+    path: string;        // R2 object path: gitingest/{org}/{repo}/summary.txt
+    contentType: string; // text/plain
+  };
+}
+      </signature>
+      <path>src/types.ts (to be added in Story 3.2)</path>
+    </interface>
+    <interface>
+      <name>searchCode</name>
+      <kind>FunctionSignature</kind>
+      <signature>
+export async function searchCode(
+  env: Env,
+  query: string,
+  limit: number = 5
+): Promise<AISearchResult[]>
+      </signature>
+      <path>src/search/ai-search-client.ts (to be created in Story 3.2)</path>
+    </interface>
+    <interface>
+      <name>withRetry</name>
+      <kind>HelperFunction</kind>
+      <signature>
+export async function withRetry<T>(
+  fn: () => Promise<T>,
+  operation: string,
+  requestId: string
+): Promise<T>
+      </signature>
+      <path>src/search/ai-search-client.ts (to be created in Story 3.2)</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+Test Framework: Vitest 3.2.0 with @cloudflare/vitest-pool-workers 0.8.19 for Workers runtime compatibility. Co-located tests: place test file next to source (test/search/ai-search-client.test.ts). Mocking strategy: Mock AI_SEARCH binding using vi.fn(), avoid external service calls in unit tests. Test structure: describe/test blocks with clear naming. Coverage target: 80%+ on ai-search-client.ts. Follow test pattern from test/api/health.test.ts:31-45 for AI_SEARCH mock setup.
+    </standards>
+    <locations>
+- test/search/ai-search-client.test.ts (unit tests, co-located with source)
+- scripts/test-ai-search-query.ts (integration test with real AI_SEARCH binding)
+- Run tests: npm test (all tests), npm run test:coverage (coverage report)
+    </locations>
+    <ideas>
+- Test query validation: query length <3 chars throws ValidationError "QUERY_TOO_SHORT" (AC#4)
+- Test query validation: query length >500 chars throws ValidationError "QUERY_TOO_LONG" (AC#4)
+- Test limit validation: limit <1 throws ValidationError "INVALID_LIMIT" (AC#4)
+- Test limit validation: limit >20 throws ValidationError "INVALID_LIMIT" (AC#4)
+- Test valid query execution: mock AI_SEARCH.query() returns results array (AC#2)
+- Test empty results: AI_SEARCH returns empty array, handled gracefully (AC#2)
+- Test retry logic: AI_SEARCH fails twice, succeeds on 3rd attempt, verify 3 calls (AC#3)
+- Test retry logic: AI_SEARCH fails all 3 attempts, throws ServiceError with retry_after:60 (AC#3)
+- Test logging: verify structured log entries created for query start and completion (AC#5)
+- Test logging: verify correlation ID (requestId) included in all log entries (AC#5)
+- Test performance: verify response time measured and logged in milliseconds (AC#6)
+- Test performance: verify WARN log if query duration >800ms (AC#6)
+- Test exponential backoff: verify delays [1000, 2000, 4000] between retry attempts (AC#3)
+- Test AI_SEARCH.query() called with correct parameters: { query, top_k: limit } (AC#2)
+- Test results ranked by similarity score (highest first) - verify response.results order (AC#2)
+- Integration test: execute real query against AI_SEARCH, validate response structure (AC#2, #6)
+- Integration test: measure actual response time, document baseline metrics (AC#6)
+    </ideas>
+  </tests>
+</story-context>

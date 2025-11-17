@@ -1,0 +1,423 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>6</epicId>
+    <storyId>1</storyId>
+    <title>Cost Monitoring Dashboard and Alerts</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-15</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>.bmad-ephemeral/stories/6-1-cost-monitoring-dashboard-and-alerts.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>product owner</asA>
+    <iWant>real-time cost monitoring and budget alerts for all Cloudflare services</iWant>
+    <soThat>we validate the <£50/month MVP hypothesis and prevent unexpected costs</soThat>
+    <tasks>
+### Task 1: Implement Cost Monitoring Script (AC: #1, #3)
+- [ ] 1.1 Create `scripts/cost-monitoring.ts` TypeScript module
+- [ ] 1.2 Integrate Cloudflare Analytics API client for cost data retrieval
+- [ ] 1.3 Implement cost calculation logic by service (Workers, R2, AI Search, KV, Vectorize)
+- [ ] 1.4 Calculate cumulative monthly spend and end-of-month projection
+- [ ] 1.5 Compute cost per query and cost per ingestion run metrics
+- [ ] 1.6 Add historical cost tracking (store daily breakdown for week-over-week, month-over-month analysis)
+
+### Task 2: Implement Budget Alert System (AC: #2)
+- [ ] 2.1 Add budget threshold logic (80% of £50/month = £40)
+- [ ] 2.2 Implement alert triggering when threshold exceeded
+- [ ] 2.3 Create alert payload with current spend, projection, service breakdown, recommendations
+- [ ] 2.4 Add console log output for alerts (always succeeds)
+- [ ] 2.5 Add optional email/Slack webhook integration for alerts (graceful degradation if unavailable)
+- [ ] 2.6 Test alert triggering with simulated cost data
+
+### Task 3: Create Cost Dashboard Visualization (AC: #1, #3)
+- [ ] 3.1 Design dashboard output format (console table, JSON export, or web UI)
+- [ ] 3.2 Implement service breakdown table view (Workers, R2, AI Search, KV, Vectorize columns)
+- [ ] 3.3 Add cumulative monthly spend display with projection
+- [ ] 3.4 Show efficiency metrics: cache hit rate, queries per £, repos per £
+- [ ] 3.5 Add historical trend visualization (week-over-week, month-over-month)
+- [ ] 3.6 Document dashboard access instructions in README
+
+### Task 4: Document Cost Optimization Recommendations (AC: #3)
+- [ ] 4.1 Analyze current cost drivers (query volume, ingestion frequency, storage)
+- [ ] 4.2 Document caching strategy recommendations (increase cache hit rate target)
+- [ ] 4.3 Document query pattern optimization (batch queries, reduce redundant searches)
+- [ ] 4.4 Document ingestion frequency tuning (balance freshness vs cost)
+- [ ] 4.5 Add cost optimization section to README or COST-OPTIMIZATION.md
+- [ ] 4.6 Include actual costs vs estimates comparison for future planning
+
+### Task 5: Add npm Scripts and Integration (AC: #1, #2, #3)
+- [ ] 5.1 Add `npm run cost-monitor` script to package.json
+- [ ] 5.2 Add `npm run cost-monitor --alert` for threshold checking
+- [ ] 5.3 Add `npm run cost-monitor --export json` for data export
+- [ ] 5.4 Add cost monitoring to CI/CD pipeline (optional weekly check)
+- [ ] 5.5 Document script usage in README
+- [ ] 5.6 Add example output screenshots or sample JSON to documentation
+
+### Task 6: Testing and Validation (AC: #1, #2, #3)
+- [ ] 6.1 Write unit tests for cost calculation logic (service breakdown, projections)
+- [ ] 6.2 Write integration tests with mocked Cloudflare Analytics API responses
+- [ ] 6.3 Test alert triggering with simulated 80% threshold breach
+- [ ] 6.4 Validate dashboard output format and accuracy
+- [ ] 6.5 Test historical tracking (ensure data persists across runs)
+- [ ] 6.6 Manual test against production Cloudflare Analytics API
+</tasks>
+  </story>
+
+  <acceptanceCriteria>
+**AC-6.1.1: Cost Dashboard Functionality**
+
+- **Given** the platform is operational with all services (Workers, R2, AI Search, KV, Vectorize)
+- **When** I view the cost monitoring dashboard
+- **Then** I see daily costs broken down by service: Workers, R2, AI Search, KV, Vectorize
+- **And** cumulative monthly spend is displayed with projection to month-end
+- **And** cost per query (AI Search) and cost per ingestion run are calculated
+
+**AC-6.1.2: Budget Alert Triggering**
+
+- **Given** monthly costs approach the budget threshold
+- **When** spending reaches 80% of £50/month budget
+- **Then** alert is triggered (console log, email, or Slack notification)
+- **And** alert includes: current spend, projection, breakdown by service, recommended actions
+
+**AC-6.1.3: Cost Optimization Insights**
+
+- **And** Cost dashboard is accessible via Cloudflare Analytics or custom visualization
+- **And** Historical cost data is tracked for trend analysis (week-over-week, month-over-month)
+- **And** Cost optimization recommendations are documented: caching strategies, query patterns, ingestion frequency
+- **And** Dashboard shows key efficiency metrics: cache hit rate, queries per £, repos per £
+</acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <!-- PRD - Cost Requirements -->
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>Non-Functional Requirements - Cost Constraints</section>
+        <snippet>NFR-7.1: Infrastructure cost &lt;£50/month for MVP (Workers, R2, AI Search, KV, Vectorize). Cost monitoring and alerts critical for validating economic hypothesis.</snippet>
+      </doc>
+
+      <!-- Epic 6 Tech Spec - Complete Design -->
+      <doc>
+        <path>.bmad-ephemeral/stories/tech-spec-epic-6.md</path>
+        <title>Epic 6 Technical Specification - Operational Excellence</title>
+        <section>Services and Modules - Cost Monitoring</section>
+        <snippet>scripts/cost-monitoring.ts queries Cloudflare Analytics API, calculates cost per service (Workers, R2, AI Search, KV, Vectorize), generates alerts when 80% of £50/month budget reached. Data models: CostBreakdown interface (daily service costs, cumulative monthly, projection, budget utilization %), CostAlert interface (triggered_at, current_spend, projection, recommendations).</snippet>
+      </doc>
+
+      <doc>
+        <path>.bmad-ephemeral/stories/tech-spec-epic-6.md</path>
+        <title>Epic 6 Technical Specification</title>
+        <section>Workflows - Cost Monitoring</section>
+        <snippet>Platform Engineer sets up Cloudflare Analytics API access → Create scripts/cost-monitoring.ts → Calculate daily costs by service → Compute monthly projection → If ≥80% of £50 budget trigger alert (console log, email, Slack webhook) → Document cost optimization recommendations.</snippet>
+      </doc>
+
+      <doc>
+        <path>.bmad-ephemeral/stories/tech-spec-epic-6.md</path>
+        <title>Epic 6 Technical Specification</title>
+        <section>APIs and Interfaces</section>
+        <snippet>Cloudflare Analytics API: GET /accounts/{account_id}/analytics/workers. Response: requests (total, by_status), latency (p50, p95, p99), errors (rate, count). Cost Monitoring Script Interface: npm run cost-monitor (display costs), npm run cost-monitor --alert (check thresholds), npm run cost-monitor --export json.</snippet>
+      </doc>
+
+      <doc>
+        <path>.bmad-ephemeral/stories/tech-spec-epic-6.md</path>
+        <title>Epic 6 Technical Specification</title>
+        <section>Acceptance Criteria - AC-6.1.1, AC-6.1.2, AC-6.1.3</section>
+        <snippet>AC-6.1.1: Cost dashboard shows daily costs by service, cumulative monthly spend with projection, cost per query/ingestion. AC-6.1.2: Budget alert triggers at 80% of £50/month with current spend, projection, breakdown, recommendations. AC-6.1.3: Historical tracking for trends, cost optimization recommendations documented, efficiency metrics (cache hit rate, queries per £, repos per £).</snippet>
+      </doc>
+
+      <!-- Architecture - Logging and TypeScript Patterns -->
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Decision Summary - Technology Stack</section>
+        <snippet>TypeScript 5.9+ strict mode, esbuild via wrangler 4.47.0+, structured JSON logging with requestId correlation, custom error classes with retry logic (3 attempts, exponential backoff 1s/2s/4s), file naming: kebab-case.ts, function naming: camelCase.</snippet>
+      </doc>
+
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Project Structure</section>
+        <snippet>scripts/ directory: Epic 6 operational scripts (cost-monitoring.ts, security-audit.sh). Follows kebab-case.ts naming convention consistent with src/utils/logger.ts, src/utils/retry.ts patterns.</snippet>
+      </doc>
+
+      <!-- Integration Testing Standards -->
+      <doc>
+        <path>docs/integration-testing-standards.md</path>
+        <title>Integration Testing Standards</title>
+        <section>Test Framework and Coverage Goals</section>
+        <snippet>Vitest framework (existing project standard from Epic 1). Unit tests: 80%+ coverage on core logic. Integration tests required for stories touching service bindings (KV, R2, APIs). Test markers: describe('Integration: ...') for categorization. Minimum 100 items for integration tests (not 5).</snippet>
+      </doc>
+
+      <doc>
+        <path>docs/integration-testing-standards.md</path>
+        <title>Integration Testing Standards</title>
+        <section>Testing Approach for External APIs</section>
+        <snippet>External API integration tests: Mock API responses for deterministic testing. Cost Monitoring Tests: Unit tests for calculation logic (service breakdown, projections, budget %), Integration tests with mocked Cloudflare Analytics API, Manual tests against production API to validate actual costs.</snippet>
+      </doc>
+
+      <!-- Epic 6 Overview -->
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic Breakdown</title>
+        <section>Epic 6: Operational Excellence</section>
+        <snippet>Epic 6 establishes production-ready operational practices: cost monitoring to validate &lt;£50/month hypothesis, security compliance (NCSC standards), observability dashboards, production deployment guides. Enables confident production deployment with cost control, security trust, and data-driven optimization.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <!-- Existing Utilities to Reuse -->
+      <artifact>
+        <path>src/utils/logger.ts</path>
+        <kind>utility</kind>
+        <symbol>createLogger, Logger interface, LogContext interface</symbol>
+        <lines>1-145</lines>
+        <reason>Structured JSON logging foundation (Epic 1.3). Cost monitoring must use createLogger for all operational events. Format: JSON with timestamp, level, message, context. Supports debug/info/warn/error levels with filtering.</reason>
+      </artifact>
+
+      <artifact>
+        <path>src/utils/retry.ts</path>
+        <kind>utility</kind>
+        <symbol>withRetry function</symbol>
+        <lines>1-114</lines>
+        <reason>Retry logic with exponential backoff (3 attempts: 1s, 2s, 4s delays). Use for Cloudflare Analytics API calls. Pattern: withRetry(() => fetch(...), 3, [1000, 2000, 4000]). Logs retries automatically.</reason>
+      </artifact>
+
+      <artifact>
+        <path>src/utils/error-handler.ts</path>
+        <kind>utility</kind>
+        <symbol>AppError, ValidationError, ServiceError, APIError classes</symbol>
+        <lines>1-152</lines>
+        <reason>Custom error classes with HTTP status codes. Cost monitoring script should throw ServiceError for Analytics API failures. ErrorResponse format follows PRD FR-3. Supports retry_after field for rate limiting.</reason>
+      </artifact>
+
+      <artifact>
+        <path>src/types.ts</path>
+        <kind>types</kind>
+        <symbol>ErrorResponse interface</symbol>
+        <lines>67-76</lines>
+        <reason>PRD-compliant error response format. Cost monitoring errors should follow this structure: {error: {code: string, message: string, retry_after?: number}}. Machine-readable error codes (e.g., ANALYTICS_API_UNAVAILABLE).</reason>
+      </artifact>
+
+      <!-- Configuration Files -->
+      <artifact>
+        <path>wrangler.jsonc</path>
+        <kind>config</kind>
+        <symbol>env.AI binding, vars.ENVIRONMENT, vars.LOG_LEVEL</symbol>
+        <lines>1-167</lines>
+        <reason>Cloudflare Workers configuration with service bindings. Cost monitoring needs Cloudflare account ID from environment. env.production vs env.staging configurations. No new bindings needed for cost monitoring (uses Analytics API via REST).</reason>
+      </artifact>
+
+      <artifact>
+        <path>package.json</path>
+        <kind>config</kind>
+        <symbol>scripts object</symbol>
+        <lines>6-21</lines>
+        <reason>npm scripts configuration. Cost monitoring will add: "cost-monitor", "cost-monitor --alert", "cost-monitor --export json". Follow existing script naming pattern (kebab-case). Existing test script uses Vitest.</reason>
+      </artifact>
+
+      <!-- Existing Patterns for Reference (No Direct Reuse) -->
+      <artifact>
+        <path>src/api/search-endpoint.ts</path>
+        <kind>api-endpoint</kind>
+        <symbol>N/A</symbol>
+        <lines>N/A</lines>
+        <reason>Reference for external API integration patterns. Cost monitoring will follow similar structure for Cloudflare Analytics API client: fetch with retry, structured logging, error handling, response validation.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <ecosystem name="node">
+        <package name="typescript" version="^5.5.2" />
+        <package name="vitest" version="~3.2.0" />
+        <package name="wrangler" version="^4.47.0" />
+        <package name="@cloudflare/vitest-pool-workers" version="^0.8.19" />
+        <package name="prettier" version="^3.6.2" />
+        <package name="eslint" version="^9.39.1" />
+      </ecosystem>
+      <note>No new dependencies required. Cost monitoring uses standard fetch API for Cloudflare Analytics API calls. Cloudflare Analytics included in Workers plan (no additional cost).</note>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>
+      <category>architecture</category>
+      <rule>File naming: kebab-case.ts (scripts/cost-monitoring.ts, NOT scripts/costMonitoring.ts)</rule>
+    </constraint>
+    <constraint>
+      <category>architecture</category>
+      <rule>Function naming: camelCase (calculateBudgetUtilization, NOT calculate_budget_utilization)</rule>
+    </constraint>
+    <constraint>
+      <category>architecture</category>
+      <rule>TypeScript strict mode required. All types must be explicitly defined (no implicit any).</rule>
+    </constraint>
+    <constraint>
+      <category>architecture</category>
+      <rule>Structured JSON logging mandatory. Use createLogger from src/utils/logger.ts for all log output.</rule>
+    </constraint>
+    <constraint>
+      <category>architecture</category>
+      <rule>Retry logic: 3 attempts with exponential backoff [1s, 2s, 4s]. Use withRetry from src/utils/retry.ts.</rule>
+    </constraint>
+    <constraint>
+      <category>testing</category>
+      <rule>Vitest framework required (existing project standard). Test files: test/scripts/cost-monitoring.test.ts</rule>
+    </constraint>
+    <constraint>
+      <category>testing</category>
+      <rule>80%+ unit test coverage on cost-monitoring.ts core logic (calculation functions, budget threshold checks)</rule>
+    </constraint>
+    <constraint>
+      <category>testing</category>
+      <rule>Integration tests required with mocked Cloudflare Analytics API responses (deterministic test data)</rule>
+    </constraint>
+    <constraint>
+      <category>testing</category>
+      <rule>Manual testing required against production Cloudflare Analytics API to validate actual cost accuracy</rule>
+    </constraint>
+    <constraint>
+      <category>cost</category>
+      <rule>Budget threshold: £50/month. Alert triggers at 80% (£40). This is a hard constraint from PRD NFR-7.1.</rule>
+    </constraint>
+    <constraint>
+      <category>cost</category>
+      <rule>Services to monitor: Workers, R2, AI Search, KV, Vectorize. Cost breakdown must include all five services.</rule>
+    </constraint>
+    <constraint>
+      <category>operational</category>
+      <rule>Zero-install monitoring. Leverage Cloudflare built-in Analytics API. No custom infrastructure or paid tools.</rule>
+    </constraint>
+    <constraint>
+      <category>operational</category>
+      <rule>Graceful degradation for alerts. Console log always succeeds. Email/Slack webhooks optional (fail silently if unavailable).</rule>
+    </constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>CostBreakdown</name>
+      <kind>TypeScript interface</kind>
+      <signature>
+interface CostBreakdown {
+  date: string;              // ISO 8601 date
+  workers_cost: number;      // £ per day
+  r2_cost: number;           // £ per day
+  ai_search_cost: number;    // £ per day
+  kv_cost: number;           // £ per day
+  vectorize_cost: number;    // £ per day (if used)
+  total_daily: number;       // £ per day
+  cumulative_month: number;  // £ month-to-date
+  projection_month_end: number; // £ projected for full month
+  budget_utilization: number;   // % of £50 budget
+}
+      </signature>
+      <path>scripts/cost-monitoring.ts (to be created)</path>
+    </interface>
+
+    <interface>
+      <name>CostAlert</name>
+      <kind>TypeScript interface</kind>
+      <signature>
+interface CostAlert {
+  triggered_at: string;      // ISO 8601 timestamp
+  budget_threshold: number;  // £50
+  current_spend: number;     // £ month-to-date
+  utilization: number;       // % (e.g., 85%)
+  projection: number;        // £ projected end-of-month
+  breakdown: CostBreakdown;
+  recommendations: string[]; // Cost optimization suggestions
+}
+      </signature>
+      <path>scripts/cost-monitoring.ts (to be created)</path>
+    </interface>
+
+    <interface>
+      <name>Cloudflare Analytics API</name>
+      <kind>REST endpoint (external)</kind>
+      <signature>
+GET /accounts/{account_id}/analytics/workers
+Response: {
+  requests: { total: number, by_status: {200: number, 400: number, 500: number} },
+  latency: { p50: number, p95: number, p99: number },
+  errors: { rate: number, count: number }
+}
+      </signature>
+      <path>External Cloudflare API (https://api.cloudflare.com/client/v4/)</path>
+    </interface>
+
+    <interface>
+      <name>npm run cost-monitor</name>
+      <kind>CLI script interface</kind>
+      <signature>
+npm run cost-monitor              # Display current month costs
+npm run cost-monitor --alert      # Check and send alerts if threshold exceeded
+npm run cost-monitor --export json # Export cost data as JSON
+      </signature>
+      <path>package.json scripts section</path>
+    </interface>
+
+    <interface>
+      <name>Logger</name>
+      <kind>TypeScript interface (existing)</kind>
+      <signature>
+const logger = createLogger({ operation: 'cost-monitoring' });
+logger.info('Cost dashboard generated', { total_monthly: 42.50 });
+logger.warn('Budget threshold exceeded', { utilization: 85 });
+logger.error('Analytics API failed', { error: 'timeout' });
+      </signature>
+      <path>src/utils/logger.ts:57-85</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+Vitest framework (existing project standard from Epic 1). Unit tests: 80%+ coverage on cost-monitoring.ts core logic (calculation functions, budget threshold checks, projection algorithms). Integration tests required with mocked Cloudflare Analytics API responses for deterministic testing. Manual tests required against production Analytics API to validate actual cost accuracy. Test markers: describe('Unit: ...') for unit tests, describe('Integration: ...') for integration tests. All test files in test/ directory matching source structure.
+    </standards>
+    <locations>
+      <location>test/scripts/cost-monitoring.test.ts</location>
+      <location>test/scripts/cost-monitoring.integration.test.ts</location>
+    </locations>
+    <ideas>
+      <test>
+        <id>AC-6.1.1</id>
+        <description>Unit test: Cost calculation logic - Given daily service costs (Workers: £5, R2: £3, AI Search: £2, KV: £1, Vectorize: £0.50), verify total_daily = £11.50, cumulative_month calculated correctly, projection_month_end accurate based on days elapsed</description>
+      </test>
+      <test>
+        <id>AC-6.1.1</id>
+        <description>Unit test: Budget utilization percentage - Given cumulative_month = £42.50, budget_threshold = £50, verify budget_utilization = 85%</description>
+      </test>
+      <test>
+        <id>AC-6.1.2</id>
+        <description>Unit test: Budget alert triggering - Given budget_utilization = 81%, verify alert triggered with correct payload (current_spend, projection, breakdown, recommendations)</description>
+      </test>
+      <test>
+        <id>AC-6.1.2</id>
+        <description>Unit test: No alert when below threshold - Given budget_utilization = 75%, verify no alert triggered</description>
+      </test>
+      <test>
+        <id>AC-6.1.3</id>
+        <description>Unit test: Cost per query calculation - Given total AI Search cost £10 and 500 queries, verify cost_per_query = £0.02</description>
+      </test>
+      <test>
+        <id>AC-6.1.3</id>
+        <description>Unit test: Cost optimization recommendations - Given low cache hit rate (60%) and high R2 costs, verify recommendations include "Increase cache hit rate target to reduce R2 reads"</description>
+      </test>
+      <test>
+        <id>AC-6.1.1</id>
+        <description>Integration test: Mock Cloudflare Analytics API - Given mocked API response with request counts and latencies, verify end-to-end cost dashboard generation succeeds</description>
+      </test>
+      <test>
+        <id>AC-6.1.2</id>
+        <description>Integration test: Alert payload format - Given threshold breach scenario, verify alert JSON structure matches CostAlert interface exactly</description>
+      </test>
+      <test>
+        <id>AC-6.1.1</id>
+        <description>Manual test: Production Analytics API - Run cost-monitoring script against actual Cloudflare account, compare dashboard output to Cloudflare billing dashboard for accuracy</description>
+      </test>
+      <test>
+        <id>AC-6.1.3</id>
+        <description>Manual test: Historical tracking - Run cost-monitor multiple times across different days, verify historical data persists and week-over-week trends display correctly</description>
+      </test>
+    </ideas>
+  </tests>
+</story-context>

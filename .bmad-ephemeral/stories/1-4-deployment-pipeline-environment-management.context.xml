@@ -1,0 +1,127 @@
+<story-context id="{bmad_folder}/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>4</storyId>
+    <title>Deployment Pipeline &amp; Environment Management</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-12</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>.bmad-ephemeral/stories/1-4-deployment-pipeline-environment-management.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer</asA>
+    <iWant>deployment scripts and environment configuration for staging and production</iWant>
+    <soThat>I can safely deploy and validate the Workers application across environments</soThat>
+    <tasks>
+- Task 1: Configure npm deployment scripts (AC: #1)
+- Task 2: Configure environment-specific wrangler.toml sections (AC: #2)
+- Task 3: Create environment variable documentation (AC: #2)
+- Task 4: Implement health check endpoint (AC: #3)
+- Task 5: Write comprehensive tests (AC: #1, #2, #3)
+- Task 6: Update documentation (AC: #1, #2)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+1. npm scripts exist for: dev, deploy:staging, deploy:production; deployment documented in README
+2. wrangler.toml supports [env.staging] and [env.production] with separate service bindings; .env.example documents variables; .gitignore excludes secrets
+3. GET /health returns 200 OK when services accessible; validates KV, R2, Vectorize, D1 connectivity; returns service status details
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path=".bmad-ephemeral/stories/tech-spec-epic-1.md" section="AC-1.4.1-1.4.8">
+        Deployment workflow: lint → test → deploy:staging → validate → deploy:production
+        Health check validates: KV accessible, R2 accessible, Vectorize accessible, D1 accessible
+        Returns 200 OK with service status JSON when all accessible, 503 with failed service details if any fail
+      </doc>
+      <doc path="docs/architecture.md" section="ADR-004">
+        Wrangler 4.47.0+ deployment, Blue-Green deployment support, instant rollback capability
+        Environment separation: staging for validation, production for live traffic
+      </doc>
+      <doc path="docs/PRD.md" section="NFR-6.1, NFR-7.1">
+        99.9% uptime target, &lt;£50/month cost constraint using Cloudflare free tiers
+      </doc>
+    </docs>
+
+    <code>
+      <code path="src/utils/logger.ts" symbol="createLogger" reason="REUSE for health check logging">
+        Usage: const logger = createLogger({ operation: 'healthCheck' })
+        Logs structured JSON with timestamp, level, message, context
+      </code>
+      <code path="src/utils/error-handler.ts" symbol="ServiceError" reason="REUSE for 503 responses when health check fails">
+        ServiceError(message, 503, 'SERVICE_UNAVAILABLE', retryAfter)
+        Has toErrorResponse() method matching PRD FR-3 format
+      </code>
+      <code path="src/utils/retry.ts" symbol="withRetry" reason="REUSE for service connectivity tests">
+        Default exponential backoff: [1000, 2000, 4000]ms
+        Apply to health check service connectivity validation
+      </code>
+      <code path="src/types.ts" symbol="ErrorResponse" reason="Use for health check error responses">
+        Format: { error: { code, message, retry_after? } }
+      </code>
+    </code>
+
+    <dependencies>
+      <wrangler version="^4.47.0">Cloudflare Workers CLI and deployment tool</wrangler>
+      <typescript version="^5.5.2">TypeScript compiler</typescript>
+      <vitest version="~3.2.0">Test framework</vitest>
+      <cloudflare-vitest-pool version="^0.8.19">Workers test environment</cloudflare-vitest-pool>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="naming">
+      Files: kebab-case.ts (health.ts)
+      Functions: camelCase (checkHealth, validateServiceConnectivity)
+      Types: PascalCase (HealthCheckResponse, ServiceStatus)
+      Named exports only
+    </constraint>
+    <constraint type="architecture">
+      Create src/api/health.ts for health check handler
+      Update src/index.ts to add GET /health route
+      DO NOT recreate logger, error classes, or retry utility - IMPORT from src/utils/
+    </constraint>
+    <constraint type="deployment">
+      Separate service bindings for staging (-staging suffix) and production (no suffix)
+      .env files must be in .gitignore
+      Health check must validate all 4 services: KV, R2, Vectorize, D1
+    </constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="checkHealth" signature="checkHealth(env: Env): Promise&lt;Response&gt;" path="src/api/health.ts">
+      Main health check handler function
+      Returns Response with 200 OK or 503 Service Unavailable
+      Validates connectivity to all service bindings
+    </interface>
+    <interface name="HealthCheckResponse" signature="interface HealthCheckResponse { status: string; services: Record&lt;string, ServiceStatus&gt;; timestamp: string; }" path="src/api/health.ts">
+      Response format for health check endpoint
+      Status: "healthy" or "unhealthy"
+      Services: object with service names as keys, status details as values
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Vitest 3.2.0 with @cloudflare/vitest-pool-workers
+      Mock service bindings using vi.fn()
+      Test success path (all services accessible) and failure paths (individual service failures)
+      80%+ coverage target
+    </standards>
+    <locations>
+      test/api/health.test.ts - Health check endpoint tests (~10-15 test cases)
+      test/deployment/deploy.test.ts - Deployment configuration validation (~5-8 test cases)
+    </locations>
+    <ideas>
+      <test-idea>Test health check returns 200 OK when all services accessible</test-idea>
+      <test-idea>Test health check returns 503 when KV fails</test-idea>
+      <test-idea>Test health check returns 503 when R2 fails</test-idea>
+      <test-idea>Test health check validates each service (KV, R2, Vectorize, D1)</test-idea>
+      <test-idea>Test wrangler.toml has staging environment section</test-idea>
+      <test-idea>Test wrangler.toml has production environment section</test-idea>
+      <test-idea>Test package.json has dev, deploy:staging, deploy:production scripts</test-idea>
+    </ideas>
+  </tests>
+</story-context>

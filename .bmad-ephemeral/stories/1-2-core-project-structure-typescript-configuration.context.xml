@@ -1,0 +1,235 @@
+<story-context id="{bmad_folder}/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>2</storyId>
+    <title>Core Project Structure &amp; TypeScript Configuration</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-12</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>.bmad-ephemeral/stories/1-2-core-project-structure-typescript-configuration.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer</asA>
+    <iWant>a well-organized project structure with TypeScript configuration</iWant>
+    <soThat>the codebase is maintainable and type-safe from day one</soThat>
+    <tasks>
+- Task 1: Create project folder structure (AC: #1)
+  - Create src/ingestion/ directory
+  - Create src/search/ directory
+  - Create src/api/ directory
+  - Create src/utils/ directory
+  - Verify TypeScript strict mode is enabled in tsconfig.json
+  - Verify @cloudflare/workers-types is installed
+
+- Task 2: Define shared TypeScript types (AC: #2)
+  - Create src/types.ts with JSDoc comments
+  - Define Repository type (from repos.json schema)
+  - Define SearchResult type (per PRD format)
+  - Define MCPResponse types (per MCP v2 spec)
+  - Define ErrorResponse type (per PRD error format)
+  - Export all types for use across modules
+
+- Task 3: Configure ESLint for code quality (AC: #3)
+  - Install ESLint and @typescript-eslint packages
+  - Create .eslintrc.json with TypeScript rules
+  - Configure rules for Workers environment
+  - Add lint script to package.json
+  - Verify linting works on existing files
+
+- Task 4: Configure Prettier for formatting (AC: #3)
+  - Install prettier
+  - Create .prettierrc with project formatting rules
+  - Add format script to package.json
+  - Verify formatting works on existing files
+
+- Task 5: Set up pre-commit hooks (AC: #3)
+  - Install husky and lint-staged
+  - Configure pre-commit hook to run lint + format
+  - Test hook by making a commit
+  - Document hook setup in README
+
+- Task 6: Write tests for type safety (AC: #1, #2)
+  - Create test/types.test.ts to validate type definitions
+  - Test Repository type matches repos.json schema
+  - Test SearchResult type structure
+  - Test ErrorResponse type structure
+  - Verify all tests pass
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+1. Given the Cloudflare Workers project is initialized (Story 1.1)
+   When I create the project folder structure
+   Then folders exist for: src/ingestion, src/search, src/api, src/utils
+   And TypeScript is configured with strict mode enabled
+   And @cloudflare/workers-types are installed for Workers APIs
+
+2. Given the project structure exists
+   When I define shared types for repos, search results, and API responses
+   Then types are centralized in src/types.ts
+   And all types follow the schemas documented in PRD (search result format, error responses)
+   And Types include JSDoc comments for developer clarity
+
+3. And ESLint is configured for code quality
+   And Prettier is configured for consistent formatting
+   And Git pre-commit hooks enforce linting (optional: husky + lint-staged)
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture - Project Structure</title>
+        <section>Project Structure</section>
+        <snippet>Complete folder structure showing src/ organization: ingestion/, search/, api/, utils/, types.ts. Story 1.2 creates these directories to mirror write/read path separation.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture - Technology Stack Details</title>
+        <section>TypeScript Configuration</section>
+        <snippet>TypeScript 5.9+ with strict mode, target: ES2022, @cloudflare/workers-types for type safety. Named exports preferred, kebab-case file naming convention.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture - Implementation Patterns</title>
+        <section>Naming Conventions</section>
+        <snippet>camelCase for functions, PascalCase for classes/types, UPPER_SNAKE_CASE for constants, kebab-case.ts for files. Module exports use named exports for tree-shaking.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic 1 - Story 1.2</title>
+        <section>Core Project Structure &amp; TypeScript Configuration</section>
+        <snippet>Create folder structure (src/ingestion, src/search, src/api, src/utils), define shared TypeScript types in src/types.ts following PRD schemas, configure ESLint and Prettier, set up pre-commit hooks.</snippet>
+      </doc>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>PRD - Search Result Type</title>
+        <section>FR-1.1 Semantic Search</section>
+        <snippet>SearchResult type includes: repository, file_path, match_snippet, relevance_score, metadata with language, stars, last_updated, github_url fields.</snippet>
+      </doc>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>PRD - Error Response Type</title>
+        <section>FR-3 Error Handling</section>
+        <snippet>ErrorResponse format: { error: { code: string, message: string, retry_after?: number } } for consistent API error responses.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>src/index.ts</path>
+        <kind>entry-point</kind>
+        <symbol>fetch handler</symbol>
+        <lines>14-18</lines>
+        <reason>Main Workers entry point. Story 1.2 extends this structure with proper module organization.</reason>
+      </artifact>
+      <artifact>
+        <path>tsconfig.json</path>
+        <kind>config</kind>
+        <symbol>TypeScript configuration</symbol>
+        <lines>35</lines>
+        <reason>TypeScript strict mode already enabled. Target is ES2021, should update to ES2022 per architecture.md for consistency.</reason>
+      </artifact>
+      <artifact>
+        <path>wrangler.jsonc</path>
+        <kind>config</kind>
+        <symbol>Service bindings</symbol>
+        <lines>16-40</lines>
+        <reason>All Cloudflare service bindings configured (R2, KV, D1, Vectorize). Type generation via cf-typegen provides Workers types.</reason>
+      </artifact>
+      <artifact>
+        <path>package.json</path>
+        <kind>config</kind>
+        <symbol>npm scripts and dependencies</symbol>
+        <lines>1-17</lines>
+        <reason>Vitest 3.2.0 test framework, TypeScript 5.5.2, wrangler 4.47.0 already installed. Story 1.2 adds ESLint, Prettier, husky, lint-staged.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <node>
+        <installed>
+          <package name="typescript" version="5.5.2" />
+          <package name="vitest" version="~3.2.0" />
+          <package name="@cloudflare/vitest-pool-workers" version="^0.8.19" />
+          <package name="wrangler" version="^4.47.0" />
+        </installed>
+        <toInstall>
+          <package name="eslint" purpose="Code quality linting" />
+          <package name="@typescript-eslint/parser" purpose="TypeScript ESLint parser" />
+          <package name="@typescript-eslint/eslint-plugin" purpose="TypeScript-specific linting rules" />
+          <package name="prettier" purpose="Code formatting" />
+          <package name="husky" purpose="Git hooks management" />
+          <package name="lint-staged" purpose="Run linters on staged files" />
+        </toInstall>
+      </node>
+      <cloudflare>
+        <service name="Workers" binding="N/A" purpose="Runtime platform" />
+        <service name="R2" binding="R2" purpose="Object storage for gitingest summaries" />
+        <service name="KV" binding="KV" purpose="Smart caching" />
+        <service name="D1" binding="DB" purpose="Metadata storage" />
+        <service name="Vectorize" binding="VECTORIZE" purpose="Vector embeddings" />
+      </cloudflare>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>TypeScript strict mode required - already enabled in tsconfig.json:35</constraint>
+    <constraint>Target should be ES2022 per architecture.md (currently ES2021 in tsconfig.json:6)</constraint>
+    <constraint>File naming: kebab-case.ts for all source files (e.g., repos-fetcher.ts, cache.ts)</constraint>
+    <constraint>Function naming: camelCase (e.g., fetchRepos, updateCache, searchCode)</constraint>
+    <constraint>Type naming: PascalCase (e.g., Repository, SearchResult, ErrorResponse)</constraint>
+    <constraint>Module pattern: Named exports only (no default exports except src/index.ts entry point)</constraint>
+    <constraint>Import organization: 1) Node/external, 2) @cloudflare/*, 3) Internal relative, 4) Type imports last</constraint>
+    <constraint>All types must include JSDoc comments for developer clarity</constraint>
+    <constraint>ESLint rules: no-explicit-any (warn), no-unused-vars (error), prefer-const (error)</constraint>
+    <constraint>Prettier config must match project standards: useTabs, singleQuote=false, trailingComma=all, printWidth=100</constraint>
+    <constraint>Pre-commit hooks run lint + format automatically via husky + lint-staged</constraint>
+    <constraint>Test files co-located: src/api/search-endpoint.ts → src/api/search-endpoint.test.ts</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>Repository (from repos.json)</name>
+      <kind>TypeScript type</kind>
+      <signature>interface Repository { full_name: string; html_url: string; description: string | null; language: string | null; stargazers_count: number; forks_count: number; created_at: string; updated_at: string; pushed_at: string; topics: string[]; visibility: "public"; is_template: boolean; }</signature>
+      <path>src/types.ts (to be created)</path>
+    </interface>
+    <interface>
+      <name>SearchResult (API response)</name>
+      <kind>TypeScript type</kind>
+      <signature>interface SearchResult { repository: string; file_path: string; match_snippet: string; relevance_score: number; metadata: { language: string; stars: number; last_updated: string; github_url: string; }; }</signature>
+      <path>src/types.ts (to be created)</path>
+    </interface>
+    <interface>
+      <name>ErrorResponse (API error format)</name>
+      <kind>TypeScript type</kind>
+      <signature>interface ErrorResponse { error: { code: string; message: string; retry_after?: number; }; }</signature>
+      <path>src/types.ts (to be created)</path>
+    </interface>
+    <interface>
+      <name>MCPSearchResponse</name>
+      <kind>TypeScript type</kind>
+      <signature>interface MCPSearchResponse { results: SearchResult[]; total: number; query: string; }</signature>
+      <path>src/types.ts (to be created)</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>Vitest 3.2.0 test framework with @cloudflare/vitest-pool-workers for Workers environment testing. Tests co-located with source files using .test.ts suffix. Test structure: describe blocks for grouping, it/test for individual cases. Mock external services (R2, KV, AI Search) in tests. Target 80%+ coverage on core logic.</standards>
+    <locations>test/*.test.ts for integration tests, src/**/*.test.ts for unit tests co-located with source</locations>
+    <ideas>
+      <idea ac="1">Test: Verify src/ingestion/, src/search/, src/api/, src/utils/ directories exist after creation</idea>
+      <idea ac="1">Test: Validate tsconfig.json has strict mode enabled and target ES2022</idea>
+      <idea ac="1">Test: Confirm @cloudflare/workers-types is in package.json devDependencies</idea>
+      <idea ac="2">Test: Repository type matches repos.json schema structure - validate required fields</idea>
+      <idea ac="2">Test: SearchResult type includes all fields from PRD FR-1.1 specification</idea>
+      <idea ac="2">Test: ErrorResponse type follows PRD FR-3 error format with code, message, optional retry_after</idea>
+      <idea ac="2">Test: All types in src/types.ts are exported and importable</idea>
+      <idea ac="2">Test: JSDoc comments exist on all type definitions</idea>
+      <idea ac="3">Test: ESLint configuration exists and validates TypeScript code</idea>
+      <idea ac="3">Test: ESLint rules include no-explicit-any, no-unused-vars, prefer-const</idea>
+      <idea ac="3">Test: Prettier configuration matches project standards (tabs, quotes, trailing commas)</idea>
+      <idea ac="3">Test: Pre-commit hook runs successfully and prevents commit on lint errors</idea>
+    </ideas>
+  </tests>
+</story-context>

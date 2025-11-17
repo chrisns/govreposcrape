@@ -1,0 +1,245 @@
+<story-context id="{bmad_folder}/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>2.1</storyId>
+    <title>Repository Discovery - Fetch and Parse repos.json Feed</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-12</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>.bmad-ephemeral/stories/2-1-repository-discovery-fetch-and-parse-repos-json-feed.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>data engineer</asA>
+    <iWant>to fetch and parse the repos.json feed from xgov-opensource-repo-scraper</iWant>
+    <soThat>I have the authoritative list of UK government repositories to process</soThat>
+    <tasks>
+      - Task 1: Define TypeScript interfaces for repositories (AC: #1, #3)
+        - Create src/types.ts if not exists (Repository interface may already exist)
+        - Define Repository interface with required fields: url, pushedAt, org, name
+        - Add JSDoc documentation for Repository interface
+        - Export interface for use across modules
+
+      - Task 2: Implement repos.json fetcher with error handling (AC: #1, #2)
+        - Create src/ingestion/repos-fetcher.ts
+        - Implement fetchReposJson() function with HTTPS fetch
+        - Add JSON parsing with try/catch for malformed data
+        - Extract required fields: url, pushedAt, org, repo name
+        - Use createLogger() from src/utils/logger.ts (Story 1.3)
+        - Integrate withRetry() from src/utils/retry.ts for exponential backoff (3 attempts: 1s, 2s, 4s)
+        - Return typed Repository[] array on success
+        - Throw ServiceError on failure after all retries
+
+      - Task 3: Add field validation and statistics tracking (AC: #3)
+        - Implement validateRepository() function
+        - Check required fields are present: url, pushedAt, org, name
+        - Check field types are correct (string validation)
+        - Track validation failures and log details
+        - Calculate statistics: total repos, valid repos, invalid repos, parse errors
+        - Log final statistics using structured logger
+
+      - Task 4: Create comprehensive tests (AC: #1, #2, #3)
+        - Create test/ingestion/repos-fetcher.test.ts
+        - Test successful fetch and parse (mock fetch with valid repos.json)
+        - Test malformed JSON handling
+        - Test network error with retry logic (verify 3 attempts)
+        - Test timeout handling
+        - Test field extraction and validation
+        - Test statistics calculation
+        - Mock fetch API using Vitest vi.fn()
+        - Verify 100% test pass rate
+
+      - Task 5: Integration with existing codebase
+        - Export fetchReposJson() from repos-fetcher.ts
+        - Ensure module can be imported in future orchestrator (Epic 2.6)
+        - Verify integration with logger, error handler, retry utilities
+        - Document usage in module JSDoc with @example
+
+      - Task 6: Update documentation
+        - Add inline JSDoc comments for all public functions
+        - Document retry behavior and error handling
+        - Add usage examples in JSDoc @example blocks
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    AC #1: Module fetches repos.json over HTTPS, parses JSON with error handling, extracts required fields (url, pushedAt, org, name)
+
+    AC #2: Retry logic with exponential backoff (3 attempts: 1s, 2s, 4s delays), structured logs record each retry attempt, clear error message after 3 failures
+
+    AC #3: Returns typed Repository[] array, validates required fields are present, logs statistics (total repos fetched, parse errors, validation failures)
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <artifact>
+        <path>docs/epics.md</path>
+        <title>Epic 2: Data Ingestion Pipeline</title>
+        <section>Story 2.1</section>
+        <snippet>First step in data pipeline - fetch UK government repositories from repos.json feed (~21k repos). Feed source: https://github.com/uk-x-gov-software-community/xgov-opensource-repo-scraper. Retry with exponential backoff (3 attempts: 1s, 2s, 4s delays) on network failures.</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/architecture.md</path>
+        <title>Architecture - Error Handling and Retry Strategy</title>
+        <section>Decision Summary</section>
+        <snippet>Error Handling: Custom error classes + retry. Configuration: 3 attempts with exponential backoff (1s, 2s, 4s). Rationale: Transient network failures should not block entire pipeline.</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/architecture.md</path>
+        <title>Architecture - Type Safety</title>
+        <section>Decision Summary</section>
+        <snippet>TypeScript strict mode enabled. @cloudflare/workers-types for Workers APIs. Typed Repository interface prevents runtime errors.</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR-1.1</section>
+        <snippet>Repository discovery functional requirement: Fetch and parse repos.json feed from xgov-opensource-repo-scraper to obtain authoritative list of UK government repositories.</snippet>
+      </artifact>
+    </docs>
+
+    <code>
+      <artifact>
+        <path>src/utils/logger.ts</path>
+        <kind>utility</kind>
+        <symbol>createLogger</symbol>
+        <lines>1-120</lines>
+        <reason>REUSE for all logging in this story. Pattern: const logger = createLogger({ operation: 'fetchRepos' }). Outputs structured JSON logs compatible with Cloudflare Workers log streaming.</reason>
+      </artifact>
+      <artifact>
+        <path>src/utils/error-handler.ts</path>
+        <kind>utility</kind>
+        <symbol>ServiceError</symbol>
+        <lines>1-100</lines>
+        <reason>REUSE for network/fetch errors. Throw ServiceError when fetch fails after all retries. Pattern: throw new ServiceError('Failed to fetch repos.json after 3 attempts', 503)</reason>
+      </artifact>
+      <artifact>
+        <path>src/utils/retry.ts</path>
+        <kind>utility</kind>
+        <symbol>withRetry</symbol>
+        <lines>1-80</lines>
+        <reason>REUSE for exponential backoff retry logic. Apply to fetchReposJson() function. Default: 3 attempts with delays [1s, 2s, 4s]. Pattern: await withRetry(() => fetch(url), { maxAttempts: 3 })</reason>
+      </artifact>
+      <artifact>
+        <path>src/types.ts</path>
+        <kind>types</kind>
+        <symbol>Repository, RepoMetadata</symbol>
+        <lines>10-35, 108-117</lines>
+        <reason>Existing Repository interface with full GitHub API fields. RepoMetadata interface for ingestion pipeline with minimal required fields (url, pushedAt, org, name). May need to align or extend for this story.</reason>
+      </artifact>
+      <artifact>
+        <path>test/api/health.test.ts</path>
+        <kind>test</kind>
+        <symbol>health check tests</symbol>
+        <lines>1-300</lines>
+        <reason>Reference for comprehensive mocking patterns (20 tests). Shows how to mock service bindings using Vitest vi.fn(). Use similar patterns for mocking fetch API.</reason>
+      </artifact>
+    </code>
+
+    <dependencies>
+      <node>
+        <vitest>~3.2.0</vitest>
+        <@cloudflare/vitest-pool-workers>^0.8.19</@cloudflare/vitest-pool-workers>
+        <typescript>^5.5.2</typescript>
+        <wrangler>^4.47.0</wrangler>
+        <eslint>^9.39.1</eslint>
+        <prettier>^3.6.2</prettier>
+        <husky>^9.1.7</husky>
+        <lint-staged>^16.2.6</lint-staged>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - File naming: kebab-case.ts (repos-fetcher.ts)
+    - Function naming: camelCase (fetchReposJson, validateRepository)
+    - Type naming: PascalCase (Repository, ReposFetchResult)
+    - Module pattern: Named exports only (export function fetchReposJson)
+    - JSDoc required: All public functions need comprehensive documentation with @example blocks
+    - TypeScript strict mode: All code must pass strict type checking
+    - ESLint: Zero errors required (pre-commit hook active)
+    - Prettier: Code formatting enforced (pre-commit hook active)
+    - Test pass rate: 100% (currently 94/94 passing - maintain this standard)
+    - DO NOT recreate utilities: Use existing logger, error-handler, retry from Story 1.3
+    - Module location: src/ingestion/repos-fetcher.ts (new module in Epic 2 folder structure)
+    - Test location: test/ingestion/repos-fetcher.test.ts (new test directory)
+    - Feed URL: https://github.com/uk-x-gov-software-community/xgov-opensource-repo-scraper (repos.json location)
+    - Retry configuration: Exactly 3 attempts with delays [1000ms, 2000ms, 4000ms]
+    - Timeout: 30 seconds for network requests
+    - Expected scale: ~21k repositories (~2-3 MB JSON payload)
+    - No service bindings used in this story (pure fetch operation)
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>createLogger</name>
+      <kind>function</kind>
+      <signature>function createLogger(context: LogContext): Logger</signature>
+      <path>src/utils/logger.ts</path>
+    </interface>
+    <interface>
+      <name>withRetry</name>
+      <kind>function</kind>
+      <signature>async function withRetry&lt;T&gt;(fn: () => Promise&lt;T&gt;, maxRetries?: number, delays?: number[]): Promise&lt;T&gt;</signature>
+      <path>src/utils/retry.ts</path>
+    </interface>
+    <interface>
+      <name>ServiceError</name>
+      <kind>class</kind>
+      <signature>class ServiceError extends AppError { constructor(message: string, statusCode: number, code?: string, retryAfter?: number) }</signature>
+      <path>src/utils/error-handler.ts</path>
+    </interface>
+    <interface>
+      <name>Repository</name>
+      <kind>interface</kind>
+      <signature>interface Repository { full_name: string; html_url: string; description: string | null; language: string | null; stargazers_count: number; forks_count: number; created_at: string; updated_at: string; pushed_at: string; topics: string[]; visibility: "public"; is_template: boolean }</signature>
+      <path>src/types.ts</path>
+    </interface>
+    <interface>
+      <name>RepoMetadata</name>
+      <kind>interface</kind>
+      <signature>interface RepoMetadata { url: string; pushedAt: string; org: string; name: string }</signature>
+      <path>src/types.ts</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Test framework: Vitest 3.2.0 with @cloudflare/vitest-pool-workers
+      Test structure: describe() blocks for grouping, it() for test cases
+      Coverage target: 80%+ on core logic
+      Mocking strategy: Mock fetch API using Vitest vi.fn() following patterns from test/api/health.test.ts
+      Test organization: test/ingestion/repos-fetcher.test.ts with describe blocks for fetchReposJson and validateRepository
+      Quality requirements: 100% test pass rate, all tests must use proper mocks, no actual network requests in unit tests
+    </standards>
+
+    <locations>
+      test/ingestion/repos-fetcher.test.ts (NEW - create for this story)
+      test/api/health.test.ts (REFERENCE - mocking patterns)
+    </locations>
+
+    <ideas>
+      AC #1 Tests:
+      - Test successful fetch and parse with valid repos.json mock (200+ repos)
+      - Test JSON parsing with well-formed data
+      - Test field extraction (url, pushedAt, org, name) from mock data
+      - Test handling of empty array (valid but log warning)
+
+      AC #2 Tests:
+      - Test network timeout (mock fetch to timeout after 30s)
+      - Test HTTP error status (404, 500, 503 responses)
+      - Test retry logic: verify exactly 3 attempts with correct delays [1s, 2s, 4s]
+      - Test final error message after all retries exhausted
+      - Test structured logging of each retry attempt
+
+      AC #3 Tests:
+      - Test repository validation with all required fields present
+      - Test repository validation with missing url field
+      - Test repository validation with missing pushedAt field
+      - Test repository validation with missing org field
+      - Test repository validation with missing name field
+      - Test statistics calculation (total, valid, invalid counts)
+      - Test logging of final statistics
+    </ideas>
+  </tests>
+</story-context>

@@ -1,0 +1,257 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>quality</epicId>
+    <storyId>4</storyId>
+    <title>Add Validation Automation and Guardrails</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-13</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>.bmad-ephemeral/stories/quality-4-add-validation-automation-and-guardrails.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>automation engineer</asA>
+    <iWant>to build quality guardrails and automation checks</iWant>
+    <soThat>validation scripts are tested before stories marked done and quality issues are caught early</soThat>
+    <tasks>
+- Task 1: Add Self-Testing Mode to Validation Scripts (AC: 1)
+  - Identify all validation scripts in scripts/ directory
+  - Add --test flag support to each validation script
+  - Implement dependency checks (AWS CLI, jq, curl, etc.)
+  - Add sample data test execution
+  - Implement fail-fast error handling with clear messages
+  - Test each script's --test mode manually
+
+- Task 2: Extend Pre-Commit Hooks (AC: 2)
+  - Review current .husky/pre-commit hook configuration
+  - Add TypeScript type checking (npm run type-check or npx tsc --noEmit)
+  - Ensure ESLint is included in pre-commit checks
+  - Ensure Prettier formatting check is included
+  - Add basic smoke tests if quick (<2 seconds)
+  - Measure hook execution time and optimize if >10 seconds
+  - Document --no-verify bypass option in README or CONTRIBUTING.md
+
+- Task 3: Document Automation Best Practices (AC: 3)
+  - Create or update CONTRIBUTING.md with automation section
+  - Document when to run integration tests vs unit tests
+  - Add guide for testing validation scripts using --test mode
+  - Document pre-commit hook usage and bypass procedures
+  - Create automation checklist for story completion
+  - Provide examples for common validation patterns
+
+- Task 4: Validate Automation and Run Integration Tests (AC: All)
+  - Run all validation scripts with --test flag and verify they pass
+  - Commit a test change and verify pre-commit hooks execute
+  - Measure pre-commit hook execution time
+  - Review automation documentation for completeness
+  - Verify automation checklist is actionable
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+### AC1: Add Self-Testing to Validation Scripts
+
+**Given** validation scripts were written but never tested
+**When** I build validation automation
+**Then** all validation scripts have test modes: --test flag runs script with sample data
+**And** test mode validates: script syntax correct, dependencies available, output format valid
+**And** scripts fail fast with clear error messages if prerequisites missing
+
+### AC2: Extend Pre-Commit Hooks for Quality Checks
+
+**Given** pre-commit hooks were set up for linting
+**When** I extend pre-commit automation
+**Then** hooks include: TypeScript type checking, linting (ESLint), formatting (Prettier), basic smoke tests
+**And** hooks are fast (<10 seconds) to avoid slowing development
+**And** hooks can be bypassed with --no-verify if needed (documented)
+
+### AC3: Document Automation Best Practices
+
+**Given** quality guardrails are defined
+**When** I document automation best practices
+**Then** documentation includes: when to run integration tests, how to test validation scripts, pre-commit hook usage
+**And** automation checklist for story completion: [ ] validation scripts tested [ ] integration tests pass
+**And** examples provided for common validation patterns
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/integration-testing-standards.md</path>
+        <title>Integration Testing Standards</title>
+        <section>Validation Script Self-Testing Pattern</section>
+        <snippet>Demonstrates before/after pattern for adding --test mode to validation scripts with dependency checks, environment variable validation, and fail-fast error handling.</snippet>
+      </doc>
+      <doc>
+        <path>TESTING.md</path>
+        <title>Testing Guide</title>
+        <section>When Tests Run (CI/CD Integration)</section>
+        <snippet>Documents when each test type runs: unit tests every commit, integration tests every PR, scale tests nightly. Provides guidance for automation workflows.</snippet>
+      </doc>
+      <doc>
+        <path>.bmad/definition-of-done.md</path>
+        <title>Definition of Done</title>
+        <section>Section 4.1 Developer Self-Check</section>
+        <snippet>DoD validation checkpoints reference automation requirements: "Validation scripts tested" is part of developer self-check before marking story for review.</snippet>
+      </doc>
+      <doc>
+        <path>.bmad-ephemeral/stories/epic-quality.md</path>
+        <title>Quality Sprint Epic</title>
+        <section>Story Quality-4</section>
+        <snippet>Defines acceptance criteria for validation automation including --test mode for scripts, extended pre-commit hooks (<10 seconds), and automation best practices documentation.</snippet>
+      </doc>
+      <doc>
+        <path>.bmad-ephemeral/stories/quality-3-update-definition-of-done-with-scale-testing.md</path>
+        <title>Story Quality-3 (Previous Story)</title>
+        <section>Completion Notes</section>
+        <snippet>Created .bmad/definition-of-done.md with validation checkpoints. Quality-4 implements the automation that the DoD requires.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>scripts/validate-ai-search.sh</path>
+        <kind>validation script</kind>
+        <symbol>validate-ai-search</symbol>
+        <lines>-</lines>
+        <reason>Primary validation script requiring --test mode. Used for AI Search validation after ingestion.</reason>
+      </artifact>
+      <artifact>
+        <path>scripts/validate-ai-search-baseline.sh</path>
+        <kind>validation script</kind>
+        <symbol>validate-ai-search-baseline</symbol>
+        <lines>-</lines>
+        <reason>Baseline validation script requiring --test mode. Validates AI Search configuration and R2 bucket connection.</reason>
+      </artifact>
+      <artifact>
+        <path>.husky/pre-commit</path>
+        <kind>git hook</kind>
+        <symbol>pre-commit</symbol>
+        <lines>1-2</lines>
+        <reason>Current pre-commit hook runs lint-staged. Needs extension to include TypeScript type checking and performance optimization.</reason>
+      </artifact>
+      <artifact>
+        <path>lint-staged.config.js</path>
+        <kind>config</kind>
+        <symbol>lint-staged configuration</symbol>
+        <lines>1-3</lines>
+        <reason>Defines which commands run on staged files: eslint --fix and prettier --write for *.ts files. Hook entry point for quality checks.</reason>
+      </artifact>
+      <artifact>
+        <path>package.json</path>
+        <kind>config</kind>
+        <symbol>npm scripts</symbol>
+        <lines>6-18</lines>
+        <reason>Defines available npm scripts: lint, format, format:check, test. Pre-commit hooks can leverage these scripts for automation.</reason>
+      </artifact>
+      <artifact>
+        <path>README.md</path>
+        <kind>documentation</kind>
+        <symbol>Development Workflow section</symbol>
+        <lines>107-163</lines>
+        <reason>Development workflow section documents testing and deployment. Needs link to CONTRIBUTING.md for automation guidance.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <typescript>
+        <package name="@typescript-eslint/eslint-plugin" version="^8.46.4" />
+        <package name="@typescript-eslint/parser" version="^8.46.4" />
+        <package name="eslint" version="^9.39.1" />
+        <package name="prettier" version="^3.6.2" />
+        <package name="husky" version="^9.1.7" />
+        <package name="lint-staged" version="^16.2.6" />
+        <package name="typescript" version="^5.5.2" />
+        <package name="vitest" version="~3.2.0" />
+      </typescript>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Validation scripts MUST have --test mode with dependency checks, environment variable validation, and fail-fast error handling</constraint>
+    <constraint>Pre-commit hooks MUST execute in <10 seconds total to avoid slowing development workflow</constraint>
+    <constraint>Pre-commit hooks MUST be bypassable with --no-verify flag (documented in CONTRIBUTING.md)</constraint>
+    <constraint>Automation documentation MUST include practical examples and actionable checklists</constraint>
+    <constraint>Validation scripts MUST test with sample data (not production data) in --test mode</constraint>
+    <constraint>Pre-commit hooks SHOULD include: TypeScript type checking (npx tsc --noEmit), ESLint, Prettier, optional smoke tests</constraint>
+    <constraint>CONTRIBUTING.md MUST document when to run unit tests vs integration tests vs scale tests</constraint>
+    <constraint>Automation checklist MUST be added to story completion workflow (reference DoD Section 4.1)</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>Validation Script Test Mode API</name>
+      <kind>CLI flag</kind>
+      <signature>script.sh --test</signature>
+      <path>scripts/*.sh</path>
+      <note>All validation scripts must support --test flag for self-testing with sample data. Exit 0 on success, exit 1 on failure with clear error message.</note>
+    </interface>
+    <interface>
+      <name>Pre-Commit Hook Execution</name>
+      <kind>Git hook</kind>
+      <signature>npx lint-staged --config lint-staged.config.js</signature>
+      <path>.husky/pre-commit</path>
+      <note>Current hook runs lint-staged which executes eslint --fix and prettier --write. Needs extension for TypeScript type checking.</note>
+    </interface>
+    <interface>
+      <name>NPM Script Automation</name>
+      <kind>npm scripts</kind>
+      <signature>npm run lint, npm run format:check, npm test</signature>
+      <path>package.json</path>
+      <note>Available automation scripts for quality checks. Can be leveraged by pre-commit hooks and CI/CD workflows.</note>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+This story focuses on automation infrastructure (validation scripts, pre-commit hooks, documentation) rather than application logic, so testing approach differs:
+
+**Validation Script Testing:**
+- Each validation script must have --test mode that runs with sample data
+- Test validates: dependencies installed, environment variables set, syntax correct
+- Manual testing required: Run each script with --test flag and verify exit codes
+
+**Pre-Commit Hook Testing:**
+- Manual testing: Make a test commit and verify hooks execute
+- Performance testing: Measure execution time (must be <10 seconds)
+- Bypass testing: Verify --no-verify flag works as documented
+
+**Documentation Testing:**
+- Manual review: Verify CONTRIBUTING.md includes all required sections
+- Actionability check: Follow automation checklist and verify it's complete
+- Example validation: Verify provided examples are accurate and runnable
+
+**Testing Frameworks:**
+- Validation scripts: Bash with exit codes (0 = success, 1 = failure)
+- Pre-commit hooks: Husky + lint-staged
+- Unit tests: Vitest (not applicable for this story)
+    </standards>
+    <locations>
+- Validation scripts: scripts/*.sh (all must support --test mode)
+- Pre-commit hook: .husky/pre-commit
+- Lint configuration: lint-staged.config.js, eslint.config.js
+- Documentation: CONTRIBUTING.md (to be created), README.md (to be updated)
+    </locations>
+    <ideas>
+### Test Ideas for Story Quality-4:
+
+**AC1: Add Self-Testing to Validation Scripts**
+- Run `scripts/validate-ai-search.sh --test` and verify exit 0
+- Run `scripts/validate-ai-search-baseline.sh --test` and verify exit 0
+- Verify clear error messages when dependencies missing (e.g., uninstall aws-cli temporarily)
+- Verify environment variable validation (e.g., unset R2_BUCKET temporarily)
+
+**AC2: Extend Pre-Commit Hooks**
+- Make a test commit with intentional TypeScript error, verify hook catches it
+- Measure hook execution time: `time git commit -m "test"` (should be <10 seconds)
+- Test bypass: `git commit --no-verify -m "test"` (should skip hooks)
+- Verify lint-staged runs eslint --fix and prettier --write on staged *.ts files
+
+**AC3: Document Automation Best Practices**
+- Review CONTRIBUTING.md for completeness (all required sections present)
+- Follow automation checklist manually and verify all steps are actionable
+- Run provided examples and verify they work as documented
+
+**Integration:**
+- End-to-end test: Make a change, run validation scripts with --test, commit with hooks enabled, verify all automation passes
+    </ideas>
+  </tests>
+</story-context>

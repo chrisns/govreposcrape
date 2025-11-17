@@ -1,0 +1,184 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>1.1</storyId>
+    <title>Project Initialization &amp; Cloudflare Service Provisioning</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-12</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>.bmad-ephemeral/stories/1-1-project-initialization-cloudflare-service-provisioning.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>platform engineer</asA>
+    <iWant>to initialize the Cloudflare Workers project with all required service bindings</iWant>
+    <soThat>we have a working foundation for building the data ingestion and API layers</soThat>
+    <tasks>
+      - Task 1: Initialize Cloudflare Workers project with template (AC: #1)
+        - Run `npm create cloudflare@latest govreposcrape -- --type hello-world --ts`
+        - Verify wrangler.toml is created
+        - Run `npm install` to install dependencies
+        - Verify project builds successfully
+
+      - Task 2: Provision Cloudflare services (AC: #2)
+        - Create D1 database: `wrangler d1 create govreposcrape-db`
+        - Create KV namespace: `wrangler kv:namespace create govreposcrape-cache`
+        - Create R2 bucket: `wrangler r2 bucket create govreposcrape-gitingest`
+        - Create Vectorize index (768-dim, cosine similarity)
+        - Update wrangler.toml with all service binding IDs
+
+      - Task 3: Verify service connectivity (AC: #2)
+        - Write test Workers script to verify D1 connection
+        - Write test Workers script to verify KV connection
+        - Write test Workers script to verify R2 connection
+        - Write test Workers script to verify Vectorize connection
+        - Deploy test script and verify all services respond
+
+      - Task 4: Document environment setup (AC: #3)
+        - Create .env.example with CLOUDFLARE_ACCOUNT_ID and API token placeholders
+        - Create README.md with setup instructions
+        - Document service naming convention (govreposcrape-*)
+        - Document all provisioned service IDs for team reference
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. **Given** a new repository with no existing infrastructure
+       **When** I initialize the project with Cloudflare Workers template
+       **Then** the project has a valid wrangler.toml configuration file
+       **And** npm dependencies are installed and locked
+       **And** the project can be deployed to Cloudflare Workers
+
+    2. **Given** the Workers project is initialized
+       **When** I provision Cloudflare services (D1, KV, Vectorize, R2)
+       **Then** all service bindings are created with appropriate names
+       **And** wrangler.toml contains all binding IDs
+       **And** I can verify connectivity to each service via test Workers script
+
+    3. **And** The project structure follows Cloudflare Workers best practices
+       **And** Environment variables are documented in .env.example
+       **And** Basic README exists with setup instructions
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture</title>
+        <section>Project Initialization</section>
+        <snippet>First implementation story must execute: npm create cloudflare@latest govreposcrape -- --type hello-world --ts. This establishes the base Cloudflare Workers architecture with TypeScript, esbuild, workerd runtime, and wrangler CLI deployment.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture</title>
+        <section>Decision Summary</section>
+        <snippet>Platform: Cloudflare Workers (edge compute, &lt;£50/month target). Language: TypeScript 5.9+ (strict mode). Starter Template: create-cloudflare hello-world. Data Storage: R2 (object storage). Cache: KV. Test Framework: Vitest 4.0+ with @cloudflare/vitest-pool-workers.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture</title>
+        <section>Project Structure</section>
+        <snippet>Project structure includes src/ directory with index.ts entry point, wrangler.toml for Workers config, package.json, tsconfig.json, .env.example, and README.md. Service bindings configured for R2, KV, D1, and Vectorize.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture</title>
+        <section>Development Environment - Setup Commands</section>
+        <snippet>Setup: npm create cloudflare@latest, install dependencies, provision services via wrangler (d1 create, kv:namespace create, r2 bucket create), update wrangler.toml with service IDs, create .env.example, run wrangler dev.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic Breakdown</title>
+        <section>Story 1.1: Project Initialization &amp; Cloudflare Service Provisioning</section>
+        <snippet>Use npm create cloudflare@latest for Workers template. Provision services: D1 database, KV namespace, Vectorize index (768-dim, cosine), R2 bucket. Service naming convention: govreposcrape-*. wrangler.toml must include all bindings for type safety.</snippet>
+      </doc>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>NFR-1: Performance</section>
+        <snippet>NFR-1.1: Query response time &lt;2s (p95 end-to-end). NFR-1.3: Data ingestion pipeline processes ~21k repos in &lt;6 hours with parallelization.</snippet>
+      </doc>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>NFR-7: Cost Constraints</section>
+        <snippet>NFR-7.1: MVP infrastructure costs &lt;£50/month (Cloudflare Workers free tier + R2 storage + AI Search pay-per-query). Smart caching reduces processing costs by 90%+.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <!-- No existing code - this is the foundation story for a greenfield project -->
+    </code>
+    <dependencies>
+      <node>
+        <package name="@cloudflare/workers-types" purpose="TypeScript type definitions for Workers runtime" />
+        <package name="vitest" purpose="Test framework" />
+        <package name="@cloudflare/vitest-pool-workers" purpose="Workers-specific Vitest test pool" />
+        <package name="wrangler" purpose="Cloudflare Workers CLI (4.47.0+)" />
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - **Service Naming Convention**: All Cloudflare services MUST use prefix `govreposcrape-` (D1: govreposcrape-db, KV: govreposcrape-cache, R2: govreposcrape-gitingest, Vectorize: govscraperepo-code-index)
+    - **TypeScript Configuration**: strict mode enabled (strictNullChecks, noImplicitAny), target: ES2022, module: ESNext
+    - **Template Choice**: Use `hello-world` template type for clean TypeScript starting point
+    - **Vectorize Configuration**: 768-dimensional embeddings, cosine similarity metric
+    - **Project Structure**: Follow architecture.md structure exactly - src/ with index.ts entry point, future subdirectories for ingestion/, search/, api/, utils/
+    - **Environment Variables**: Document all required env vars in .env.example (CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN)
+    - **wrangler.toml**: Must include ALL service bindings (R2, KV, D1, Vectorize) for type safety and runtime access
+    - **Prerequisites**: Node.js 20+, npm 10+, wrangler CLI 4.47.0+, Cloudflare account with Workers enabled
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>wrangler.toml Service Bindings</name>
+      <kind>configuration</kind>
+      <signature>
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "govreposcrape-gitingest"
+
+[[kv_namespaces]]
+binding = "KV"
+id = "&lt;kv-namespace-id&gt;"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "govreposcrape-db"
+database_id = "&lt;d1-database-id&gt;"
+
+[[vectorize]]
+binding = "VECTORIZE"
+index_name = "govscraperepo-code-index"
+      </signature>
+      <path>wrangler.toml</path>
+    </interface>
+    <interface>
+      <name>Workers Entry Point</name>
+      <kind>TypeScript module</kind>
+      <signature>export default { fetch(request: Request, env: Env, ctx: ExecutionContext): Promise&lt;Response&gt; }</signature>
+      <path>src/index.ts</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      This is the foundation story - no existing test infrastructure yet. Future stories will use Vitest 4.0+ with @cloudflare/vitest-pool-workers for Workers-specific testing. Tests should be co-located with source files (*.test.ts pattern). For this story, service connectivity verification is done via a deployable test Workers script that validates each service binding (D1, KV, R2, Vectorize) returns successful responses.
+    </standards>
+    <locations>
+      - Future test location: src/**/*.test.ts (co-located with source)
+      - Service verification: Can be deployed as temporary Workers script for connectivity validation
+    </locations>
+    <ideas>
+      - AC#1: Verify wrangler.toml exists and is valid TOML format
+      - AC#1: Verify package.json exists with required dependencies
+      - AC#1: Verify project builds without errors (wrangler build)
+      - AC#2: Verify all service bindings are present in wrangler.toml (R2, KV, D1, Vectorize)
+      - AC#2: Deploy test script that attempts connection to each service and returns status
+      - AC#2: Verify service naming follows convention (govreposcrape-* prefix)
+      - AC#3: Verify .env.example exists with required variables documented
+      - AC#3: Verify README.md exists with setup instructions
+      - AC#3: Verify project structure matches architecture requirements
+    </ideas>
+  </tests>
+</story-context>

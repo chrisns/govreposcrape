@@ -1,0 +1,322 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>6</epicId>
+    <storyId>2</storyId>
+    <title>Security Compliance Validation - NCSC Standards</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-15</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>.bmad-ephemeral/stories/6-2-security-compliance-validation-ncsc-standards.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>security engineer</asA>
+    <iWant>to validate the platform against NCSC Secure Coding Standards</iWant>
+    <soThat>govscraperepo meets government security requirements for production deployment</soThat>
+    <tasks>
+### Task 1: Create NCSC Compliance Checklist (AC: #1, #3)
+- [ ] 1.1 Create `SECURITY.md` file with NCSC Secure Coding Standards checklist
+- [ ] 1.2 Document input validation requirements (query parameters, JSON bodies)
+- [ ] 1.3 Document output encoding practices (JSON-only responses, no HTML injection)
+- [ ] 1.4 Document secrets management (no secrets in code/logs, use wrangler secret)
+- [ ] 1.5 Document HTTPS-only enforcement (TLS 1.3, verify wrangler.toml)
+- [ ] 1.6 Document audit logging compliance (query logs per NFR-2.3)
+- [ ] 1.7 Document read-only access pattern (no writes to GitHub)
+- [ ] 1.8 Document security incident response plan
+
+### Task 2: Implement Security Audit Script (AC: #1, #2)
+- [ ] 2.1 Create `scripts/security-audit.sh` bash script
+- [ ] 2.2 Integrate npm audit for dependency vulnerability scanning
+- [ ] 2.3 Add NCSC checklist validation logic (validate input sanitization exists)
+- [ ] 2.4 Verify no eval/exec usage in codebase (grep for dangerous patterns)
+- [ ] 2.5 Check for secrets in logs (grep for API keys, tokens, passwords)
+- [ ] 2.6 Verify HTTPS-only in wrangler.toml and fetch calls
+- [ ] 2.7 Generate SecurityAuditReport JSON output with pass/fail status
+- [ ] 2.8 Add console log summary report for quick review
+
+### Task 3: Validate Input Sanitization on API Endpoints (AC: #1)
+- [ ] 3.1 Review all API endpoints in src/api/ for input validation
+- [ ] 3.2 Verify query parameter validation (search endpoint /api/search)
+- [ ] 3.3 Ensure no unsafe eval/exec usage in code
+- [ ] 3.4 Document input validation patterns in SECURITY.md
+- [ ] 3.5 Add tests for malicious input rejection (XSS, SQL injection attempts)
+
+### Task 4: Configure Dependency Security Scanning (AC: #2)
+- [ ] 4.1 Configure Dependabot in `.github/dependabot.yml`
+- [ ] 4.2 Set up weekly dependency scan schedule
+- [ ] 4.3 Configure security alert notifications (GitHub Security Advisories)
+- [ ] 4.4 Document dependency update process in SECURITY.md
+- [ ] 4.5 Add npm audit to CI/CD pipeline (GitHub Actions)
+- [ ] 4.6 Configure CI to block PRs on high/critical vulnerabilities
+
+### Task 5: Verify Audit Logging Compliance (AC: #3)
+- [ ] 5.1 Review existing structured logging from Epic 1.3 (src/utils/logger.ts)
+- [ ] 5.2 Verify all queries logged with timestamp, query text, response time
+- [ ] 5.3 Ensure no PII or secrets in log output
+- [ ] 5.4 Document audit log retention policy (Cloudflare 7-day default)
+- [ ] 5.5 Test log export for compliance audits
+- [ ] 5.6 Document audit logging in SECURITY.md per NFR-2.3
+
+### Task 6: Testing and Validation (AC: #1, #2, #3)
+- [ ] 6.1 Write unit tests for input validation functions
+- [ ] 6.2 Write integration test to run full security audit script
+- [ ] 6.3 Test npm audit in CI/CD with zero high/critical vulnerabilities assertion
+- [ ] 6.4 Manual review of NCSC checklist completeness
+- [ ] 6.5 Test Dependabot configuration with test vulnerability PR
+- [ ] 6.6 Validate SECURITY.md documentation completeness
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+**AC-6.2.1: NCSC Compliance Checklist**
+
+- **Given** the platform codebase is complete
+- **When** I perform security compliance validation
+- **Then** security checklist covers: input validation, output encoding, no eval/exec, dependency scanning
+- **And** all API endpoints validate and sanitize inputs (query strings, parameters)
+- **And** no secrets or API keys are logged or exposed in error messages
+- **And** HTTPS-only enforcement is verified (TLS 1.3)
+
+**AC-6.2.2: Dependency Security Scanning**
+
+- **Given** dependencies are used in the project
+- **When** I run dependency security scanning
+- **Then** npm audit or equivalent shows zero high/critical vulnerabilities
+- **And** Dependabot or equivalent is configured for automated security updates
+- **And** dependency scanning runs weekly with alerts on new vulnerabilities
+
+**AC-6.2.3: Security Documentation**
+
+- **And** Security compliance checklist is documented in SECURITY.md
+- **And** Audit logging covers all queries (timestamp, query text, response time) per NFR-2.3
+- **And** Read-only access pattern is validated (no write operations to GitHub)
+- **And** Security incident response plan is documented
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>Non-Functional Requirements - Security</section>
+        <snippet>NFR-2.1 mandates NCSC Secure Coding Standards compliance including input validation on all API endpoints, no eval/exec usage, and secrets management. NFR-2.3 requires 100% audit logging of queries with timestamp, query text, and response time. NFR-2.5 requires zero high/critical CVEs with weekly scans and 48-hour patching SLA.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>System Architecture Document</title>
+        <section>Security Architecture and Logging Strategy</section>
+        <snippet>Architecture defines structured JSON logging foundation (Epic 1.3), read-only access pattern to public repositories, HTTPS-only enforcement, and zero PII in logs. All security tooling should be open-source and zero-install (leverage Cloudflare built-in features).</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic Breakdown Document</title>
+        <section>Epic 6: Operational Excellence</section>
+        <snippet>Epic 6 establishes production-ready operational practices including security compliance validation against NCSC standards. Goal is to ensure MVP is sustainable, secure (NCSC compliant), and observable with actionable metrics. Security compliance enables government trust and confident production deployment.</snippet>
+      </doc>
+      <doc>
+        <path>.bmad-ephemeral/stories/tech-spec-epic-6.md</path>
+        <title>Technical Specification - Epic 6</title>
+        <section>Security Compliance Data Models and Workflows</section>
+        <snippet>Defines SecurityChecklistItem and SecurityAuditReport interfaces. Story 6.2 workflow covers NCSC checklist creation, security-audit.sh implementation, npm audit integration, Dependabot configuration, input validation review, and CI/CD pipeline integration. Script interface: ./scripts/security-audit.sh with --checklist-only, --dependencies, --fix flags.</snippet>
+      </doc>
+      <doc>
+        <path>TESTING.md</path>
+        <title>Testing Guide</title>
+        <section>Test Types and CI/CD Integration</section>
+        <snippet>Project uses Vitest framework with @cloudflare/vitest-pool-workers. Unit tests required for all stories with logic. Integration tests required for service binding stories. CI/CD integration section provides guidance for adding npm audit and security validation to pipeline.</snippet>
+      </doc>
+      <doc>
+        <path>.bmad-ephemeral/stories/6-1-cost-monitoring-dashboard-and-alerts.md</path>
+        <title>Story 6.1 Implementation Reference</title>
+        <section>Completion Notes and Patterns</section>
+        <snippet>Established npm scripts pattern (cost-monitor, cost-monitor:alert, cost-monitor:export). Uses createLogger() from src/utils/logger.ts for structured logging. Added 126-line README section documenting feature. 16 unit tests with 100% pass rate. TypeScript interfaces defined (CostBreakdown, CostAlert). Zero issues in code review.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>src/utils/logger.ts</path>
+        <kind>utility</kind>
+        <symbol>createLogger</symbol>
+        <lines>1-120</lines>
+        <reason>Structured JSON logging foundation (Epic 1.3). Security audit script should use createLogger() for audit events to maintain consistent logging patterns. Already includes requestId correlation and ISO 8601 timestamps for NFR-2.3 compliance.</reason>
+      </artifact>
+      <artifact>
+        <path>src/api/search-endpoint.ts</path>
+        <kind>api-endpoint</kind>
+        <symbol>executeSearch</symbol>
+        <lines>40-60</lines>
+        <reason>Example of input validation pattern - query.substring(0, 100) for privacy, query validation via MCPRequest type. Security validation should verify all API endpoints follow similar input sanitization patterns.</reason>
+      </artifact>
+      <artifact>
+        <path>src/api/mcp-handler.ts</path>
+        <kind>api-handler</kind>
+        <symbol>validateMCPRequest</symbol>
+        <lines>1-50</lines>
+        <reason>Input validation and request parsing logic. Security checklist should verify this handler validates query parameters and rejects malicious inputs (XSS, injection attempts).</reason>
+      </artifact>
+      <artifact>
+        <path>scripts/cost-monitoring.ts</path>
+        <kind>operational-script</kind>
+        <symbol>main</symbol>
+        <lines>1-541</lines>
+        <reason>Reference implementation for npm scripts pattern established in Story 6.1. Security-audit.sh should follow similar CLI argument pattern (--format json) and npm scripts integration (security-audit, security-audit:fix).</reason>
+      </artifact>
+      <artifact>
+        <path>wrangler.jsonc</path>
+        <kind>configuration</kind>
+        <symbol>N/A</symbol>
+        <lines>1-50</lines>
+        <reason>Cloudflare Workers configuration including service bindings and AI config. Security audit must verify HTTPS-only enforcement, no plaintext secrets in config, and proper TLS settings.</reason>
+      </artifact>
+      <artifact>
+        <path>test/scripts/cost-monitoring.test.ts</path>
+        <kind>test</kind>
+        <symbol>describe blocks</symbol>
+        <lines>1-421</lines>
+        <reason>Testing pattern reference - 16 unit tests with 100% pass rate using Vitest. Security audit tests should follow similar structure: describe blocks for categories, mocked dependencies, explicit AC verification.</reason>
+      </artifact>
+      <artifact>
+        <path>src/utils/error-handler.ts</path>
+        <kind>utility</kind>
+        <symbol>ServiceError</symbol>
+        <lines>1-50</lines>
+        <reason>Custom error class for structured error handling. Security audit should verify errors don't leak sensitive information (no secrets/API keys in error messages per NFR-2.1).</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <npm>
+        <package>vitest</package>
+        <version>^2.1.8</version>
+        <purpose>Testing framework - unit tests for security validation functions</purpose>
+      </npm>
+      <npm>
+        <package>@cloudflare/vitest-pool-workers</package>
+        <version>^0.7.4</version>
+        <purpose>Cloudflare Workers test environment integration</purpose>
+      </npm>
+      <npm>
+        <package>typescript</package>
+        <version>^5.9.0</version>
+        <purpose>Type safety for SecurityChecklistItem and SecurityAuditReport interfaces</purpose>
+      </npm>
+      <npm>
+        <package>tsx</package>
+        <version>^4.20.6</version>
+        <purpose>TypeScript execution (established in Story 6.1) - NOT needed for bash security-audit.sh</purpose>
+      </npm>
+      <bash>
+        <tool>npm audit</tool>
+        <purpose>Dependency vulnerability scanning (built-in npm feature, zero install)</purpose>
+      </bash>
+      <bash>
+        <tool>grep</tool>
+        <purpose>Pattern matching for dangerous code patterns (eval/exec) and secrets detection</purpose>
+      </bash>
+      <github>
+        <feature>Dependabot</feature>
+        <config>.github/dependabot.yml</config>
+        <purpose>Automated security updates for npm dependencies</purpose>
+      </github>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint id="C1">NCSC Secure Coding Standards compliance is mandatory (NFR-2.1) - all API endpoints must validate and sanitize inputs</constraint>
+    <constraint id="C2">No eval(), exec(), or dynamic code execution allowed - security audit must grep codebase and verify zero occurrences</constraint>
+    <constraint id="C3">Secrets management: use wrangler secret for API tokens - no secrets in code, logs, or git history</constraint>
+    <constraint id="C4">HTTPS-only enforcement with TLS 1.3 - verify in wrangler.jsonc and all fetch() calls</constraint>
+    <constraint id="C5">Audit logging compliance (NFR-2.3) - 100% of queries logged with timestamp, query text, response time using structured JSON logger</constraint>
+    <constraint id="C6">Read-only access pattern - no write operations to GitHub, only metadata and gitingest API calls</constraint>
+    <constraint id="C7">Zero high/critical CVEs in production dependencies (NFR-2.5) - weekly scans, 48-hour patching SLA</constraint>
+    <constraint id="C8">Use open-source security tools only - npm audit, Dependabot, GitHub Security Advisories (zero-install principle)</constraint>
+    <constraint id="C9">No PII in logs or vectors - security audit must verify logger.info() calls don't log sensitive user data</constraint>
+    <constraint id="C10">CI/CD integration required - npm audit must run on every PR and block merges on high/critical vulnerabilities</constraint>
+    <constraint id="C11">Testing coverage goal: 80%+ on input validation functions and security audit logic</constraint>
+    <constraint id="C12">Follow npm scripts pattern from Story 6.1 - security-audit, security-audit:checklist, security-audit:dependencies</constraint>
+    <constraint id="C13">Documentation in SECURITY.md required - incident response plan, compliance checklist, dependency update process</constraint>
+  </constraints>
+  <interfaces>
+    <interface>
+      <name>createLogger</name>
+      <kind>function signature</kind>
+      <signature>createLogger(context: LogContext): Logger</signature>
+      <path>src/utils/logger.ts</path>
+      <description>Structured JSON logger factory. Security audit events should use this for consistent logging (requestId correlation, ISO 8601 timestamps).</description>
+    </interface>
+    <interface>
+      <name>SecurityChecklistItem</name>
+      <kind>TypeScript interface</kind>
+      <signature>interface SecurityChecklistItem { id: string; category: "input_validation" | "output_encoding" | "secrets" | "dependencies" | "https" | "audit_logging"; description: string; status: "pass" | "fail" | "not_applicable"; evidence: string; remediation?: string; }</signature>
+      <path>.bmad-ephemeral/stories/tech-spec-epic-6.md:102-109</path>
+      <description>Data model for NCSC compliance checklist items. Each item maps to NCSC standards with pass/fail status and evidence.</description>
+    </interface>
+    <interface>
+      <name>SecurityAuditReport</name>
+      <kind>TypeScript interface</kind>
+      <signature>interface SecurityAuditReport { audit_date: string; overall_status: "pass" | "fail"; checklist: SecurityChecklistItem[]; dependency_vulnerabilities: { high: number; medium: number; low: number; }; ncsc_compliance: boolean; }</signature>
+      <path>.bmad-ephemeral/stories/tech-spec-epic-6.md:111-122</path>
+      <description>Complete security audit report structure. Generated by security-audit.sh and output as JSON for CI/CD integration.</description>
+    </interface>
+    <interface>
+      <name>npm audit output</name>
+      <kind>CLI command output</kind>
+      <signature>npm audit --json</signature>
+      <path>N/A - npm built-in</path>
+      <description>JSON output format for dependency vulnerabilities. Security-audit.sh should parse this to populate dependency_vulnerabilities in SecurityAuditReport.</description>
+    </interface>
+  </interfaces>
+  <tests>
+    <standards>Project uses Vitest (^2.1.8) with @cloudflare/vitest-pool-workers for Workers-compatible testing. Unit tests are required for ALL stories with logic and must achieve 80%+ coverage on core functions. Tests should be organized in describe blocks by functional category with explicit AC verification. Integration tests are required for service binding interactions (KV, R2, D1, AI Search) but NOT for pure logic/documentation stories. Testing pattern established in Story 6.1: 16 unit tests with 100% pass rate, mocked external dependencies (Analytics API), and clear AC-to-test mapping. Security tests should mock npm audit output and validate bash script exit codes. CI/CD integration requires npm audit to run on every PR with zero high/critical vulnerabilities as blocking criteria.</standards>
+    <locations>
+      <pattern>test/scripts/security-audit.test.ts</pattern>
+      <pattern>test/security/*.test.ts</pattern>
+      <pattern>test/api/*.test.ts (for input validation tests)</pattern>
+    </locations>
+    <ideas>
+      <idea ac="AC-6.2.1" priority="high">
+        <description>Unit test: Verify NCSC checklist validation logic in security-audit.sh</description>
+        <approach>Mock codebase grep results for eval/exec patterns, verify script detects violations and reports "fail" status. Test both pass and fail scenarios.</approach>
+      </idea>
+      <idea ac="AC-6.2.1" priority="high">
+        <description>Unit test: Validate input sanitization detection on API endpoints</description>
+        <approach>Read actual src/api/ files, verify security-audit.sh correctly identifies input validation patterns (type guards, query.substring for truncation). Test against known-good and known-bad patterns.</approach>
+      </idea>
+      <idea ac="AC-6.2.1" priority="high">
+        <description>Unit test: Verify secrets detection in logs and code</description>
+        <approach>Mock log files with test API keys/tokens, verify grep patterns detect them. Test common secret formats (API_KEY=, token:, Authorization:). Verify HTTPS-only enforcement check in wrangler.jsonc.</approach>
+      </idea>
+      <idea ac="AC-6.2.2" priority="high">
+        <description>Integration test: Run full security-audit.sh and verify zero high/critical vulnerabilities</description>
+        <approach>Execute actual npm audit --json, parse output, assert dependency_vulnerabilities.high === 0 && dependency_vulnerabilities.critical === 0. This validates real dependency state.</approach>
+      </idea>
+      <idea ac="AC-6.2.2" priority="medium">
+        <description>Unit test: Mock npm audit JSON output parsing</description>
+        <approach>Provide mock npm audit --json responses (with vulnerabilities and without), verify security-audit.sh correctly parses and categorizes by severity (high/medium/low).</approach>
+      </idea>
+      <idea ac="AC-6.2.2" priority="medium">
+        <description>Unit test: Verify Dependabot YAML configuration validity</description>
+        <approach>Parse .github/dependabot.yml, verify weekly schedule, npm ecosystem configured, correct directory ("/"). Validate YAML syntax and required fields.</approach>
+      </idea>
+      <idea ac="AC-6.2.3" priority="high">
+        <description>Unit test: Verify audit logging compliance check</description>
+        <approach>Mock logger.ts usage across codebase, verify security-audit.sh detects query logging with required fields (timestamp, query, responseTime). Check src/api/ endpoints use createLogger().</approach>
+      </idea>
+      <idea ac="AC-6.2.3" priority="high">
+        <description>Unit test: Validate SECURITY.md completeness</description>
+        <approach>Read generated SECURITY.md, verify required sections present: NCSC checklist, incident response plan, dependency update process, audit log retention policy. Assert section headers and minimum content length.</approach>
+      </idea>
+      <idea ac="AC-6.2.3" priority="medium">
+        <description>Unit test: Verify read-only access pattern validation</description>
+        <approach>Grep codebase for git commands and GitHub API write operations (POST/PUT/DELETE to github.com). Verify security-audit.sh detects zero write operations (only GET requests and gitingest API calls allowed).</approach>
+      </idea>
+      <idea ac="AC-6.2.1,AC-6.2.2,AC-6.2.3" priority="high">
+        <description>Integration test: End-to-end security audit report generation</description>
+        <approach>Run ./scripts/security-audit.sh --format json, parse SecurityAuditReport output. Verify all checklist items have status, overall_status is computed correctly (fail if any item fails), ncsc_compliance boolean matches overall_status. Validate JSON schema.</approach>
+      </idea>
+      <idea ac="AC-6.2.1" priority="low">
+        <description>Unit test: Malicious input rejection on MCP API endpoints</description>
+        <approach>Send crafted XSS payloads (&lt;script&gt;alert(1)&lt;/script&gt;) and SQL injection attempts ('; DROP TABLE--) to /api/search. Verify requests are sanitized or rejected with 400 status. This validates input validation implementation.</approach>
+      </idea>
+    </ideas>
+  </tests>
+</story-context>

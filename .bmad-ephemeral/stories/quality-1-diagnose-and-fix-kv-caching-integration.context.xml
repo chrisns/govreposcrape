@@ -1,0 +1,329 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>quality</epicId>
+    <storyId>quality.1</storyId>
+    <title>Diagnose and Fix KV Caching Integration</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-13</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>.bmad-ephemeral/stories/quality-1-diagnose-and-fix-kv-caching-integration.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>cost-conscious engineer</asA>
+    <iWant>to diagnose why KV caching isn't working and fix the integration</iWant>
+    <soThat>we achieve 90%+ cache hit rate and avoid wasting compute on reprocessing</soThat>
+    <tasks>
+      - Root Cause Diagnosis (30 minutes)
+        - Check KV access from Docker container
+        - Inspect container code (orchestrator.py, cache.py)
+        - Check Worker code for KV proxy endpoints
+        - Document findings with evidence
+
+      - Fix Implementation (1 hour)
+        - Implement Worker KV proxy endpoints (GET /cache/:org/:repo, PUT /cache/:org/:repo)
+        - Update container cache.py to call Worker KV proxy via HTTP
+        - Add cache hit/miss statistics logging
+        - Ensure cache hits skip gitingest processing
+
+      - Integration Testing (30 minutes)
+        - Test with 100+ repos from repos.json
+        - Verify 90%+ cache hit rate on second run
+        - Validate KV namespace entries
+        - Check cache entry format (pushedAt, processedAt, status)
+
+      - End-to-End Verification
+        - Run complete workflow: process 100 → reprocess 100 → verify cache hits
+        - Export cache statistics for monitoring
+        - Notify user when fix complete
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1" title="Root Cause Diagnosis">
+      <given>Story 2-2 was marked done but caching doesn't work</given>
+      <when>I diagnose the caching system</when>
+      <then>
+        - Identify root cause: why KV cache checks aren't preventing reprocessing
+        - Diagnosis covers: Worker orchestrator → Docker container communication, KV write/read logic, cache key format
+        - Findings documented with specific line numbers and code sections
+      </then>
+      <validation>
+        - Root cause identified and documented
+        - Evidence provided (logs, code inspection, test results)
+        - Specific code locations identified (file:line)
+      </validation>
+    </criterion>
+
+    <criterion id="AC2" title="Fix Implementation">
+      <given>The root cause is identified</given>
+      <when>I implement the fix</when>
+      <then>
+        - KV cache checks correctly prevent reprocessing of unchanged repos
+        - Cache hit/miss statistics logged to stdout
+        - Cache hits skip gitingest processing entirely
+        - Cache misses trigger processing and update KV after success
+      </then>
+      <validation>
+        - Code changes implement fix
+        - Cache hit/miss logging added
+        - Cache hit path skips gitingest
+        - Cache miss path processes and updates KV
+      </validation>
+    </criterion>
+
+    <criterion id="AC3" title="Integration Testing with Realistic Data">
+      <given>The fix is implemented</given>
+      <when>I test with realistic data (100+ repos)</when>
+      <then>
+        - Cache hit rate is 90%+ on second ingestion run
+        - Logs show: "Cache check: 95/100 hits (95.0%), 5 misses"
+        - KV namespace contains entries for all processed repos
+        - Cache entries include: pushedAt timestamp, processedAt timestamp, status
+      </then>
+      <validation>
+        - Integration test with 100+ repos passes
+        - Cache hit rate ≥90% on second run
+        - KV namespace contains correct entries
+        - Cache entry format validated
+      </validation>
+    </criterion>
+
+    <criterion id="AC4" title="End-to-End Verification">
+      <given>The fix is tested</given>
+      <when>I run end-to-end verification</when>
+      <then>
+        - Test workflow: process 100 repos → reprocess same 100 → verify 90%+ cache hits
+        - Cache statistics module exports metrics for monitoring
+        - User notified when fix is complete and tested
+      </then>
+      <validation>
+        - End-to-end test passes
+        - Cache statistics available
+        - User notified (can restart ingestion)
+      </validation>
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>.bmad-ephemeral/stories/epic-quality.md</path>
+        <title>Quality Sprint Epic</title>
+        <section>Story Quality-1</section>
+        <snippet>Address critical quality gaps discovered during Epic 2 implementation. KV caching completely broken - Story 2-2 marked "done" but doesn't work at all. Repositories being reprocessed from scratch, wasting compute and time.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic Breakdown</title>
+        <section>Epic 2: Lessons Learned</section>
+        <snippet>Integration tests critical for third-party API contracts. Issue: Mocked unit tests didn't catch gitingest API contract change. Takeaway: Integration tests with real dependencies needed.</snippet>
+      </doc>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>NFR-1.3, NFR-7.1</section>
+        <snippet>Smart caching via R2 metadata enables 90%+ cache hit rate target. Infrastructure cost target: <£50/month for MVP operations.</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <artifact>
+        <path>container/orchestrator.py</path>
+        <kind>orchestrator</kind>
+        <symbol>main pipeline orchestration</symbol>
+        <lines>unknown</lines>
+        <reason>Primary entry point for ingestion pipeline - needs investigation for cache integration</reason>
+      </artifact>
+      <artifact>
+        <path>container/cache.py</path>
+        <kind>cache module</kind>
+        <symbol>cache check/update logic</symbol>
+        <lines>unknown</lines>
+        <reason>Contains KV cache read/write logic that likely has integration bug</reason>
+      </artifact>
+      <artifact>
+        <path>container/ingest.py</path>
+        <kind>ingestion processor</kind>
+        <symbol>gitingest processing</symbol>
+        <lines>360-376</lines>
+        <reason>Summary size truncation logic - reference for understanding pipeline flow</reason>
+      </artifact>
+      <artifact>
+        <path>src/index.ts</path>
+        <kind>worker entry</kind>
+        <symbol>Cloudflare Worker main</symbol>
+        <lines>unknown</lines>
+        <reason>Will need KV proxy endpoints added here</reason>
+      </artifact>
+      <artifact>
+        <path>wrangler.jsonc</path>
+        <kind>config</kind>
+        <symbol>KV binding configuration</symbol>
+        <lines>unknown</lines>
+        <reason>Contains KV namespace binding that containers need to access via Worker proxy</reason>
+      </artifact>
+    </code>
+
+    <dependencies>
+      <node>
+        <package>@cloudflare/workers-types</package>
+        <reason>TypeScript types for Workers KV API</reason>
+      </node>
+      <python>
+        <package>requests</package>
+        <reason>HTTP client for container to call Worker KV proxy</reason>
+      </python>
+      <python>
+        <package>boto3</package>
+        <reason>Already in use for R2 access - reference pattern</reason>
+      </python>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint priority="critical">
+      <title>Docker containers cannot directly access Cloudflare Workers KV bindings</title>
+      <description>KV is a Workers-specific binding. External Docker containers require HTTP proxy through Worker to access KV namespace.</description>
+      <source>.bmad-ephemeral/stories/quality-1-diagnose-and-fix-kv-caching-integration.md#Likely Root Causes</source>
+    </constraint>
+
+    <constraint priority="high">
+      <title>Cache key format must match Story 2-2 specification</title>
+      <description>Cache keys follow pattern: repo:{org}/{name}. Must maintain consistency with original design.</description>
+      <source>docs/epics.md#Story 2.2</source>
+    </constraint>
+
+    <constraint priority="high">
+      <title>Integration tests required with 100+ repos minimum</title>
+      <description>Quality Sprint standard: No story marked done with only 5-repo unit tests. Requires realistic data volumes.</description>
+      <source>.bmad-ephemeral/stories/epic-quality.md#Integration Testing Standards</source>
+    </constraint>
+
+    <constraint priority="medium">
+      <title>Cache statistics must be logged and exportable</title>
+      <description>Structured logging of cache hit/miss rates for monitoring and observability.</description>
+      <source>docs/epics.md#Story 2.2</source>
+    </constraint>
+
+    <constraint priority="high">
+      <title>90%+ cache hit rate target on second run</title>
+      <description>Caching effectiveness validated with 90%+ hit rate when reprocessing same repos.</description>
+      <source>docs/PRD.md#FR-1.3</source>
+    </constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>Worker KV Proxy - GET /cache/:org/:repo</name>
+      <kind>REST endpoint</kind>
+      <signature>
+        GET /cache/:org/:repo
+        Response: 200 { pushedAt, processedAt, status } | 404 Not Found
+      </signature>
+      <path>src/api/cache-proxy.ts (to be created)</path>
+      <description>Check if repository exists in cache. Returns cache entry or 404 if not cached.</description>
+    </interface>
+
+    <interface>
+      <name>Worker KV Proxy - PUT /cache/:org/:repo</name>
+      <kind>REST endpoint</kind>
+      <signature>
+        PUT /cache/:org/:repo
+        Body: { pushedAt: string, processedAt: string, status: string }
+        Response: 204 No Content
+      </signature>
+      <path>src/api/cache-proxy.ts (to be created)</path>
+      <description>Update cache entry after successful repository processing.</description>
+    </interface>
+
+    <interface>
+      <name>Container Cache Client</name>
+      <kind>Python module</kind>
+      <signature>
+        check_cache(org: str, repo: str) -> Optional[CacheEntry]
+        update_cache(org: str, repo: str, entry: CacheEntry) -> None
+      </signature>
+      <path>container/cache.py (to be modified)</path>
+      <description>Python client that calls Worker KV proxy endpoints via HTTP.</description>
+    </interface>
+
+    <interface>
+      <name>KV Namespace Binding</name>
+      <kind>Cloudflare Workers KV</kind>
+      <signature>
+        env.CACHE_KV.get(key, 'json') -> Promise<CacheEntry>
+        env.CACHE_KV.put(key, value) -> Promise<void>
+      </signature>
+      <path>wrangler.jsonc#kv_namespaces</path>
+      <description>Cloudflare Workers KV binding for cache storage.</description>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      <standard>
+        Integration tests required for all stories with service integration (Quality Sprint standard). Tests must use real service bindings (KV, R2), not mocks. Minimum 100-1000 item samples for realistic validation. Test execution time of 5-10 minutes is acceptable for quality assurance.
+      </standard>
+      <standard>
+        Python integration tests in test/integration/ directory. Use pytest framework matching existing test structure. Test data from repos.json first 100 entries for deterministic, reproducible results.
+      </standard>
+      <standard>
+        Test infrastructure: Separate KV namespace (govscraperepo-test-kv) and R2 bucket (govscraperepo-test-r2) for isolation from production. Automated cleanup after test runs.
+      </standard>
+    </standards>
+
+    <locations>
+      <location>test/unit/*.test.ts - Existing unit tests (TypeScript/Vitest)</location>
+      <location>test/integration/ - NEW: Integration tests directory (Python/pytest)</location>
+      <location>test/integration/fixtures/ - Test data snapshots</location>
+    </locations>
+
+    <ideas>
+      <idea ac="AC1" priority="critical">
+        Test: Verify Docker container cannot access KV directly
+        - Run container interactively
+        - Attempt direct KV access (should fail)
+        - Document failure mode for root cause evidence
+      </idea>
+
+      <idea ac="AC2" priority="critical">
+        Test: Worker KV proxy endpoints functional
+        - Unit test: GET /cache/:org/:repo returns cached entry or 404
+        - Unit test: PUT /cache/:org/:repo updates KV namespace
+        - Integration test: Container can call Worker proxy successfully
+      </idea>
+
+      <idea ac="AC3" priority="critical">
+        Test: Cache hit rate validation with 100 repos
+        - First run: Process 100 repos, verify all cache misses
+        - Second run: Reprocess same 100 repos, assert ≥90% cache hits
+        - Verify KV contains 100 entries with correct format
+        - Validate cache entries: pushedAt, processedAt, status fields
+      </idea>
+
+      <idea ac="AC4" priority="high">
+        Test: End-to-end cache statistics monitoring
+        - Verify cache statistics exported to logs
+        - Test cache hit/miss rate calculation accuracy
+        - Validate structured logging format
+      </idea>
+
+      <idea priority="medium">
+        Test: Cache persistence across container restarts
+        - Process repos in first container instance
+        - Stop container
+        - Start new container instance
+        - Verify cache entries still accessible
+      </idea>
+
+      <idea priority="medium">
+        Test: Cache invalidation on pushedAt change
+        - Process repo with initial pushedAt timestamp
+        - Update repos.json with new pushedAt
+        - Reprocess - should be cache miss
+        - Verify new cache entry created
+      </idea>
+    </ideas>
+  </tests>
+</story-context>

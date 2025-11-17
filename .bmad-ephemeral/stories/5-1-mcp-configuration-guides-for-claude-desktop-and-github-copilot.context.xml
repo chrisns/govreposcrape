@@ -1,0 +1,354 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>5</epicId>
+    <storyId>5.1</storyId>
+    <title>MCP Configuration Guides for Claude Desktop and GitHub Copilot</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-14</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>.bmad-ephemeral/stories/5-1-mcp-configuration-guides-for-claude-desktop-and-github-copilot.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>UK government developer or civil servant</asA>
+    <iWant>step-by-step guides to configure Claude Desktop and GitHub Copilot to use the govscraperepo MCP API</iWant>
+    <soThat>I can discover relevant government code through my AI assistant in less than 5 minutes without needing support</soThat>
+    <tasks>
+      - Task 1: Create Claude Desktop Integration Guide (docs/integration/claude-desktop.md)
+        - 1.1 Create file structure
+        - 1.2 Write prerequisites section
+        - 1.3 Document OS-specific config file paths (macOS, Windows, Linux)
+        - 1.4 Provide exact JSON configuration block
+        - 1.5 Write step-by-step instructions
+        - 1.6 Add 3 example queries
+        - 1.7 Document expected response format
+        - 1.8 Write troubleshooting section
+        - 1.9 Test guide on macOS (verify less than 5 min completion)
+        - 1.10 Test guide on Linux or Windows
+      - Task 2: Create GitHub Copilot Integration Guide (docs/integration/github-copilot.md)
+        - 2.1 Create file with clear disclaimer
+        - 2.2 Add MCP support status disclaimer
+        - 2.3 Document expected MCP configuration format
+        - 2.4 Provide step-by-step instructions
+        - 2.5 Add Copilot-specific example queries
+        - 2.6 Write troubleshooting section
+        - 2.7 Link to official GitHub Copilot documentation
+        - 2.8 Add Coming Soon badge if needed
+      - Task 3: Multi-Platform Verification and Testing
+        - 3.1 Verify macOS config path
+        - 3.2 Verify Windows config path
+        - 3.3 Verify Linux config path
+        - 3.4 Confirm JSON format identical across platforms
+        - 3.5 Document platform-specific variations
+      - Task 4: Integration Examples and Verification
+        - 4.1 Create 3 UK government test queries
+        - 4.2 Execute test queries against production API
+        - 4.3 Document SearchResult structure
+        - 4.4 Add result interpretation guidance
+        - 4.5 Add visual examples
+      - Task 5: Documentation Review and Quality Checks
+        - 5.1 Readability check (F-E level 8-9)
+        - 5.2 Completeness check (all ACs covered)
+        - 5.3 Link integrity check
+        - 5.4 JSON validation
+        - 5.5 Peer review
+      - Task 6: Update README with Integration Quickstart
+        - 6.1 Add Quick Start section
+        - 6.2 Link to detailed guides
+        - 6.3 Provide 30-second overview
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <ac id="AC-5.1.1" title="Claude Desktop Configuration Guide Completeness">
+      GIVEN a developer has Claude Desktop installed
+      WHEN they follow the Claude Desktop MCP configuration guide
+      THEN the guide includes:
+      - Step-by-step instructions for locating config file (macOS, Windows, Linux paths)
+      - Exact JSON configuration with govscraperepo MCP endpoint
+      - Troubleshooting section covering: network errors, invalid config syntax, no results returned
+      - Example queries to verify integration: "search UK government authentication code"
+      - Expected results format (5 SearchResults with repo URLs, snippets, metadata)
+      AND the guide can be completed in less than 5 minutes by average developer
+      PASS CRITERIA: Developer can configure Claude Desktop and execute successful query without support
+    </ac>
+
+    <ac id="AC-5.1.2" title="GitHub Copilot Configuration Guide with Caveats">
+      GIVEN GitHub Copilot is installed in IDE (VS Code or JetBrains)
+      WHEN a developer reads the GitHub Copilot MCP configuration guide
+      THEN the guide includes:
+      - Clear disclaimer: "GitHub Copilot MCP support is preview/not yet publicly available"
+      - Step-by-step instructions for extension settings and MCP server configuration
+      - Example queries demonstrating Copilot-specific usage patterns
+      - Troubleshooting covering Copilot-specific issues
+      AND the guide clearly notes MCP support status and links to GitHub Copilot documentation
+      PASS CRITERIA: Developer understands MCP support status and has configuration steps ready when feature releases
+    </ac>
+
+    <ac id="AC-5.1.3" title="Multi-Platform Configuration Path Verification">
+      GIVEN Claude Desktop configuration guides for 3 platforms (macOS, Windows, Linux)
+      WHEN developers on each platform follow the guide
+      THEN config file paths are correct for:
+      - macOS: ~/Library/Application Support/Claude/claude_desktop_config.json
+      - Windows: %APPDATA%\Claude\claude_desktop_config.json
+      - Linux: ~/.config/Claude/claude_desktop_config.json
+      AND JSON configuration format is identical across all platforms
+      PASS CRITERIA: Manual testing on at least 2 platforms confirms paths and config work
+    </ac>
+
+    <ac id="AC-5.1.4" title="Integration Verification Examples">
+      GIVEN a developer has completed MCP configuration
+      WHEN they test the integration using provided example queries
+      THEN example queries include:
+      - "search UK government authentication code"
+      - "find NHS API integration examples"
+      - "show me postcode validation implementations"
+      AND guide explains expected response structure (SearchResult array with 5 results)
+      AND guide shows how to verify results are relevant government code
+      PASS CRITERIA: Developer can confirm integration works by executing test queries
+    </ac>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>.bmad-ephemeral/stories/tech-spec-epic-5.md</path>
+        <title>Epic 5 Technical Specification: Developer Experience and Documentation</title>
+        <section>Story 5.1 Acceptance Criteria</section>
+        <snippet>Complete acceptance criteria for MCP configuration guides including Claude Desktop completeness (AC-5.1.1), GitHub Copilot with caveats (AC-5.1.2), multi-platform verification (AC-5.1.3), and integration examples (AC-5.1.4). Includes detailed GIVEN/WHEN/THEN format with pass criteria.</snippet>
+      </doc>
+
+      <doc>
+        <path>.bmad-ephemeral/stories/tech-spec-epic-5.md</path>
+        <title>Epic 5 Technical Specification</title>
+        <section>Detailed Design - APIs and Interfaces</section>
+        <snippet>Claude Desktop MCP Configuration format in JSON with mcpServers structure. Config file locations for macOS (~/Library/Application Support/Claude/claude_desktop_config.json), Windows (%APPDATA%\Claude\claude_desktop_config.json), and Linux (~/.config/Claude/claude_desktop_config.json). GitHub Copilot configuration marked with clear MCP support status disclaimers.</snippet>
+      </doc>
+
+      <doc>
+        <path>.bmad-ephemeral/stories/tech-spec-epic-5.md</path>
+        <title>Epic 5 Technical Specification</title>
+        <section>Non-Functional Requirements - Documentation Quality</section>
+        <snippet>NFR-5.1: Documentation Load Time under 1 second. NFR-5.6: HTTPS-Only in Documentation. NFR-5.10: Documentation Accuracy with 100% code examples executing successfully. NFR-5.11: Config Path Accuracy verified on all supported OS platforms.</snippet>
+      </doc>
+
+      <doc>
+        <path>.bmad-ephemeral/stories/tech-spec-epic-5.md</path>
+        <title>Epic 5 Technical Specification</title>
+        <section>Risks, Assumptions, Open Questions</section>
+        <snippet>Risk 1: Claude Desktop config format changes (HIGH impact, LOW probability) - Mitigation: Version-pin documentation, link to official Anthropic MCP docs. Risk 2: GitHub Copilot MCP support not released (MEDIUM impact, MEDIUM-HIGH probability) - Mitigation: Clear visual disclaimers, Coming Soon badge. Assumption 2: Claude Desktop supports MCP v2 protocol with JSON config file format.</snippet>
+      </doc>
+
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture</title>
+        <section>Epic to Architecture Mapping</section>
+        <snippet>Epic 5: Developer Experience maps to docs/, examples/, static/ directories. Technologies: Markdown, OpenAPI 3.0, bash/node/python examples. No code changes to Workers API - pure documentation layer.</snippet>
+      </doc>
+
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture</title>
+        <section>Implementation Patterns - File Naming</section>
+        <snippet>File naming conventions: Markdown files use kebab-case.md (e.g., claude-desktop.md, github-copilot.md). Documentation follows GitHub-Flavored Markdown (GFM) standard.</snippet>
+      </doc>
+
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document - govscraperepo</title>
+        <section>FR-4: Developer Tools and Integration</section>
+        <snippet>FR-4.1: Provide clear configuration instructions for MCP-compatible AI assistants (Claude Desktop, GitHub Copilot) including exact endpoint URLs, authentication requirements (none for MVP), and example queries. Integration time target: under 5 minutes from documentation to first successful query.</snippet>
+      </doc>
+
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epics and Stories</title>
+        <section>Epic 5: Developer Experience and Documentation</section>
+        <snippet>Story 5.1: MCP Configuration Guides for Claude Desktop and GitHub Copilot. Goal: Enable developers to configure AI assistants in under 5 minutes. Deliverables: Platform-specific guides (macOS/Windows/Linux), JSON configuration examples, troubleshooting sections, and integration verification queries.</snippet>
+      </doc>
+
+      <doc>
+        <path>README.md</path>
+        <title>govscraperepo - UK Government Code Discovery via MCP API</title>
+        <section>Production API Endpoint</section>
+        <snippet>Production endpoint: https://govreposcrape.cloud.cns.me. MCP v2 protocol compliant. POST /mcp/search for semantic code search, GET /mcp/health for health checks. No authentication required (open access).</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <file>
+        <path>src/types.ts</path>
+        <kind>TypeScript interface definitions</kind>
+        <symbol>MCPRequest, MCPResponse, SearchResult</symbol>
+        <lines>All interfaces</lines>
+        <reason>These TypeScript interfaces define the exact data structures developers will receive from the MCP API. Documentation must accurately describe SearchResult structure (repo_url, snippet, similarity_score, metadata fields) to help developers verify integration works correctly.</reason>
+      </file>
+
+      <file>
+        <path>src/index.ts</path>
+        <kind>Workers entry point</kind>
+        <symbol>fetch handler, error responses</symbol>
+        <lines>Complete file</lines>
+        <reason>Main API endpoint implementation showing actual error response formats. Documentation troubleshooting section should reference real error codes and messages from this implementation (400 Bad Request for validation errors, 500 Internal Server Error for service failures).</reason>
+      </file>
+
+      <file>
+        <path>wrangler.jsonc</path>
+        <kind>Cloudflare Workers configuration</kind>
+        <symbol>Production environment configuration</symbol>
+        <lines>Complete file</lines>
+        <reason>Production deployment configuration confirming the actual deployed endpoint URL. Verifies https://govreposcrape.cloud.cns.me as the correct endpoint to document in integration guides.</reason>
+      </file>
+
+      <file>
+        <path>.bmad-ephemeral/stories/4-3-api-error-handling-and-structured-logging.md</path>
+        <kind>Previous story completion record</kind>
+        <symbol>Dev Agent Record, Senior Developer Review</symbol>
+        <lines>800-892</lines>
+        <reason>Establishes documentation quality standards from Story 4.3 (comprehensive README with 156 lines, user-friendly configuration tables, inline justifications). Apply same standards to MCP configuration guides. Production API confirmed operational and ready for integration testing.</reason>
+      </file>
+    </code>
+
+    <dependencies>
+      <node>
+        <devDependencies>
+          <wrangler>^4.47.0</wrangler>
+          <typescript>^5.5.2</typescript>
+          <prettier>^3.6.2</prettier>
+          <eslint>^9.39.1</eslint>
+        </devDependencies>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - **Pure Documentation Story**: No code changes to Workers API (src/, wrangler.jsonc). Only create/update Markdown files in docs/ and README.md
+    - **File Naming**: Use kebab-case.md for all documentation files (claude-desktop.md, github-copilot.md) per architecture conventions
+    - **Documentation Format**: GitHub-Flavored Markdown (GFM) standard - renders correctly on GitHub
+    - **Integration Time Target**: Guides must be completable in under 5 minutes (AC-5.1.1) - measured during manual testing
+    - **Platform Coverage**: Document all 3 platforms (macOS, Windows, Linux) with verified config file paths (AC-5.1.3)
+    - **Config Path Verification Required**: Test on at least 2 platforms (macOS + Linux OR Windows) per AC-5.1.3
+    - **GitHub Copilot Uncertainty**: Include clear disclaimers about MCP support status (AC-5.1.2) - "preview/not yet publicly available"
+    - **Production API Dependency**: Production endpoint https://govreposcrape.cloud.cns.me must be live and operational for integration testing
+    - **JSON Configuration Validity**: All JSON config blocks must be syntactically correct and tested
+    - **Example Query Validation**: All 3 example queries must return relevant UK government code results when tested against production API
+    - **Documentation Quality Standards**: Follow Story 4.3 standards - comprehensive, user-friendly, clear configuration tables, inline justifications
+    - **Readability Target**: F-E reading level 8-9 per NFR-5.4.5
+    - **Link Integrity**: All links must resolve (no 404s) per NFR-5.13
+    - **HTTPS-Only**: All documentation examples use HTTPS URLs per NFR-5.6
+    - **No Hardcoded Secrets**: Even though API is open access, demonstrate secure patterns for future auth (use environment variables in examples) per NFR-5.5
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>POST /mcp/search</name>
+      <kind>REST endpoint</kind>
+      <signature>POST https://govreposcrape.cloud.cns.me/mcp/search
+Request: { query: string (3-500 chars), limit?: number (1-20, default 5) }
+Response: { results: SearchResult[], took_ms: number }
+SearchResult: { repo_url, repo_org, repo_name, snippet, last_updated, language?, similarity_score, github_link, codespaces_link, metadata }</signature>
+      <path>src/index.ts</path>
+    </interface>
+
+    <interface>
+      <name>GET /mcp/health</name>
+      <kind>REST endpoint</kind>
+      <signature>GET https://govreposcrape.cloud.cns.me/mcp/health
+Response: { status: "healthy", services: { workers, ai_search, r2 }, timestamp }</signature>
+      <path>src/index.ts</path>
+    </interface>
+
+    <interface>
+      <name>Claude Desktop MCP Configuration</name>
+      <kind>JSON configuration file</kind>
+      <signature>{
+  "mcpServers": {
+    "govscraperepo": {
+      "url": "https://govreposcrape.cloud.cns.me/mcp",
+      "description": "UK Government code discovery - semantic search over 21k government repositories"
+    }
+  }
+}</signature>
+      <path>Config file locations platform-specific - see constraints</path>
+    </interface>
+
+    <interface>
+      <name>GitHub Copilot MCP Configuration</name>
+      <kind>JSON configuration (expected format, MCP support status uncertain)</kind>
+      <signature>Configuration format depends on Copilot's MCP implementation. Document expected format based on MCP v2 spec with clear disclaimer about support status.</signature>
+      <path>docs/integration/github-copilot.md (to be created)</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      **Manual Testing Only** - This is a pure documentation story with no automated tests. Testing approach:
+      1. Manual execution of integration guides on 2+ platforms (macOS + Linux/Windows) to verify config paths and completion time under 5 minutes
+      2. Manual query testing against production API to verify all 3 example queries return relevant results
+      3. JSON configuration validation (paste into JSON validator to check syntax)
+      4. Link integrity checking (manual click-through or automated tool like markdown-link-check)
+      5. Readability assessment (Flesch-Kincaid Grade Level tool to verify F-E level 8-9)
+      6. Peer review by second developer following guides fresh to identify unclear instructions
+
+      **Quality Gates from Story 4.3:**
+      - 100% pass rate expectation for manual tests (all guides work as documented)
+      - Zero regressions (all links resolve, all JSON valid, all queries return results)
+      - Comprehensive documentation matching Story 4.3 standards (156 lines README section as benchmark)
+    </standards>
+
+    <locations>
+      **No test files** - Documentation artifacts only:
+      - docs/integration/claude-desktop.md (to be created)
+      - docs/integration/github-copilot.md (to be created)
+      - README.md (to be updated with Quick Start section)
+    </locations>
+
+    <ideas>
+      <idea ac="AC-5.1.1">
+        Test Idea 1: Follow Claude Desktop guide on macOS
+        - Start timer when opening guide
+        - Follow each step exactly as written
+        - Measure completion time (target: under 5 minutes)
+        - Execute 3 example queries in Claude Desktop
+        - Verify each returns 5 SearchResults with expected fields
+        - Test troubleshooting section by intentionally creating errors (invalid JSON, wrong endpoint)
+      </idea>
+
+      <idea ac="AC-5.1.3">
+        Test Idea 2: Multi-platform config path verification
+        - Test macOS path: ~/Library/Application Support/Claude/claude_desktop_config.json
+        - Test Linux path on Ubuntu 22.04: ~/.config/Claude/claude_desktop_config.json
+        - OR verify Windows path from official Claude Desktop documentation: %APPDATA%\Claude\claude_desktop_config.json
+        - Confirm JSON configuration format identical across all platforms
+        - Document any platform-specific variations found
+      </idea>
+
+      <idea ac="AC-5.1.4">
+        Test Idea 3: Example query validation against production API
+        - Execute query 1: "search UK government authentication code" - expect 3+ relevant results
+        - Execute query 2: "find NHS API integration examples" - expect 3+ NHS-related results
+        - Execute query 3: "show me postcode validation implementations" - expect 3+ postcode-related results
+        - Verify SearchResult structure matches documentation (repo_url, snippet, similarity_score, metadata all present)
+        - Assess result relevance manually - are top 5 results actually UK government code?
+      </idea>
+
+      <idea ac="AC-5.1.2">
+        Test Idea 4: GitHub Copilot guide review
+        - Verify disclaimer is prominent and clear: "GitHub Copilot MCP support is preview/not yet publicly available"
+        - Check for Coming Soon badge or equivalent visual indicator
+        - Verify link to official GitHub Copilot documentation exists
+        - Confirm expected MCP configuration format based on MCP v2 spec
+        - Ensure guide manages expectations about feature availability
+      </idea>
+
+      <idea ac="AC-5.1.1, AC-5.1.2, AC-5.1.3, AC-5.1.4">
+        Test Idea 5: Documentation quality checks (all ACs)
+        - Readability: Run Flesch-Kincaid Grade Level tool on all guides - target F-E level 8-9
+        - Completeness: Verify every AC requirement has corresponding documentation section
+        - Link integrity: Run markdown-link-check on all .md files - zero 404s
+        - JSON validation: Paste all JSON config blocks into JSON validator - zero syntax errors
+        - Peer review: Second developer follows guides fresh - reports any unclear steps, missing prerequisites, or errors
+      </idea>
+    </ideas>
+  </tests>
+</story-context>

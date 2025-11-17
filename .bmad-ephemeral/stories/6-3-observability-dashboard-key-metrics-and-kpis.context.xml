@@ -1,0 +1,279 @@
+<story-context id="{bmad_folder}/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>6</epicId>
+    <storyId>3</storyId>
+    <title>Observability Dashboard - Key Metrics and KPIs</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-15</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>.bmad-ephemeral/stories/6-3-observability-dashboard-key-metrics-and-kpis.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>platform operator</asA>
+    <iWant>a dashboard showing key metrics and KPIs for platform health</iWant>
+    <soThat>I can monitor adoption, performance, and quality in real-time</soThat>
+    <tasks>
+### Task 1: Configure Cloudflare Analytics Dashboard (AC: #1, #3)
+- [ ] 1.1 Access Cloudflare Analytics dashboard for Workers project
+- [ ] 1.2 Document dashboard URL and access instructions in README
+- [ ] 1.3 Configure custom views for: query volume trends, response time percentiles, error rates
+- [ ] 1.4 Enable GraphQL Analytics API for programmatic access (if needed for custom metrics)
+- [ ] 1.5 Verify built-in metrics availability: requests, latency, errors, status codes
+
+### Task 2: Implement Custom Metrics Collection (AC: #1)
+- [ ] 2.1 Create `src/utils/metrics.ts` for custom metrics tracking
+- [ ] 2.2 Track cache hit rate: KV cache hits vs misses (integrate with Epic 2 caching)
+- [ ] 2.3 Track empty result rate: queries returning zero results
+- [ ] 2.4 Track slow query rate: queries with response time >2s
+- [ ] 2.5 Track error types breakdown: categorize errors by type (validation, AI Search timeout, etc.)
+- [ ] 2.6 Emit custom metrics via structured logging (integrate with src/utils/logger.ts)
+- [ ] 2.7 Add metrics to MCP API responses (optional: X-Response-Time, X-Cache-Hit headers)
+
+### Task 3: Configure MVP Success Tracking (AC: #2)
+- [ ] 3.1 Define MVP success thresholds in dashboard
+- [ ] 3.2 Create dashboard views highlighting MVP metrics
+- [ ] 3.3 Configure alerts for critical thresholds
+- [ ] 3.4 Set up alert delivery mechanism (Cloudflare Notifications, email, or Slack webhook)
+- [ ] 3.5 Document alert response procedures in README
+
+### Task 4: Implement Metrics Export Functionality (AC: #3)
+- [ ] 4.1 Create `scripts/export-metrics.ts` for metrics export (TypeScript with tsx)
+- [ ] 4.2 Integrate with Cloudflare GraphQL Analytics API for data retrieval
+- [ ] 4.3 Support export formats: CSV and JSON
+- [ ] 4.4 Add CLI arguments: --format (csv|json), --start-date, --end-date, --output-file
+- [ ] 4.5 Add npm scripts: `metrics-export`, `metrics-export:weekly`, `metrics-export:monthly`
+- [ ] 4.6 Document metrics export usage in README
+
+### Task 5: Document Dashboard Usage (AC: #3)
+- [ ] 5.1 Add "Observability Dashboard" section to README (after "Security Compliance")
+- [ ] 5.2 Document dashboard access: URL, authentication, permissions
+- [ ] 5.3 Add screenshots of key dashboard views
+- [ ] 5.4 Document custom metrics definitions and calculation methods
+- [ ] 5.5 Document alert configuration and thresholds
+- [ ] 5.6 Add metrics export examples (CSV, JSON)
+- [ ] 5.7 Link to Cloudflare Analytics documentation
+
+### Task 6: Testing and Validation (AC: #1, #2, #3)
+- [ ] 6.1 Write unit tests for metrics collection functions
+- [ ] 6.2 Write integration tests for metrics export script
+- [ ] 6.3 Manual validation: Generate test traffic and verify metrics appear in dashboard
+- [ ] 6.4 Verify alert triggering: Simulate error rate threshold breach
+- [ ] 6.5 Test metrics export for multiple time ranges and formats
+- [ ] 6.6 Validate README documentation completeness and accuracy
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+**AC-6.3.1: Key Metrics Dashboard**
+- **Given** the platform is operational and serving queries
+- **When** I view the observability dashboard
+- **Then** dashboard shows: query volume (per day/week), response time (p50, p95, p99), error rate, cache hit rate
+- **And** adoption metrics: unique users (if trackable), queries per user, repeat usage
+- **And** quality metrics: empty result rate, slow query rate (>2s), error types breakdown
+
+**AC-6.3.2: MVP Success Tracking**
+- **Given** I want to track MVP success criteria
+- **When** I review the dashboard
+- **Then** MVP metrics are highlighted: weekly query volume (target: hundreds), adoption trend, performance compliance (<2s p95)
+- **And** alerts are configured for: error rate >1%, p95 response time >2s, daily queries <10 (low adoption warning)
+
+**AC-6.3.3: Dashboard Accessibility**
+- **And** Dashboard is implemented using Cloudflare Analytics or custom tool (Grafana, Datadog)
+- **And** Key metrics are exportable for reporting (CSV, JSON)
+- **And** Dashboard link and access instructions are documented in README
+- **And** Metrics align with PRD success criteria (FR-8, NFR-1, NFR-6)
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <artifact>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR-8: Operational Excellence</section>
+        <snippet>FR-8.2 Audit Logging requirement: "Log all queries for compliance and debugging" with structured JSON logs (timestamp, query, user, results). User value: Accountability, debugging, compliance. Domain constraint: Government audit requirements.</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>NFR-1: Performance Requirements</section>
+        <snippet>NFR-1.1 Query Response Time: < 2 seconds (p95) end-to-end. Measurement via Workers Analytics, real-user monitoring. Rationale: GitHub search ~1-2s; we must match to be competitive. NFR-1.4 Cache Hit Rate: 90%+ cache hit rate on subsequent runs.</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>NFR-6: Reliability Requirements</section>
+        <snippet>NFR-6.1 API Uptime: 99.9% uptime (MVP), measured via Cloudflare Workers Analytics. NFR-6.3 Error Rate: < 0.1% API error rate (5xx responses), alerting via PagerDuty for error rate > 1%. Monitoring via Cloudflare Workers exception tracking.</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>Success Criteria</section>
+        <snippet>MVP Success Criteria: "Hundreds of uses per week" trackable via query volume metrics. Early adopters integrate and get relevant results. Infrastructure costs <£50/month. <2s query latency (p95). MVP Fails If: Adoption minimal despite availability (no one uses it).</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/epics.md</path>
+        <title>Epic 6: Operational Excellence</title>
+        <section>Story 6.3: Observability Dashboard</section>
+        <snippet>Goal: Dashboard showing key metrics and KPIs for platform health to monitor adoption, performance, and quality in real-time. Cloudflare Workers Analytics provides built-in metrics (requests, latency, errors). Custom metrics via structured logging: query patterns, result relevance, cache efficiency.</snippet>
+      </artifact>
+      <artifact>
+        <path>.bmad-ephemeral/stories/tech-spec-epic-6.md</path>
+        <title>Epic 6 Technical Specification</title>
+        <section>Story 6.3 Data Models</section>
+        <snippet>ObservabilityMetrics interface: query_volume, unique_users (optional), response_time_p50/p95/p99, error_rate, cache_hit_rate, empty_result_rate, slow_query_rate. MVP success metrics: weekly_queries (target: hundreds), adoption_trend, performance_compliance (p95 < 2s).</snippet>
+      </artifact>
+      <artifact>
+        <path>.bmad-ephemeral/stories/tech-spec-epic-6.md</path>
+        <title>Epic 6 Technical Specification</title>
+        <section>Story 6.3 Workflows</section>
+        <snippet>Workflow: 1) Access Cloudflare Analytics dashboard, 2) Configure custom metrics in src/utils/metrics.ts (cache hit rate, empty results), 3) Export key metrics (query volume, p50/p95/p99, error rate), 4) Set up alerts (error rate >1%, p95 >2s, daily queries <10), 5) Document dashboard access in README.</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Monitoring and Alerting</section>
+        <snippet>Cloudflare Analytics: Request volume, latency, error rates with built-in dashboard. Custom Metrics: Cost per query, cache hit rate, query response time distribution. Alerts: Error rate >1%, p95 >2s, low adoption warnings.</snippet>
+      </artifact>
+    </docs>
+    <code>
+      <artifact>
+        <path>src/utils/logger.ts</path>
+        <kind>utility</kind>
+        <symbol>createLogger, Logger, LogEntry, LogContext</symbol>
+        <lines>1-145</lines>
+        <reason>Structured JSON logging foundation (Epic 1.3). Story 6.3 custom metrics must integrate with this existing logging infrastructure for consistency. createLogger() used for operational event logging.</reason>
+      </artifact>
+      <artifact>
+        <path>src/api/search-endpoint.ts</path>
+        <kind>service</kind>
+        <symbol>executeSearch</symbol>
+        <lines>41-141</lines>
+        <reason>Main search endpoint that logs performance metrics (aiSearchDuration, totalDuration) and warns on slow queries (>2s). Lines 64-70, 110-116 show performance tracking patterns to replicate in metrics.ts.</reason>
+      </artifact>
+      <artifact>
+        <path>scripts/cost-monitoring.ts</path>
+        <kind>script</kind>
+        <symbol>CostBreakdown, CostAlert, EfficiencyMetrics</symbol>
+        <lines>1-150</lines>
+        <reason>Story 6.1 implementation showing TypeScript script pattern for operational tooling. Defines cost monitoring interfaces and Cloudflare Analytics API integration. Metrics export should follow similar patterns.</reason>
+      </artifact>
+      <artifact>
+        <path>src/types.ts</path>
+        <kind>types</kind>
+        <symbol>MCPRequest, MCPResponse, SearchResult</symbol>
+        <lines>151-168</lines>
+        <reason>Core API types. MCPResponse.took_ms field (line 167) tracks query execution time - this is a key performance metric for dashboard.</reason>
+      </artifact>
+      <artifact>
+        <path>README.md</path>
+        <kind>documentation</kind>
+        <symbol>N/A</symbol>
+        <lines>1-100</lines>
+        <reason>Project README structure. Story 6.3 requires adding "Observability Dashboard" section after "Security Compliance" following similar documentation patterns used in Story 6.1 and 6.2.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <node>
+        <typescript version="^5.5.2">Type-safe metrics interfaces and script implementation</typescript>
+        <tsx version="^4.20.6">Execute TypeScript scripts (export-metrics.ts) without compilation step</tsx>
+        <vitest version="~3.2.0">Unit and integration testing framework (project standard)</vitest>
+        <cloudflare-vitest-pool-workers version="^0.8.19">Workers-specific test environment for Vitest</cloudflare-vitest-pool-workers>
+        <wrangler version="^4.47.0">Cloudflare Workers CLI for deployment and log streaming</wrangler>
+        <prettier version="^3.6.2">Code formatting (project standard)</prettier>
+        <eslint version="^9.39.1">Code linting with TypeScript support</eslint>
+      </node>
+      <cloudflare>
+        <workers-analytics>Built-in telemetry for request volume, latency, errors (zero-install)</workers-analytics>
+        <graphql-analytics-api>Programmatic access to metrics data for export functionality</graphql-analytics-api>
+        <kv version="service-binding">Cache hit rate metrics (from Epic 2 caching)</kv>
+        <workers-runtime>Edge deployment platform with automatic metrics collection</workers-runtime>
+      </cloudflare>
+      <frameworks>
+        <structured-logging>src/utils/logger.ts - Existing logging infrastructure (Epic 1.3)</structured-logging>
+        <error-handling>src/utils/error-handler.ts - AppError, ServiceError patterns</error-handling>
+      </frameworks>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Follow Story 6.1 TypeScript script pattern for export-metrics.ts (use tsx, structured logging via createLogger, npm scripts for execution)</constraint>
+    <constraint>Integrate with existing structured logging infrastructure (src/utils/logger.ts) - DO NOT create parallel logging system</constraint>
+    <constraint>Performance tracking must use existing patterns from search-endpoint.ts (duration calculation, slow query warnings)</constraint>
+    <constraint>Custom metrics must emit structured JSON logs compatible with Cloudflare Workers log streaming (NFR-2.3 audit logging)</constraint>
+    <constraint>Dashboard documentation must follow README structure from Stories 6.1/6.2 (comprehensive sections with examples)</constraint>
+    <constraint>Alert thresholds align with PRD requirements: error rate >1% (NFR-6.3), p95 >2s (NFR-1.1), daily queries <10 (adoption warning)</constraint>
+    <constraint>Use Cloudflare Workers Analytics as primary metrics source (zero-install, built-in telemetry)</constraint>
+    <constraint>Vitest testing framework for unit/integration tests (existing project standard from Epic 1)</constraint>
+    <constraint>All metrics definitions must align with PRD success criteria (FR-8, NFR-1, NFR-6) for traceability</constraint>
+  </constraints>
+  <interfaces>
+    <interface>
+      <name>Cloudflare Workers Analytics API</name>
+      <kind>REST endpoint</kind>
+      <signature>GET /accounts/{account_id}/analytics/workers - Returns: { requests: { total, by_status }, latency: { p50, p95, p99 }, errors: { rate, count } }</signature>
+      <path>External - Cloudflare Platform API</path>
+    </interface>
+    <interface>
+      <name>createLogger</name>
+      <kind>function signature</kind>
+      <signature>createLogger(baseContext: Partial&lt;LogContext&gt;, minLogLevel?: LogLevel): Logger</signature>
+      <path>src/utils/logger.ts:104-107</path>
+    </interface>
+    <interface>
+      <name>Logger interface</name>
+      <kind>class interface</kind>
+      <signature>interface Logger { debug(message, metadata?), info(message, metadata?), warn(message, metadata?), error(message, metadata?) }</signature>
+      <path>src/utils/logger.ts:57-85</path>
+    </interface>
+    <interface>
+      <name>CostBreakdown (from Story 6.1)</name>
+      <kind>TypeScript interface</kind>
+      <signature>interface CostBreakdown { date, workers_cost, r2_cost, ai_search_cost, kv_cost, vectorize_cost, total_daily, cumulative_month, projection_month_end, budget_utilization }</signature>
+      <path>scripts/cost-monitoring.ts:26-47</path>
+    </interface>
+    <interface>
+      <name>ObservabilityMetrics (Tech Spec)</name>
+      <kind>TypeScript interface</kind>
+      <signature>interface ObservabilityMetrics { period, query_volume, unique_users?, response_time_p50/p95/p99, error_rate, cache_hit_rate, empty_result_rate, slow_query_rate, mvp_success_metrics }</signature>
+      <path>.bmad-ephemeral/stories/tech-spec-epic-6.md:126-144</path>
+    </interface>
+  </interfaces>
+  <tests>
+    <standards>
+Project uses Vitest (v3.2.0) with @cloudflare/vitest-pool-workers for Workers-specific testing. All tests follow describe/it/expect pattern with clear AC traceability comments. Test files mirror source structure: test/utils/, test/api/, test/scripts/. Coverage goal: 80%+ on core logic. Integration tests mock external dependencies (Cloudflare Analytics API). Manual tests validate end-to-end workflows and dashboard access. Story 6.1 established pattern: Unit tests for calculation logic, integration tests for API calls, manual tests for dashboard verification.
+    </standards>
+    <locations>
+test/utils/metrics.test.ts (new) - Unit tests for custom metrics collection functions
+test/scripts/export-metrics.test.ts (new) - Integration tests for metrics export script
+test/api/search-endpoint.test.ts (existing) - Contains performance tracking patterns to reference
+test/scripts/cost-monitoring.test.ts (existing) - Reference for script testing patterns from Story 6.1
+    </locations>
+    <ideas>
+      <idea ac="AC-6.3.1">
+Unit test: Mock Cloudflare Analytics API response, call metrics collection function, verify metrics format matches ObservabilityMetrics interface (query_volume, response_time_p50/p95/p99, error_rate, cache_hit_rate). Assert all required fields present and types correct.
+      </idea>
+      <idea ac="AC-6.3.1">
+Integration test: Create src/utils/metrics.ts with calculateCacheHitRate(), trackEmptyResults(), trackSlowQueries() functions. Mock KV cache stats and search-endpoint logs. Verify custom metrics calculated correctly (empty_result_rate, slow_query_rate >2s threshold).
+      </idea>
+      <idea ac="AC-6.3.1">
+Manual test: Generate test traffic via examples/curl.sh (10-20 test queries with varying response times). Access Cloudflare Analytics dashboard via README instructions. Verify query volume, p50/p95/p99 latency, error rate displayed correctly and match logged values.
+      </idea>
+      <idea ac="AC-6.3.2">
+Unit test: Mock metrics data with weekly_queries=150 (below "hundreds" target), adoption_trend="decreasing", p95=2500ms (exceeds 2s). Call MVP success evaluation function. Assert alert conditions triggered for low adoption and performance non-compliance.
+      </idea>
+      <idea ac="AC-6.3.2">
+Integration test: Configure Cloudflare Analytics alerts via API (error_rate >1%, p95 >2s, daily_queries <10). Trigger test conditions by simulating high error rate or slow queries. Verify alert notifications delivered (console log, email, or Slack webhook).
+      </idea>
+      <idea ac="AC-6.3.3">
+Integration test: Run export-metrics.ts script with mock Analytics API returning sample data. Test --format csv and --format json output. Verify CSV has headers (date, query_volume, p50, p95, p99, error_rate), JSON has correct structure. Test --start-date and --end-date filtering.
+      </idea>
+      <idea ac="AC-6.3.3">
+Manual test: Follow README "Observability Dashboard" section step-by-step. Verify dashboard link accessible, authentication instructions clear, all key metrics visible. Export metrics using npm run metrics-export:weekly. Verify CSV/JSON files created and data accurate.
+      </idea>
+      <idea ac="AC-6.3.3">
+Unit test: Test metrics alignment with PRD requirements. Mock metrics: error_rate=0.05% (passes NFR-6.3 <0.1%), p95=1800ms (passes NFR-1.1 <2s), weekly_queries=250 (passes FR-8 "hundreds" target). Assert all PRD success criteria met.
+      </idea>
+    </ideas>
+  </tests>
+</story-context>

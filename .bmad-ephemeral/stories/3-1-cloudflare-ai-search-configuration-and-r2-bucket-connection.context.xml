@@ -1,0 +1,225 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>3</epicId>
+    <storyId>3.1</storyId>
+    <title>Cloudflare AI Search Configuration and R2 Bucket Connection</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-13</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>.bmad-ephemeral/stories/3-1-cloudflare-ai-search-configuration-and-r2-bucket-connection.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>platform engineer</asA>
+    <iWant>Cloudflare AI Search configured to automatically monitor and index gitingest summaries from the R2 bucket</iWant>
+    <soThat>semantic search capabilities are enabled without manual indexing workflows</soThat>
+    <tasks>
+      <task id="1">Configure AI Search in Cloudflare Dashboard (AC: #1)</task>
+      <task id="2">Add AI_SEARCH service binding to wrangler.toml (AC: #2)</task>
+      <task id="3">Update TypeScript types for AI_SEARCH binding (AC: #2)</task>
+      <task id="4">Create health check endpoint (AC: #4)</task>
+      <task id="5">Validate AI Search indexing with test upload (AC: #3)</task>
+      <task id="6">Write unit tests for health check endpoint (AC: #4)</task>
+      <task id="7">Document setup instructions in DEPLOYMENT.md (AC: #5)</task>
+      <task id="8">Integration testing - full validation (AC: #1, #2, #3, #4)</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <ac id="1">
+      <given>I access the Cloudflare Dashboard AI Search section</given>
+      <when>I create a new AI Search index named "govreposcrape-search"</when>
+      <then>the index is configured with: Source type: R2 Bucket, Bucket: govreposcrape-gitingest, Path prefix: gitingest/, File pattern: **/*.txt, Content-Type filter: text/plain</then>
+      <and>continuous monitoring (auto-indexing on R2 changes) is enabled</and>
+    </ac>
+    <ac id="2">
+      <given>the AI Search service is configured</given>
+      <when>I add the AI_SEARCH service binding to wrangler.toml</when>
+      <then>the binding is accessible from Workers without errors</then>
+      <and>no ID or configuration is required (managed service)</and>
+    </ac>
+    <ac id="3">
+      <given>AI Search is monitoring the R2 bucket</given>
+      <when>I upload a test file to R2 at gitingest/test-org/test-repo/summary.txt</when>
+      <then>the file is indexed and searchable within 5 minutes</then>
+      <and>I can query via Workers and receive results containing the test content</and>
+    </ac>
+    <ac id="4">
+      <given>AI Search is operational</given>
+      <when>I create a health check endpoint at /mcp/health</when>
+      <then>the endpoint returns: Status: 200 OK if AI Search is reachable, Status: 503 Service Unavailable if AI Search is down, JSON response: { "status": "healthy", "services": { "ai_search": "operational" } }</then>
+    </ac>
+    <ac id="5">
+      <given>the AI Search configuration is complete</given>
+      <when>I review the DEPLOYMENT.md file</when>
+      <then>it contains setup instructions including: Dashboard configuration steps, wrangler.toml binding configuration, Testing procedure (upload test file → query), Health check verification, Troubleshooting common issues</then>
+    </ac>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/tech-spec-epic-3.md</path>
+        <title>Epic 3 Technical Specification: AI Search Integration</title>
+        <section>AC-3.1: AI Search Configuration and R2 Bucket Connection</section>
+        <snippet>Authoritative acceptance criteria for Story 3.1: AI Search service configured via Cloudflare dashboard to monitor R2 bucket govreposcrape-gitingest, Configuration specifies path prefix gitingest/, file pattern **/*.txt, content-type text/plain, AI Search automatically detects and indexes new/updated objects, Indexed documents searchable within 5 minutes of R2 upload, Service binding AI_SEARCH added to wrangler.toml and accessible from Workers, Health check endpoint confirms AI Search connectivity, Setup instructions documented in DEPLOYMENT.md</snippet>
+      </doc>
+      <doc>
+        <path>docs/tech-spec-epic-3.md</path>
+        <title>Epic 3 Technical Specification: AI Search Integration</title>
+        <section>Workflows and Sequencing - Story 3.1: AI Search Configuration</section>
+        <snippet>Configuration workflow: 1. Access Cloudflare Dashboard → AI Search section, 2. Create new AI Search index: govreposcrape-search, 3. Configure source: Type: R2 Bucket, Bucket: govreposcrape-gitingest, Path prefix: gitingest/, File pattern: **/*.txt, Content-Type filter: text/plain, 4. Enable continuous monitoring (auto-indexing on R2 changes), 5. Add AI_SEARCH service binding to wrangler.toml: [[ai]] binding = "AI_SEARCH", 6. Validate: Upload test file to R2 → wait 5 min → query via Workers</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture</title>
+        <section>Cloudflare Services - AI Search (Managed RAG)</section>
+        <snippet>Source: R2 bucket auto-monitoring, Embedding: Automatic (managed by Cloudflare), Index: Real-time (minutes after R2 upload), Query: Natural language semantic search. Service Bindings (wrangler.toml): [[ai]] binding = "AI_SEARCH". External Integrations: repos.json feed: HTTPS fetch from GitHub, gitingest: Python library (containerized), MCP clients: Claude Desktop, GitHub Copilot</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture</title>
+        <section>R2 (Object Storage)</section>
+        <snippet>Path structure: gitingest/{org}/{repo}/summary.txt, Custom metadata: pushedAt, url, processedAt, Content-Type: text/plain (AI Search compatibility), Auto-indexing by AI Search. Rate Limits: 1M reads/month (free tier), Cost: Minimal (reads are free tier, metadata access is fast)</snippet>
+      </doc>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>Non-Functional Requirements - NFR-1.1: Query Response Time</section>
+        <snippet>Target: &lt;2 seconds (p95) end-to-end. Epic 3 Contribution: AI Search retrieval &lt;800ms (p95). Measurement: Workers Analytics, custom performance logging. Rationale: Developer tool UX - slow search = abandonment</snippet>
+      </doc>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>Non-Functional Requirements - NFR-2.3: Query Logging</section>
+        <snippet>Requirement: 100% of queries logged with metadata. Fields: timestamp, query text, result count, response time, requestId. Storage: Cloudflare Workers logs (7 days), export for long-term analysis. Rationale: Debugging, relevance analysis</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>src/utils/logger.ts</path>
+        <kind>utility</kind>
+        <symbol>createLogger, Logger interface, LogContext interface</symbol>
+        <lines>1-118</lines>
+        <reason>Structured JSON logging utility for Cloudflare Workers - use for health check endpoint and AI Search query logging. Outputs JSON-formatted logs compatible with Cloudflare Workers log streaming. Pattern: createLogger({ operation: 'ai-search-health' }).info('message', { metadata })</reason>
+      </artifact>
+      <artifact>
+        <path>src/utils/error-handler.ts</path>
+        <kind>utility</kind>
+        <symbol>ServiceError, ValidationError, APIError classes</symbol>
+        <lines>1-152</lines>
+        <reason>Custom error classes for structured error handling - use ServiceError for AI Search unavailability (503 status, retry_after field). Pattern: throw new ServiceError('AI Search unavailable', 503, 'SEARCH_UNAVAILABLE', 60)</reason>
+      </artifact>
+      <artifact>
+        <path>wrangler.jsonc</path>
+        <kind>configuration</kind>
+        <symbol>service bindings configuration</symbol>
+        <lines>14-40</lines>
+        <reason>Existing service bindings for R2, KV, D1, Vectorize - follow same pattern to add AI_SEARCH binding. Add [[ai]] section with binding = "AI_SEARCH" (no ID needed for managed service)</reason>
+      </artifact>
+      <artifact>
+        <path>src/types.ts</path>
+        <kind>types</kind>
+        <symbol>Env interface</symbol>
+        <lines>1-50</lines>
+        <reason>TypeScript type definitions for Workers environment - add AISearchBinding interface and update Env to include AI_SEARCH: AISearchBinding. Define query() method signature matching Cloudflare AI Search API</reason>
+      </artifact>
+      <artifact>
+        <path>src/api/health.ts</path>
+        <kind>endpoint</kind>
+        <symbol>health check implementation</symbol>
+        <lines>n/a</lines>
+        <reason>NEW FILE - Create health check endpoint that tests AI_SEARCH binding connectivity. Return 200 OK with { status: "healthy", services: { ai_search: "operational" } } if reachable, 503 with { status: "unhealthy", services: { ai_search: "unavailable" } } if down</reason>
+      </artifact>
+      <artifact>
+        <path>src/index.ts</path>
+        <kind>entry-point</kind>
+        <symbol>fetch handler, route handling</symbol>
+        <lines>1-50</lines>
+        <reason>Workers entry point - add /mcp/health route handler that calls checkHealth(env) from src/api/health.ts. Handle GET method only, return health check response</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <node>
+        <package name="@cloudflare/vitest-pool-workers" version="^0.8.19">For Workers-specific test environment</package>
+        <package name="@typescript-eslint/eslint-plugin" version="^8.46.4">TypeScript linting rules</package>
+        <package name="@typescript-eslint/parser" version="^8.46.4">TypeScript parser for ESLint</package>
+        <package name="eslint" version="^9.39.1">Code linting</package>
+        <package name="husky" version="^9.1.7">Git hooks for pre-commit validation</package>
+        <package name="lint-staged" version="^16.2.6">Run linters on staged files</package>
+        <package name="prettier" version="^3.6.2">Code formatting</package>
+        <package name="typescript" version="^5.5.2">TypeScript language runtime</package>
+        <package name="vitest" version="~3.2.0">Test runner</package>
+        <package name="wrangler" version="^4.47.0">Cloudflare Workers CLI</package>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Follow architecture pattern: src/api/ for API endpoints, src/utils/ for utilities</constraint>
+    <constraint>Use structured JSON logging via createLogger() from src/utils/logger.ts for all operations</constraint>
+    <constraint>Use ServiceError class from src/utils/error-handler.ts for AI Search failures with 503 status and retry_after field</constraint>
+    <constraint>wrangler.jsonc service binding pattern: Add [[ai]] section with binding = "AI_SEARCH" (no ID needed for managed service)</constraint>
+    <constraint>TypeScript strict mode enabled - all functions must have proper type annotations</constraint>
+    <constraint>Health check must test actual AI_SEARCH binding connectivity, not just return static response</constraint>
+    <constraint>R2 bucket govreposcrape-gitingest already exists and is populated (from Epic 2) - do not create new bucket</constraint>
+    <constraint>AI Search configuration must monitor gitingest/ path prefix to match Epic 2 upload structure</constraint>
+    <constraint>Content-Type filter text/plain required - matches Epic 2 R2 uploads</constraint>
+    <constraint>Health check endpoint follows REST conventions: GET method only, JSON response, appropriate status codes (200/503)</constraint>
+    <constraint>All file paths must use kebab-case naming (e.g., ai-search-client.ts not AISearchClient.ts)</constraint>
+    <constraint>Functions and methods use camelCase naming (e.g., checkHealth not check_health)</constraint>
+    <constraint>Integration testing must validate 5-minute indexing lag requirement (AC #3)</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>AISearchBinding.query()</name>
+      <kind>Workers service binding API</kind>
+      <signature>query(request: { query: string; top_k?: number; filters?: Record&lt;string, any&gt; }): Promise&lt;{ results: Array&lt;{ content: string; score: number; metadata: { path: string; contentType: string } }&gt;; took_ms: number }&gt;</signature>
+      <path>src/types.ts (to be added)</path>
+    </interface>
+    <interface>
+      <name>HealthCheckResponse</name>
+      <kind>JSON response interface</kind>
+      <signature>{ status: "healthy" | "unhealthy"; services: { ai_search: "operational" | "unavailable" } }</signature>
+      <path>src/api/health.ts (to be created)</path>
+    </interface>
+    <interface>
+      <name>Logger interface</name>
+      <kind>Structured logging</kind>
+      <signature>Logger { debug(message: string, metadata?: Record&lt;string, unknown&gt;): void; info(message: string, metadata?: Record&lt;string, unknown&gt;): void; warn(message: string, metadata?: Record&lt;string, unknown&gt;): void; error(message: string, metadata?: Record&lt;string, unknown&gt;): void }</signature>
+      <path>src/utils/logger.ts:42-70</path>
+    </interface>
+    <interface>
+      <name>ServiceError class</name>
+      <kind>Error handling</kind>
+      <signature>ServiceError(message: string, statusCode = 500, code = "SERVICE_ERROR", retryAfter?: number)</signature>
+      <path>src/utils/error-handler.ts:96-125</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Test Framework: Vitest with @cloudflare/vitest-pool-workers for Workers-specific test environment.
+      Test Structure: describe/test blocks with clear naming.
+      Coverage Target: 80%+ on health.ts module.
+      Mocking Strategy: Mock AI_SEARCH binding to simulate operational/unavailable states using vitest vi.fn().
+      Test Location: Co-located with source files (src/api/health.test.ts).
+      Assertion Library: Vitest expect() with matchers (toBe, toEqual, etc.).
+      Test Execution: npm test for all tests, npm test src/api/ for specific module.
+    </standards>
+    <locations>
+      <location>src/api/health.test.ts - Unit tests for health check endpoint</location>
+      <location>test/ - Integration tests (if needed)</location>
+    </locations>
+    <ideas>
+      <idea ac="4">Test: Health check returns 200 when AI Search operational - Mock AI_SEARCH.query() to resolve successfully, assert response status 200 and body { status: "healthy", services: { ai_search: "operational" } }</idea>
+      <idea ac="4">Test: Health check returns 503 when AI Search unavailable - Mock AI_SEARCH.query() to reject with error, assert response status 503 and body { status: "unhealthy", services: { ai_search: "unavailable" } }</idea>
+      <idea ac="4">Test: Health check JSON response structure - Validate response matches HealthCheckResponse interface with correct fields</idea>
+      <idea ac="4">Test: Health check rejects non-GET methods - Send POST/PUT/DELETE to /mcp/health, assert 405 Method Not Allowed</idea>
+      <idea ac="2">Test: AI_SEARCH binding accessible in Workers - Integration test that wrangler.jsonc binding is correctly configured and accessible from Worker fetch handler</idea>
+      <idea ac="3">Integration test: Upload test file to R2, wait 5 minutes, query AI Search, validate test content returned - Measures indexing lag compliance with NFR-1.4</idea>
+      <idea ac="5">Documentation validation: DEPLOYMENT.md contains all required sections (Dashboard config, wrangler.toml, testing procedure, health check, troubleshooting)</idea>
+    </ideas>
+  </tests>
+</story-context>

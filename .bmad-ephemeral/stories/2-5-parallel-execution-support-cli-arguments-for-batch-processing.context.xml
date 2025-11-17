@@ -1,0 +1,229 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>5</storyId>
+    <title>Parallel Execution Support - CLI Arguments for Batch Processing</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-13</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>.bmad-ephemeral/stories/2-5-parallel-execution-support-cli-arguments-for-batch-processing.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>performance engineer</asA>
+    <iWant>CLI arguments for batch-size and offset to enable parallel container execution</iWant>
+    <soThat>we can process ~21k repos in <6 hours instead of 58 hours sequential</soThat>
+    <tasks>
+- Task 1: Add CLI argument parsing for --batch-size and --offset (AC: #1)
+- Task 2: Implement modulo arithmetic filtering (AC: #1)
+- Task 3: Update logging to show batch context (AC: #2)
+- Task 4: Create comprehensive tests for parallel execution (AC: #1, #2, #3)
+- Task 5: Update documentation with parallel execution guide (AC: #3)
+- Task 6: Create parallel execution script (AC: #2, #3)
+- Task 7: Integration testing with parallel execution (AC: #2, #3)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+**AC1: CLI Arguments for Batch Processing**
+- Container accepts --batch-size=N --offset=M arguments
+- Modulo arithmetic: batch-size=10, offset=0 → repos [0, 10, 20, 30...]
+- Example: batch-size=10, offset=1 → repos [1, 11, 21, 31...]
+
+**AC2: Parallel Execution Performance**
+- 10 containers in parallel process all 21,000 repos exactly once
+- Processing completes in ~6 hours (10× speedup from ~58 hours sequential)
+- Progress logging: "Processing batch 10, offset 3: 2,100 repos"
+
+**AC3: Documentation and Help**
+- CLI usage documented in README with examples
+- --help flag explains arguments
+- Parallel execution prevents duplicate processing
+- Statistics aggregate across all containers
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic 2 - Data Ingestion Pipeline</title>
+        <section>Story 2.5: Parallel Execution Support</section>
+        <snippet>Implements CLI arguments for batch-size and offset to enable parallel container execution. Modulo arithmetic filtering allows 10 containers to process ~21k repos in <6 hours (10× speedup from 58 hours sequential). Each container processes every Nth repository starting at offset M.</snippet>
+      </doc>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>NFR-1.3: Initial Data Seeding Performance</section>
+        <snippet>21k repos × 10s avg ÷ 10 parallel = ~6 hours (within MVP timeline). Parallelization required for MVP to achieve initial seeding within acceptable timeframe.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture - Technology Stack</title>
+        <section>Python 3.11+ (Container)</section>
+        <snippet>Runtime: Docker container. Library: gitingest. Dependencies: boto3 (R2 access), requests. Orchestration: Manual CLI execution for MVP, GitHub Actions for Phase 2.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture - Implementation Patterns</title>
+        <section>File Naming Conventions</section>
+        <snippet>Python files: snake_case.py (e.g., r2_client.py, orchestrator.py). Functions: snake_case. Classes: PascalCase. Constants: UPPER_SNAKE_CASE.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>container/ingest.py</path>
+        <kind>module</kind>
+        <symbol>ProcessingStats</symbol>
+        <lines>57-94</lines>
+        <reason>Statistics tracking class - will be extended to include batch_size and offset context</reason>
+      </artifact>
+      <artifact>
+        <path>container/ingest.py</path>
+        <kind>module</kind>
+        <symbol>JSONFormatter</symbol>
+        <lines>32-45</lines>
+        <reason>Structured JSON logging pattern - batch context will be added to metadata</reason>
+      </artifact>
+      <artifact>
+        <path>container/ingest.py</path>
+        <kind>function</kind>
+        <symbol>retry_with_backoff</symbol>
+        <lines>166-196</lines>
+        <reason>Reusable retry logic - established pattern to follow for error handling</reason>
+      </artifact>
+      <artifact>
+        <path>container/ingest.py</path>
+        <kind>function</kind>
+        <symbol>upload_summary_to_r2</symbol>
+        <lines>112-163</lines>
+        <reason>R2 upload integration - works independently in parallel, no locking needed</reason>
+      </artifact>
+      <artifact>
+        <path>container/test_ingest.py</path>
+        <kind>test</kind>
+        <symbol>test suite</symbol>
+        <lines>1-324</lines>
+        <reason>Existing pytest test suite - will add parallel execution tests following same patterns</reason>
+      </artifact>
+      <artifact>
+        <path>container/r2_client.py</path>
+        <kind>module</kind>
+        <symbol>upload_with_retry</symbol>
+        <lines>216-257</lines>
+        <reason>R2 upload with retry - parallelization-friendly (no shared state)</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <python>
+        <package name="gitingest" version="latest">Core library for generating LLM-ready code summaries</package>
+        <package name="boto3" version=">=1.34.0">AWS S3-compatible client for Cloudflare R2 storage</package>
+        <package name="pytest" version=">=8.0.0">Testing framework</package>
+        <package name="pytest-mock" version=">=3.12.0">Mocking support for pytest</package>
+        <package name="argparse" version="stdlib">CLI argument parsing (Python standard library - no install needed)</package>
+      </python>
+      <docker>
+        <image>python:3.11-slim</image>
+        <note>Container runtime - already configured in Dockerfile</note>
+      </docker>
+      <bash>
+        <note>Parallel execution script requires bash shell (available on all Unix-like systems)</note>
+      </bash>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+- **Independent Container Execution**: Each container must operate independently with no cross-container coordination or locking required
+- **Modulo Arithmetic Correctness**: Filtering must guarantee each repo processed exactly once across all containers (no duplicates, no gaps)
+- **Fail-Safe Design**: One container failure must not block or affect other containers
+- **Statistics Independence**: Each container tracks its own statistics; aggregation happens via log parsing (no shared state)
+- **R2 and KV Parallelization**: Both R2 and KV services support concurrent access from multiple containers
+- **Offset Validation**: offset must be < batch_size (runtime validation required)
+- **Backward Compatibility**: Sequential execution (no CLI args) must continue to work for single-container usage
+- **Environment Variables**: All containers share same R2/KV credentials (passed via --env-file .env)
+- **Logging Format**: Structured JSON logs must include batch context (batch_size, offset) for filtering/aggregation
+  </constraints>
+  <interfaces>
+    <interface>
+      <name>CLI Arguments</name>
+      <kind>command-line interface</kind>
+      <signature>python ingest.py [--batch-size=N] [--offset=M] [--dry-run] [--help]</signature>
+      <path>container/ingest.py</path>
+    </interface>
+    <interface>
+      <name>filter_repos_for_batch</name>
+      <kind>function signature</kind>
+      <signature>def filter_repos_for_batch(repos: List[Dict], batch_size: int, offset: int) -> List[Dict]</signature>
+      <path>container/ingest.py (new function)</path>
+    </interface>
+    <interface>
+      <name>ProcessingStats.log_stats</name>
+      <kind>method</kind>
+      <signature>def log_stats(self, batch_size: int = 1, offset: int = 0) -> None</signature>
+      <path>container/ingest.py:81-94 (extend existing method)</path>
+    </interface>
+    <interface>
+      <name>Parallel Execution Script</name>
+      <kind>bash script</kind>
+      <signature>./scripts/run-parallel.sh [batch-size]</signature>
+      <path>scripts/run-parallel.sh (new file)</path>
+    </interface>
+  </interfaces>
+  <tests>
+    <standards>
+**Test Framework**: pytest (Python testing framework)
+
+**Established Patterns** (from Stories 2.3, 2.4):
+- Test structure: Test functions with descriptive names (test_*)
+- Coverage target: 80%+ on core logic (100% pass rate maintained)
+- Mocking strategy: Use pytest-mock/monkeypatch for external dependencies
+- Test organization: Class-based grouping (class TestParallelExecution)
+
+**Quality Standards**:
+- All tests must pass (100% pass rate)
+- Test coverage for all acceptance criteria
+- Edge cases: offset validation, modulo arithmetic correctness, no duplicates
+- Clear test names describing what is tested
+- Arrange-Act-Assert pattern
+
+**Testing Approach**:
+- Unit tests for: CLI parsing, modulo filtering, offset validation
+- Integration tests for: parallel execution simulation, coverage verification
+- Mock repos.json feed with test dataset (100 repos)
+- Verify statistics tracking with batch context
+    </standards>
+    <locations>
+- container/test_ingest.py - Add new TestParallelExecution class
+- container/test_ingest.py - Existing test patterns to follow
+- scripts/run-parallel.sh - Will include basic integration test
+    </locations>
+    <ideas>
+**Test Ideas Mapped to Acceptance Criteria:**
+
+**AC1: CLI Arguments and Filtering**
+- test_cli_argument_parsing_default_values() - Verify defaults: batch_size=1, offset=0
+- test_cli_argument_parsing_custom_values() - Verify --batch-size=10 --offset=3 parsed correctly
+- test_offset_validation_error() - Verify error when offset >= batch_size
+- test_help_flag() - Verify --help displays usage
+- test_dry_run_flag() - Verify --dry-run skips processing
+- test_modulo_filtering_offset_0() - batch_size=10, offset=0 → repos [0, 10, 20, ...]
+- test_modulo_filtering_offset_5() - batch_size=10, offset=5 → repos [5, 15, 25, ...]
+- test_modulo_filtering_batch_size_1() - Sequential mode (backward compatibility)
+
+**AC2: Parallel Coverage and Performance**
+- test_parallel_execution_coverage() - All 100 repos processed exactly once across 10 containers
+- test_no_duplicate_processing() - No overlaps between offsets 0-9
+- test_batch_progress_logging() - Verify "Processing batch 10, offset 3: {count} repos"
+- test_statistics_with_batch_context() - Verify batch_size and offset in final stats
+
+**AC3: Documentation and Usability**
+- test_help_message_includes_examples() - Verify --help shows parallel execution examples
+- test_cli_error_messages() - Verify clear error for invalid offset
+- Integration test: Run scripts/run-parallel.sh with test dataset, verify all repos processed
+
+**Additional Edge Cases:**
+- test_single_repo_with_parallel() - 1 repo, 10 containers → only container 0 processes it
+- test_empty_repos_list() - No repos → no errors, just empty stats
+- test_batch_size_greater_than_repo_count() - batch_size=100, repos=50 → some containers process 0 repos
+    </ideas>
+  </tests>
+</story-context>

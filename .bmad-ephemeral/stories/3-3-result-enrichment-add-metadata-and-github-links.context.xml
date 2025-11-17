@@ -1,0 +1,284 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>3</epicId>
+    <storyId>3</storyId>
+    <title>Result Enrichment - Add Metadata and GitHub Links</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-13</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>.bmad-ephemeral/stories/3-3-result-enrichment-add-metadata-and-github-links.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>API developer</asA>
+    <iWant>to enrich search results with repository metadata and actionable links</iWant>
+    <soThat>users can quickly evaluate and access relevant code</soThat>
+    <tasks>
+- [ ] Task 1: Parse R2 object paths and extract repository information (AC: #1, #3)
+  - [ ] Subtask 1.1: Create file `src/search/result-enricher.ts`
+  - [ ] Subtask 1.2: Implement `parseR2Path(path: string)` to extract org/repo from `gitingest/{org}/{repo}/summary.txt`
+  - [ ] Subtask 1.3: Add input validation for R2 path format
+  - [ ] Subtask 1.4: Handle edge cases: missing parts, malformed paths, encoding issues
+  - [ ] Subtask 1.5: Add unit tests for path parsing with various formats
+
+- [ ] Task 2: Generate GitHub and quick-launch links (AC: #1, #3)
+  - [ ] Subtask 2.1: Implement `buildGitHubURL(org: string, repo: string)` → `https://github.com/{org}/{repo}`
+  - [ ] Subtask 2.2: Implement `buildCodespacesURL(org: string, repo: string)` → `https://github.dev/{org}/{repo}`
+  - [ ] Subtask 2.3: Implement `buildGitpodURL(org: string, repo: string)` → `https://gitpod.io/#https://github.com/{org}/{repo}`
+  - [ ] Subtask 2.4: Add URL encoding for organization and repository names
+  - [ ] Subtask 2.5: Add unit tests for link generation
+
+- [ ] Task 3: Fetch R2 metadata for additional context (AC: #2)
+  - [ ] Subtask 3.1: Implement `fetchR2Metadata(env: Env, path: string)` using R2 HEAD request
+  - [ ] Subtask 3.2: Extract custom metadata: pushedAt, url, processedAt from R2 object
+  - [ ] Subtask 3.3: Add timeout handling for R2 HEAD requests (<100ms target)
+  - [ ] Subtask 3.4: Implement graceful degradation if metadata unavailable (return partial result)
+  - [ ] Subtask 3.5: Add structured logging for metadata fetch operations
+  - [ ] Subtask 3.6: Add unit tests with mocked R2 binding
+
+- [ ] Task 4: Implement main enrichResult function (AC: #1, #2, #3)
+  - [ ] Subtask 4.1: Define `EnrichedSearchResult` TypeScript interface in src/types.ts
+  - [ ] Subtask 4.2: Implement `enrichResult(env: Env, rawResult: AISearchResult): Promise<EnrichedSearchResult>`
+  - [ ] Subtask 4.3: Combine: parsed path, generated links, R2 metadata into enriched result
+  - [ ] Subtask 4.4: Preserve original AISearchResult fields (content, score)
+  - [ ] Subtask 4.5: Add error handling with try-catch and fallback to minimal enrichment
+  - [ ] Subtask 4.6: Add JSDoc documentation with examples
+
+- [ ] Task 5: Implement batch enrichment for multiple results (AC: #1, #2, #3)
+  - [ ] Subtask 5.1: Implement `enrichResults(env: Env, rawResults: AISearchResult[]): Promise<EnrichedSearchResult[]>`
+  - [ ] Subtask 5.2: Use `Promise.all()` for parallel enrichment of results
+  - [ ] Subtask 5.3: Handle partial failures gracefully (some results enriched, some minimal)
+  - [ ] Subtask 5.4: Add performance logging: total time, per-result average
+  - [ ] Subtask 5.5: Target <100ms per result enrichment (measured and logged)
+
+- [ ] Task 6: Write comprehensive unit tests (AC: #1, #2, #3)
+  - [ ] Subtask 6.1: Create `test/search/result-enricher.test.ts`
+  - [ ] Subtask 6.2: Test path parsing: valid paths, malformed paths, edge cases
+  - [ ] Subtask 6.3: Test link generation: GitHub, Codespaces, Gitpod URL formats
+  - [ ] Subtask 6.4: Test R2 metadata fetch: success, timeout, missing metadata
+  - [ ] Subtask 6.5: Test enrichResult: complete enrichment, partial enrichment, error handling
+  - [ ] Subtask 6.6: Test batch enrichResults: parallel execution, mixed success/failure
+  - [ ] Subtask 6.7: Test graceful degradation when R2 unavailable
+  - [ ] Subtask 6.8: Achieve 80%+ code coverage on result-enricher.ts
+
+- [ ] Task 7: Integration testing with real R2 binding (AC: #2)
+  - [ ] Subtask 7.1: Create integration test with test R2 bucket
+  - [ ] Subtask 7.2: Upload test object with custom metadata to R2
+  - [ ] Subtask 7.3: Execute enrichResult with real R2 HEAD request
+  - [ ] Subtask 7.4: Validate metadata retrieved correctly
+  - [ ] Subtask 7.5: Measure R2 HEAD request latency (<100ms target)
+  - [ ] Subtask 7.6: Document integration test results
+</tasks>
+  </story>
+
+  <acceptanceCriteria>
+1. **Given** raw search results from AI Search API (Story 3.2)
+   **When** I enrich the results
+   **Then** each result includes: full GitHub URL, organization name, repository name
+   **And** direct links to GitHub repository and specific file (if available)
+   **And** quick-launch links: GitHub Codespaces, Gitpod
+
+2. **Given** metadata is stored in R2 object custom metadata (from Epic 2)
+   **When** I retrieve additional context
+   **Then** results include: pushedAt timestamp (last updated), language (if detectable)
+   **And** snippet context shows surrounding code lines (configurable, default 5 lines)
+
+3. **Given** result enrichment requirements
+   **When** I implement the enrichment module
+   **Then** result enrichment module has clear interfaces: `enrichResult(rawResult): EnrichedResult`
+   **And** GitHub links follow format: `https://github.com/{org}/{repo}`
+   **And** Codespaces link: `https://github.dev/{org}/{repo}`
+   **And** Module location: src/search/result-enricher.ts
+</acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic 3: AI Search Integration</title>
+        <section>Story 3.3: Result Enrichment - Add Metadata and GitHub Links</section>
+        <snippet>Parse R2 object path to extract org/repo from gitingest/alphagov/govuk-frontend/summary.txt. Metadata retrieval may require R2 HEAD request. Result format matches PRD schema (FR-2.3 Result Metadata &amp; Context).</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>System Architecture</title>
+        <section>R2 Data Storage - Custom Metadata</section>
+        <snippet>R2 path structure: gitingest/{org}/{repo}/summary.txt. Custom metadata: pushedAt, url, processedAt. Content-Type: text/plain (AI Search compatibility). Auto-indexing by AI Search.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>System Architecture</title>
+        <section>MCPSearchResult Data Model</section>
+        <snippet>SearchResult includes: repo_url, repo_org, repo_name, snippet (from AI Search), last_updated (pushedAt), language (optional), similarity_score (0.0-1.0), github_link, codespaces_link, metadata (full RepoMetadata).</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>System Architecture</title>
+        <section>Response Time Targets (NFR-1.1)</section>
+        <snippet>Target: &lt;2s end-to-end (p95). AI Search query: &lt;800ms. Result enrichment: &lt;100ms (R2 metadata fetch). Parallel operations where possible (concurrent AI Search + metadata fetch).</snippet>
+      </doc>
+      <doc>
+        <path>.bmad-ephemeral/stories/3-2-ai-search-query-api-integration-in-workers.md</path>
+        <title>Story 3.2: AI Search Query API Integration</title>
+        <section>Completion Notes &amp; Learnings</section>
+        <snippet>AISearchResult interface defined in src/types.ts (lines 134-146) with structure: content, score, metadata {path, contentType}. Path format: gitingest/{org}/{repo}/summary.txt. All 176 tests passing.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>src/types.ts</path>
+        <kind>interface</kind>
+        <symbol>AISearchResult</symbol>
+        <lines>134-146</lines>
+        <reason>Input type for result enrichment - provides content, score, and metadata.path in gitingest/{org}/{repo}/summary.txt format</reason>
+      </artifact>
+      <artifact>
+        <path>src/search/ai-search-client.ts</path>
+        <kind>module</kind>
+        <symbol>searchCode</symbol>
+        <lines>147-211</lines>
+        <reason>Returns AISearchResult[] that will be enriched by this story. Shows query validation, retry logic, and logging patterns to follow.</reason>
+      </artifact>
+      <artifact>
+        <path>src/utils/logger.ts</path>
+        <kind>utility</kind>
+        <symbol>createLogger</symbol>
+        <lines>1-50</lines>
+        <reason>Structured JSON logging utility - use for all log operations with operation and requestId context</reason>
+      </artifact>
+      <artifact>
+        <path>src/utils/error-handler.ts</path>
+        <kind>utility</kind>
+        <symbol>ValidationError, ServiceError</symbol>
+        <lines>1-100</lines>
+        <reason>Custom error classes for validation and service errors - use for graceful degradation patterns</reason>
+      </artifact>
+      <artifact>
+        <path>container/ingest.py</path>
+        <kind>ingestion</kind>
+        <symbol>upload metadata</symbol>
+        <lines>163-171</lines>
+        <reason>Shows R2 custom metadata structure: pushedAt, url, processedAt. This metadata will be fetched via R2 HEAD request.</reason>
+      </artifact>
+      <artifact>
+        <path>src/ingestion/cache.ts</path>
+        <kind>service</kind>
+        <symbol>CacheEntry</symbol>
+        <lines>43-48</lines>
+        <reason>Shows pushedAt usage pattern and timestamp comparison logic for cache decisions</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <nodejs>
+        <package name="@cloudflare/workers-types" version="^4.x" purpose="Cloudflare Workers TypeScript bindings - Env, R2Bucket types" />
+        <package name="vitest" version="~3.2.0" purpose="Test framework with @cloudflare/vitest-pool-workers for Workers testing" />
+        <package name="typescript" version="^5.5.2" purpose="Type safety - strict mode enabled" />
+      </nodejs>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>File naming: kebab-case.ts pattern (result-enricher.ts)</constraint>
+    <constraint>Function naming: camelCase pattern (enrichResult, parseR2Path, buildGitHubURL)</constraint>
+    <constraint>Module pattern: Named exports only (export { enrichResult, enrichResults }), no default exports</constraint>
+    <constraint>TypeScript: strict mode enabled, all types must be explicitly defined</constraint>
+    <constraint>Error handling: Graceful degradation required - return partial results rather than throwing errors when R2 metadata unavailable</constraint>
+    <constraint>Logging: Structured JSON logging via createLogger({ operation, requestId }) - all operations must log start, duration, and outcome</constraint>
+    <constraint>Performance: Result enrichment must complete in &lt;100ms per result (measured and logged, warn if exceeded)</constraint>
+    <constraint>Testing: 80%+ code coverage required, co-located tests in test/search/result-enricher.test.ts</constraint>
+    <constraint>Path format: ALL paths in code must be project-relative (strip /Users/.../govreposcrape/ prefix)</constraint>
+    <constraint>Interfaces: Define EnrichedSearchResult in src/types.ts (DO NOT create new types file)</constraint>
+  </constraints>
+  <interfaces>
+    <interface>
+      <name>AISearchResult (existing - DO NOT RECREATE)</name>
+      <kind>TypeScript interface</kind>
+      <signature>interface AISearchResult {
+  content: string;       // Code snippet from indexed file
+  score: number;         // Similarity score (0.0-1.0)
+  metadata: {
+    path: string;        // R2 object path: gitingest/{org}/{repo}/summary.txt
+    contentType: string; // text/plain
+  };
+}</signature>
+      <path>src/types.ts:134-146</path>
+    </interface>
+    <interface>
+      <name>EnrichedSearchResult (NEW - to be created)</name>
+      <kind>TypeScript interface</kind>
+      <signature>interface EnrichedSearchResult {
+  // Original AISearchResult fields
+  content: string;
+  score: number;
+
+  // Enriched fields - repository info
+  repository: {
+    org: string;
+    name: string;
+    fullName: string;  // org/name format
+  };
+
+  // Enriched fields - links
+  links: {
+    github: string;        // https://github.com/{org}/{repo}
+    codespaces: string;    // https://github.dev/{org}/{repo}
+    gitpod: string;        // https://gitpod.io/#https://github.com/{org}/{repo}
+  };
+
+  // Enriched fields - metadata (optional, graceful degradation)
+  metadata?: {
+    pushedAt?: string;     // ISO 8601 timestamp
+    url?: string;          // Full GitHub URL from R2
+    processedAt?: string;  // When gitingest completed
+    language?: string;     // Detected language (if available)
+  };
+
+  // R2 path for reference
+  r2Path: string;
+}</signature>
+      <path>src/types.ts (add to existing file)</path>
+    </interface>
+    <interface>
+      <name>R2Bucket.head() method</name>
+      <kind>Cloudflare R2 API</kind>
+      <signature>async head(key: string): Promise&lt;R2Object | null&gt;
+// R2Object.customMetadata: Record&lt;string, string&gt; | undefined
+// Returns null if object not found</signature>
+      <path>@cloudflare/workers-types</path>
+    </interface>
+    <interface>
+      <name>enrichResult function signature</name>
+      <kind>Function interface</kind>
+      <signature>export async function enrichResult(
+  env: Env,
+  rawResult: AISearchResult
+): Promise&lt;EnrichedSearchResult&gt;</signature>
+      <path>src/search/result-enricher.ts (to be created)</path>
+    </interface>
+    <interface>
+      <name>enrichResults batch function signature</name>
+      <kind>Function interface</kind>
+      <signature>export async function enrichResults(
+  env: Env,
+  rawResults: AISearchResult[]
+): Promise&lt;EnrichedSearchResult[]&gt;</signature>
+      <path>src/search/result-enricher.ts (to be created)</path>
+    </interface>
+  </interfaces>
+  <tests>
+    <standards>Testing framework: Vitest ~3.2.0 with @cloudflare/vitest-pool-workers for Cloudflare Workers environment simulation. Test structure: describe blocks for grouping by functionality, test/it for individual test cases. Mock pattern: Mock external services (R2, AI_SEARCH) using vi.fn() and mockResolvedValue/mockRejectedValue. Coverage target: 80%+ on result-enricher.ts module. Test file location: test/search/result-enricher.test.ts (mirrors src/search/ structure). TypeScript strict mode in tests. All helper functions exported for testability.</standards>
+    <locations>test/search/result-enricher.test.ts (primary), test/ directory mirrors src/ structure</locations>
+    <ideas>
+      <idea ac="1">Test parseR2Path: valid path (gitingest/alphagov/govuk-frontend/summary.txt → {org: alphagov, repo: govuk-frontend}), malformed path (missing parts, wrong format), edge cases (org with dash, repo with underscore, URL encoding)</idea>
+      <idea ac="1">Test buildGitHubURL: basic org/repo, special characters requiring URL encoding, verify https://github.com/{org}/{repo} format</idea>
+      <idea ac="1">Test buildCodespacesURL: verify https://github.dev/{org}/{repo} format</idea>
+      <idea ac="1">Test buildGitpodURL: verify https://gitpod.io/#https://github.com/{org}/{repo} format with nested GitHub URL</idea>
+      <idea ac="2">Test fetchR2Metadata: successful HEAD request with customMetadata, R2 object not found (null), missing customMetadata fields, R2 service timeout/error, verify graceful degradation (returns empty object {})</idea>
+      <idea ac="2">Test R2 HEAD request performance: measure duration &lt;100ms, verify logging of slow operations</idea>
+      <idea ac="3">Test enrichResult: complete enrichment with all metadata, partial enrichment (R2 unavailable), invalid R2 path handling, verify all EnrichedSearchResult fields populated correctly</idea>
+      <idea ac="3">Test enrichResults batch: parallel execution via Promise.all, mixed success/failure scenarios, performance measurement (total time, average per result), verify &lt;100ms per result target</idea>
+      <idea ac="1,2,3">Test error handling: R2 binding unavailable, malformed AISearchResult input, graceful degradation to minimal enrichment, verify structured logging on errors</idea>
+      <idea ac="1,2,3">Test logging: verify createLogger called with operation and requestId, verify duration logged, verify slow enrichment warning when &gt;100ms</idea>
+    </ideas>
+  </tests>
+</story-context>

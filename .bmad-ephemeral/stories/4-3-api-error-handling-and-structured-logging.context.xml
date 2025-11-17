@@ -1,0 +1,351 @@
+<story-context id="{bmad_folder}/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>4</epicId>
+    <storyId>4.3</storyId>
+    <title>API Error Handling and Structured Logging</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-14</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>.bmad-ephemeral/stories/4-3-api-error-handling-and-structured-logging.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>reliability engineer</asA>
+    <iWant>comprehensive error handling and structured logging across all API endpoints</iWant>
+    <soThat>we can debug issues, monitor performance, and maintain high reliability</soThat>
+    <tasks>
+- Task 1: Verify Epic 1 logging foundation (AC: #2, #3)
+- Task 2: Review Epic 1 error handling foundation (AC: #1, #4)
+- Task 3: Review Story 4.1 error formatting (AC: #1, #4)
+- Task 4: Enhance global error handler in src/index.ts (AC: #1, #4)
+- Task 5: Implement request/response logging middleware (AC: #3, #5)
+- Task 6: Add performance logging for slow queries (AC: #5)
+- Task 7: Implement sensitive data filtering in logs (AC: #2)
+- Task 8: Configure log levels by environment (AC: #6)
+- Task 9: Add error context enrichment (AC: #2)
+- Task 10: Verify integration with Story 4.1 and 4.2 modules (AC: #1, #3, #5)
+- Task 11: Unit tests for error handling and logging (AC: #1, #2, #3, #4, #5)
+- Task 12: Integration tests with full request lifecycle (AC: #3, #5)
+- Task 13: Documentation (AC: #2, #3, #5, #6)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+1. Global error handler catches all errors and returns appropriate HTTP status codes (400, 500, 503) with PRD-compliant error format
+2. Error logs include full context (error type, stack trace, request details) while filtering sensitive data
+3. All API requests use structured JSON logging with consistent fields (timestamp, level, message, context with requestId)
+4. Error type mapping: ValidationError→400, ServiceError→500/503, unknown→500
+5. Request logging includes start (requestId, method, path) and completion (requestId, duration, statusCode, resultCount)
+6. Log levels configurable by environment: debug in development, info+ in production
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic Breakdown</title>
+        <section>Epic 4: Story 4.3</section>
+        <snippet>As a reliability engineer, I want comprehensive error handling and structured logging across all API endpoints, so that we can debug issues, monitor performance, and maintain high reliability. Builds on Epic 1 logging foundation (Story 1.3) and Story 4.1 error formatting.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture</title>
+        <section>Error Handling</section>
+        <snippet>Custom error classes (ValidationError, ServiceError, APIError) with HTTP status codes. Error response format: { error: { code, message, retry_after? } }. Retry logic with exponential backoff (3 attempts: 1s, 2s, 4s).</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture</title>
+        <section>Logging Strategy</section>
+        <snippet>Structured log format with timestamp, level (debug/info/warn/error), message, context (requestId, operation, duration, metadata). Log levels by environment: development=debug, production=info. Never log secrets, trim large payloads.</snippet>
+      </doc>
+      <doc>
+        <path>.bmad-ephemeral/stories/4-2-semantic-search-endpoint-integrate-ai-search-with-mcp-response-format.md</path>
+        <title>Story 4.2 Completion Notes</title>
+        <section>Dev Agent Record</section>
+        <snippet>Error propagation via ServiceError works correctly through formatErrorResponse(). Performance logging patterns established (AI Search duration, total duration). Request correlation via requestId already implemented. 142/142 tests passing.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>src/utils/logger.ts</path>
+        <kind>utility</kind>
+        <symbol>createLogger</symbol>
+        <lines>1-118</lines>
+        <reason>Epic 1 Story 1.3 logging foundation. Provides structured JSON logger with debug/info/warn/error methods. Story 4.3 will add logRequest(), logResponse(), sanitizeLogData() helpers.</reason>
+      </artifact>
+      <artifact>
+        <path>src/utils/logger.ts</path>
+        <kind>interface</kind>
+        <symbol>LogContext</symbol>
+        <lines>16-23</lines>
+        <reason>Log context structure with requestId (UUID v4), operation (string), metadata (Record). Used for request correlation and structured logging.</reason>
+      </artifact>
+      <artifact>
+        <path>src/utils/logger.ts</path>
+        <kind>interface</kind>
+        <symbol>LogEntry</symbol>
+        <lines>28-37</lines>
+        <reason>JSON log output structure: timestamp (ISO8601), level (debug/info/warn/error), message (string), context (LogContext). Cloudflare Workers compatible.</reason>
+      </artifact>
+      <artifact>
+        <path>src/utils/error-handler.ts</path>
+        <kind>utility</kind>
+        <symbol>ValidationError</symbol>
+        <lines>69-74</lines>
+        <reason>Epic 1 Story 1.3 error class for invalid input. Always returns HTTP 400. Has code and message fields. Used by Story 4.1 validateMCPRequest().</reason>
+      </artifact>
+      <artifact>
+        <path>src/utils/error-handler.ts</path>
+        <kind>utility</kind>
+        <symbol>ServiceError</symbol>
+        <lines>96-125</lines>
+        <reason>Epic 1 Story 1.3 error class for service failures. Supports HTTP 500/503 with optional retry_after field. Used by Story 4.2 executeSearch() for AI Search failures.</reason>
+      </artifact>
+      <artifact>
+        <path>src/utils/error-handler.ts</path>
+        <kind>utility</kind>
+        <symbol>AppError</symbol>
+        <lines>22-47</lines>
+        <reason>Base error class with statusCode, code, and toErrorResponse() method. Parent of ValidationError and ServiceError. Formats errors per PRD FR-3 specification.</reason>
+      </artifact>
+      <artifact>
+        <path>src/api/mcp-handler.ts</path>
+        <kind>handler</kind>
+        <symbol>formatErrorResponse</symbol>
+        <lines>234-282</lines>
+        <reason>Story 4.1 error formatter. Maps ValidationError→400, ServiceError→500/503, unknown→500. Returns JSON: { error: { code, message, retry_after? } }. Logs unhandled exceptions with stack traces.</reason>
+      </artifact>
+      <artifact>
+        <path>src/api/mcp-handler.ts</path>
+        <kind>constant</kind>
+        <symbol>ERROR_CODES</symbol>
+        <lines>33-41</lines>
+        <reason>Story 4.1 error code constants: INVALID_QUERY, INVALID_LIMIT, INVALID_CONTENT_TYPE, MALFORMED_JSON, PAYLOAD_TOO_LARGE, SEARCH_ERROR, INTERNAL_ERROR. Machine-readable codes for client error handling.</reason>
+      </artifact>
+      <artifact>
+        <path>src/api/mcp-handler.ts</path>
+        <kind>handler</kind>
+        <symbol>handleMCPSearch</symbol>
+        <lines>322-368</lines>
+        <reason>Story 4.1+4.2 MCP search handler. Generates requestId via crypto.randomUUID(), logs request validation and completion with duration. Uses try/catch with formatErrorResponse(). Pattern to follow for Story 4.3 global error handler.</reason>
+      </artifact>
+      <artifact>
+        <path>src/api/mcp-handler.ts</path>
+        <kind>handler</kind>
+        <symbol>addCORSHeaders</symbol>
+        <lines>172-183</lines>
+        <reason>Story 4.1 CORS header utility. Must be applied to ALL responses including error responses. formatErrorResponse() already calls this.</reason>
+      </artifact>
+      <artifact>
+        <path>src/index.ts</path>
+        <kind>entry-point</kind>
+        <symbol>fetch</symbol>
+        <lines>24-112</lines>
+        <reason>Cloudflare Workers entry point with routing. Currently has basic logging (request received, route not found) but NO global error handler. Story 4.3 will wrap all request processing in try/catch.</reason>
+      </artifact>
+      <artifact>
+        <path>src/api/search-endpoint.ts</path>
+        <kind>handler</kind>
+        <symbol>executeSearch</symbol>
+        <lines>1-199</lines>
+        <reason>Story 4.2 search orchestration. Demonstrates performance logging pattern: warns if AI Search >800ms or total >2s. Logs completion with requestId, duration, resultCount. Pattern to generalize in Story 4.3.</reason>
+      </artifact>
+      <artifact>
+        <path>test/utils/logger.test.ts</path>
+        <kind>test</kind>
+        <symbol>logger tests</symbol>
+        <lines>1-100</lines>
+        <reason>Epic 1 Story 1.3 logger tests. Validates structured JSON output, log levels, context fields. Story 4.3 will add tests for logRequest(), logResponse(), sanitizeLogData().</reason>
+      </artifact>
+      <artifact>
+        <path>test/utils/error-handler.test.ts</path>
+        <kind>test</kind>
+        <symbol>error handler tests</symbol>
+        <lines>1-150</lines>
+        <reason>Epic 1 Story 1.3 error class tests. Validates ValidationError, ServiceError, toErrorResponse() format. Story 4.3 will reference for error mapping validation.</reason>
+      </artifact>
+      <artifact>
+        <path>test/api/mcp-handler.test.ts</path>
+        <kind>test</kind>
+        <symbol>mcp-handler tests</symbol>
+        <lines>1-800</lines>
+        <reason>Story 4.1+4.2 integration tests. 41 tests covering validation, error formatting, CORS, request/response logging. Story 4.3 will add global error handler tests here.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <typescript>
+        <package>typescript</package>
+        <version>^5.5.2</version>
+        <description>TypeScript strict mode for type safety</description>
+      </typescript>
+      <testing>
+        <package>vitest</package>
+        <version>~3.2.0</version>
+        <description>Test framework with @cloudflare/vitest-pool-workers for Workers runtime</description>
+      </testing>
+      <testing>
+        <package>@cloudflare/vitest-pool-workers</package>
+        <version>^0.8.19</version>
+        <description>Vitest integration for Cloudflare Workers environment</description>
+      </testing>
+      <linting>
+        <package>eslint</package>
+        <version>^9.39.1</version>
+        <description>Code linting with @typescript-eslint plugin</description>
+      </linting>
+      <linting>
+        <package>prettier</package>
+        <version>^3.6.2</version>
+        <description>Code formatting</description>
+      </linting>
+      <deployment>
+        <package>wrangler</package>
+        <version>^4.47.0</version>
+        <description>Cloudflare Workers CLI for deployment</description>
+      </deployment>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+- Use existing logger from Epic 1 (src/utils/logger.ts) - DO NOT recreate
+- Use existing error classes from Epic 1 (src/utils/error-handler.ts) - DO NOT recreate
+- Use existing formatErrorResponse() from Story 4.1 - DO NOT recreate
+- Maintain 100% test coverage (142/142 tests passing baseline from Story 4.2)
+- Follow Story 4.2 performance logging pattern: warn if >2s total (NFR-1.1 threshold)
+- Request correlation via requestId (crypto.randomUUID() pattern from Story 4.1)
+- CORS headers must be present on ALL responses including errors (addCORSHeaders pattern)
+- Never log secrets, API keys, or full stack traces in production
+- Truncate large query strings (>100 chars → hash for privacy)
+- Log levels: development=debug, production=info (configure via wrangler.toml)
+- Error mapping: ValidationError→400, ServiceError→500/503, unknown→500 with INTERNAL_ERROR
+- Structured JSON logs compatible with Cloudflare Workers log streaming
+- TypeScript strict mode compilation (no errors)
+- ESLint and Prettier compliance
+- File naming: kebab-case.ts, Function naming: camelCase
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>Logger</name>
+      <kind>TypeScript interface</kind>
+      <signature>
+interface Logger {
+  debug(message: string, metadata?: Record&lt;string, unknown&gt;): void;
+  info(message: string, metadata?: Record&lt;string, unknown&gt;): void;
+  warn(message: string, metadata?: Record&lt;string, unknown&gt;): void;
+  error(message: string, metadata?: Record&lt;string, unknown&gt;): void;
+}
+      </signature>
+      <path>src/utils/logger.ts</path>
+    </interface>
+    <interface>
+      <name>createLogger</name>
+      <kind>Factory function</kind>
+      <signature>
+function createLogger(baseContext: Partial&lt;LogContext&gt;): Logger
+// baseContext: { operation: string, requestId?: string, metadata?: Record&lt;string, unknown&gt; }
+// Returns: Logger instance with bound context
+      </signature>
+      <path>src/utils/logger.ts:87-117</path>
+    </interface>
+    <interface>
+      <name>formatErrorResponse</name>
+      <kind>Error formatter function</kind>
+      <signature>
+function formatErrorResponse(error: unknown): Response
+// Maps: ValidationError→400, ServiceError→500/503, unknown→500
+// Returns: Response with JSON { error: { code, message, retry_after? } } and CORS headers
+      </signature>
+      <path>src/api/mcp-handler.ts:234-282</path>
+    </interface>
+    <interface>
+      <name>ValidationError</name>
+      <kind>Error class</kind>
+      <signature>
+class ValidationError extends AppError {
+  constructor(message: string, code = "VALIDATION_ERROR")
+  // Always returns HTTP 400
+  // Has: statusCode, code, message, toErrorResponse()
+}
+      </signature>
+      <path>src/utils/error-handler.ts:69-74</path>
+    </interface>
+    <interface>
+      <name>ServiceError</name>
+      <kind>Error class</kind>
+      <signature>
+class ServiceError extends AppError {
+  retryAfter?: number;
+  constructor(message: string, statusCode = 500, code = "SERVICE_ERROR", retryAfter?: number)
+  // Supports HTTP 500/503 with optional retry_after field
+  // Has: statusCode, code, message, retryAfter, toErrorResponse()
+}
+      </signature>
+      <path>src/utils/error-handler.ts:96-125</path>
+    </interface>
+    <interface>
+      <name>LogEntry</name>
+      <kind>TypeScript interface</kind>
+      <signature>
+interface LogEntry {
+  timestamp: string;  // ISO8601
+  level: "debug" | "info" | "warn" | "error";
+  message: string;
+  context: LogContext;  // { requestId?, operation, metadata? }
+}
+      </signature>
+      <path>src/utils/logger.ts:28-37</path>
+    </interface>
+    <interface>
+      <name>ErrorResponse</name>
+      <kind>TypeScript interface</kind>
+      <signature>
+interface ErrorResponse {
+  error: {
+    code: string;         // Machine-readable error code
+    message: string;      // Human-readable error message
+    retry_after?: number; // Optional: seconds to wait before retry
+  };
+}
+      </signature>
+      <path>src/types.ts</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+Testing framework: Vitest 3.2.0 with @cloudflare/vitest-pool-workers for Cloudflare Workers runtime simulation. Test files use .test.ts extension and are located in test/ directory mirroring src/ structure. All tests mock external services (AI_SEARCH, R2, KV) for isolation. Target: 80%+ coverage on core logic, 100% on critical paths. Use describe blocks for grouping, it/test for cases. Story 4.2 baseline: 142/142 tests passing.
+    </standards>
+    <locations>
+test/utils/*.test.ts - Utility tests (logger, error-handler, retry)
+test/api/*.test.ts - API endpoint tests (mcp-handler, search-endpoint, health, cache-proxy)
+test/search/*.test.ts - Search integration tests (ai-search-client, result-enricher)
+test/ingestion/*.test.ts - Ingestion pipeline tests (repos-fetcher, cache)
+    </locations>
+    <ideas>
+AC #1: Test global error handler catches ValidationError and returns 400 with formatErrorResponse
+AC #1: Test global error handler catches ServiceError and returns 500/503 with retry_after
+AC #1: Test global error handler catches unknown Error and returns 500 with INTERNAL_ERROR
+AC #2: Test error logs include error type, message, stack trace (development only)
+AC #2: Test sensitive data is filtered from logs (secrets, API keys)
+AC #2: Test large query strings (>100 chars) are truncated/hashed in logs
+AC #3: Test structured JSON log format with all required fields (timestamp, level, message, context)
+AC #3: Test requestId correlation between request start and completion logs
+AC #3: Test logs are compatible with Cloudflare Workers log streaming (JSON.stringify output)
+AC #4: Test ValidationError maps to 400 Bad Request
+AC #4: Test ServiceError maps to 500/503 with correct statusCode
+AC #4: Test unknown Error maps to 500 with INTERNAL_ERROR code
+AC #5: Test request start log includes requestId, method, path, query
+AC #5: Test request completion log includes requestId, duration, statusCode, resultCount
+AC #5: Test log levels (debug, info, warn, error) are used appropriately
+AC #5: Test slow query warning (>2s total duration) logs at warn level
+AC #6: Test debug logs are enabled in development environment
+AC #6: Test debug logs are filtered in production environment (only info+)
+AC #6: Test LOG_LEVEL environment variable controls log filtering
+Integration: Test full request lifecycle with request/response logging and error handling
+Integration: Test CORS headers are preserved on error responses
+Integration: Test formatErrorResponse is used consistently across all endpoints
+    </ideas>
+  </tests>
+</story-context>

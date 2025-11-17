@@ -1,0 +1,6 @@
+#!/bin/sh
+# Run TypeScript type checking
+npm run type-check
+
+# Run lint-staged for ESLint and Prettier
+npx lint-staged --config lint-staged.config.js

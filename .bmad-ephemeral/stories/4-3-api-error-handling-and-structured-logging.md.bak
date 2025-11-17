@@ -1,0 +1,391 @@
+# Story 4.3: API Error Handling and Structured Logging
+
+Status: ready-for-dev
+
+## Story
+
+As a **reliability engineer**,
+I want **comprehensive error handling and structured logging across all API endpoints**,
+so that **we can debug issues, monitor performance, and maintain high reliability**.
+
+## Acceptance Criteria
+
+1. **Given** any API endpoint encounters an error
+   **When** the error occurs
+   **Then** error is caught by global error handler
+   **And** appropriate HTTP status code is returned (400, 500, 503)
+   **And** error response follows PRD format: `{ error: { code, message, retry_after? } }`
+
+2. **Given** an internal server error (500)
+   **When** the error is logged
+   **Then** structured log includes: error type, stack trace, request context (path, method)
+   **And** sensitive data is never logged (secrets, API keys)
+   **And** error logs enable quick root cause analysis
+
+3. **Given** API requests are processed
+   **When** logging is performed
+   **Then** all logs are structured JSON with fields: timestamp, level, message, context
+   **And** context includes: requestId (correlation), duration, endpoint, status
+   **And** logs are compatible with Cloudflare Workers log streaming
+
+4. **Given** the global error handler is implemented
+   **When** it processes different error types
+   **Then** ValidationError maps to 400 Bad Request
+   **And** ServiceError maps to 500 Internal Server Error or 503 Service Unavailable
+   **And** Unknown errors map to 500 Internal Server Error with generic message
+
+5. **Given** all API endpoints use structured logging
+   **When** a request is processed
+   **Then** request start is logged with: requestId, method, path, query
+   **And** request completion is logged with: requestId, duration, statusCode, resultCount
+   **And** log levels are appropriate: debug for details, info for completion, warn for slow queries, error for failures
+
+6. **Given** logging configuration by environment
+   **When** the application runs in development
+   **Then** debug-level logs are enabled for detailed debugging
+   **When** the application runs in production
+   **Then** only info, warn, and error logs are emitted
+
+## Tasks / Subtasks
+
+- [ ] Task 1: Verify Epic 1 logging foundation (AC: #2, #3)
+  - [ ] Subtask 1.1: Verify src/utils/logger.ts exists from Epic 1 Story 1.3
+  - [ ] Subtask 1.2: Confirm createLogger() function with structured JSON output
+  - [ ] Subtask 1.3: Verify log levels supported: debug, info, warn, error
+  - [ ] Subtask 1.4: Confirm requestId correlation support in logger
+  - [ ] Subtask 1.5: Document logger interface for consistency across story
+
+- [ ] Task 2: Review Epic 1 error handling foundation (AC: #1, #4)
+  - [ ] Subtask 2.1: Verify src/utils/error-handler.ts exists from Epic 1 Story 1.3
+  - [ ] Subtask 2.2: Confirm ValidationError class with statusCode, code fields
+  - [ ] Subtask 2.3: Confirm ServiceError class with statusCode, retry_after fields
+  - [ ] Subtask 2.4: Confirm APIError class (if exists) or document if not needed
+  - [ ] Subtask 2.5: Document error class hierarchy for story implementation
+
+- [ ] Task 3: Review Story 4.1 error formatting (AC: #1, #4)
+  - [ ] Subtask 3.1: Review formatErrorResponse() in src/api/mcp-handler.ts from Story 4.1
+  - [ ] Subtask 3.2: Confirm error response format: `{ error: { code, message, retry_after? } }`
+  - [ ] Subtask 3.3: Verify ERROR_CODES constants (INVALID_QUERY, SEARCH_ERROR, etc.)
+  - [ ] Subtask 3.4: Confirm ValidationError → 400, ServiceError → 503 mapping
+  - [ ] Subtask 3.5: Document that Story 4.1 already implements basic error handling
+
+- [ ] Task 4: Enhance global error handler in src/index.ts (AC: #1, #4)
+  - [ ] Subtask 4.1: Review existing error handling in src/index.ts fetch handler
+  - [ ] Subtask 4.2: Wrap all request processing in try/catch at top level
+  - [ ] Subtask 4.3: Import formatErrorResponse from src/api/mcp-handler.ts
+  - [ ] Subtask 4.4: Catch ValidationError → call formatErrorResponse → return 400
+  - [ ] Subtask 4.5: Catch ServiceError → call formatErrorResponse → return 500/503
+  - [ ] Subtask 4.6: Catch generic Error → log full stack → return 500 with INTERNAL_ERROR
+  - [ ] Subtask 4.7: Ensure requestId is generated early and passed to error handler
+  - [ ] Subtask 4.8: Add structured logging for all caught errors with context
+
+- [ ] Task 5: Implement request/response logging middleware (AC: #3, #5)
+  - [ ] Subtask 5.1: Create logRequest() helper in src/utils/logger.ts or src/api/mcp-handler.ts
+  - [ ] Subtask 5.2: Log request start: { timestamp, level: "info", message: "Request received", context: { requestId, method, path, query } }
+  - [ ] Subtask 5.3: Create logResponse() helper for completion logging
+  - [ ] Subtask 5.4: Log request completion: { timestamp, level: "info", message: "Request completed", context: { requestId, duration, statusCode, resultCount } }
+  - [ ] Subtask 5.5: Use performance timing pattern from Story 4.2 (Date.now() - startTime)
+  - [ ] Subtask 5.6: Add correlation between request and response logs via requestId
+
+- [ ] Task 6: Add performance logging for slow queries (AC: #5)
+  - [ ] Subtask 6.1: Check if total request duration >2s (NFR-1.1 threshold)
+  - [ ] Subtask 6.2: If >2s, log at "warn" level with message: "Slow query detected"
+  - [ ] Subtask 6.3: Include breakdown: { aiSearchDuration, enrichmentDuration, totalDuration }
+  - [ ] Subtask 6.4: Reference performance budget from Story 3.4 in warn message
+  - [ ] Subtask 6.5: Use same threshold as Story 4.2 executeSearch() warnings
+
+- [ ] Task 7: Implement sensitive data filtering in logs (AC: #2)
+  - [ ] Subtask 7.1: Create sanitizeLogData() helper in src/utils/logger.ts
+  - [ ] Subtask 7.2: Filter fields: API keys, tokens, secrets (if added in future)
+  - [ ] Subtask 7.3: Truncate large payloads: if query >100 chars, log hash instead
+  - [ ] Subtask 7.4: Never log full stack traces in production (only in development)
+  - [ ] Subtask 7.5: Document sensitive data policy in code comments
+
+- [ ] Task 8: Configure log levels by environment (AC: #6)
+  - [ ] Subtask 8.1: Add LOG_LEVEL environment variable to wrangler.toml
+  - [ ] Subtask 8.2: Development environment: LOG_LEVEL = "debug"
+  - [ ] Subtask 8.3: Production environment: LOG_LEVEL = "info"
+  - [ ] Subtask 8.4: Update createLogger() to respect LOG_LEVEL from env
+  - [ ] Subtask 8.5: Filter logs based on level: debug only if LOG_LEVEL === "debug"
+  - [ ] Subtask 8.6: Document log level configuration in README
+
+- [ ] Task 9: Add error context enrichment (AC: #2)
+  - [ ] Subtask 9.1: Include request details in error logs: method, path, headers
+  - [ ] Subtask 9.2: Include error details: error.name, error.message, error.stack
+  - [ ] Subtask 9.3: Include correlation data: requestId, timestamp, duration
+  - [ ] Subtask 9.4: Format error logs consistently across all error types
+  - [ ] Subtask 9.5: Test error logs are actionable for debugging
+
+- [ ] Task 10: Verify integration with Story 4.1 and 4.2 modules (AC: #1, #3, #5)
+  - [ ] Subtask 10.1: Confirm src/api/mcp-handler.ts uses structured logging for all operations
+  - [ ] Subtask 10.2: Confirm src/api/search-endpoint.ts uses logger from Epic 1
+  - [ ] Subtask 10.3: Verify formatErrorResponse() is used consistently across all endpoints
+  - [ ] Subtask 10.4: Test that ServiceError from Story 4.2 propagates correctly
+  - [ ] Subtask 10.5: Verify CORS headers preserved on error responses (Story 4.1 pattern)
+  - [ ] Subtask 10.6: Run full test suite to ensure no regressions
+
+- [ ] Task 11: Unit tests for error handling and logging (AC: #1, #2, #3, #4, #5)
+  - [ ] Subtask 11.1: Create test/utils/logger.test.ts (if not exists from Epic 1)
+  - [ ] Subtask 11.2: Test createLogger() outputs structured JSON
+  - [ ] Subtask 11.3: Test log level filtering: debug disabled in production mode
+  - [ ] Subtask 11.4: Test sanitizeLogData() filters sensitive fields
+  - [ ] Subtask 11.5: Test requestId correlation between request/response logs
+  - [ ] Subtask 11.6: Create test/api/error-handling.test.ts
+  - [ ] Subtask 11.7: Test global error handler: ValidationError → 400 with error format
+  - [ ] Subtask 11.8: Test global error handler: ServiceError → 503 with retry_after
+  - [ ] Subtask 11.9: Test global error handler: generic Error → 500 with INTERNAL_ERROR
+  - [ ] Subtask 11.10: Test error logs include stack traces (development only)
+  - [ ] Subtask 11.11: Test performance warnings for slow queries (>2s)
+  - [ ] Subtask 11.12: Achieve 80%+ test coverage for error handling and logging
+
+- [ ] Task 12: Integration tests with full request lifecycle (AC: #3, #5)
+  - [ ] Subtask 12.1: Update test/api/mcp-handler.test.ts to verify request/response logging
+  - [ ] Subtask 12.2: Test request start log includes requestId, method, path
+  - [ ] Subtask 12.3: Test request completion log includes requestId, duration, statusCode
+  - [ ] Subtask 12.4: Test correlation: same requestId in start and completion logs
+  - [ ] Subtask 12.5: Test error response logs include full context
+  - [ ] Subtask 12.6: Test CORS headers present on error responses
+  - [ ] Subtask 12.7: Verify all 142+ tests still passing after changes
+
+- [ ] Task 13: Documentation (AC: #2, #3, #5, #6)
+  - [ ] Subtask 13.1: Document error handling strategy in src/api/mcp-handler.ts JSDoc
+  - [ ] Subtask 13.2: Document logging patterns in src/utils/logger.ts JSDoc
+  - [ ] Subtask 13.3: Add inline comments for sensitive data filtering rationale
+  - [ ] Subtask 13.4: Document log level configuration in wrangler.toml comments
+  - [ ] Subtask 13.5: Add examples of structured log output in JSDoc
+  - [ ] Subtask 13.6: Document error response format in OpenAPI spec (if exists from Story 5.2)
+  - [ ] Subtask 13.7: Update README with logging and error handling sections
+
+## Dev Notes
+
+### Architecture Context
+
+**Epic 4: MCP API Server (Read Path)** (from epics.md):
+- **Goal:** Build user-facing MCP v2 protocol API with error handling and observability
+- **Story 4.3 Role:** Comprehensive error handling and structured logging across all API endpoints
+- **Module Locations:** src/utils/logger.ts (Epic 1), src/utils/error-handler.ts (Epic 1), src/api/mcp-handler.ts (Story 4.1), src/index.ts (Epic 1)
+- **Integration Point:** Story 4.1 (protocol) → Story 4.2 (search) → **Story 4.3 (error handling/logging)**
+
+**Error Response Format** (from epics.md Story 4.3):
+```typescript
+interface ErrorResponse {
+  error: {
+    code: string;         // Machine-readable error code
+    message: string;      // Human-readable error message
+    retry_after?: number; // Optional: seconds to wait before retry
+  };
+}
+```
+
+**HTTP Status Code Mapping** (from epics.md):
+- `400 Bad Request` - ValidationError (invalid query, limit, content-type)
+- `500 Internal Server Error` - Generic/unhandled errors
+- `503 Service Unavailable` - ServiceError (AI Search timeout, R2 unavailable)
+
+**Custom Error Classes** (from architecture.md):
+```typescript
+class ValidationError extends Error {
+  statusCode = 400;
+  code: string;
+  constructor(message: string, code: string) {
+    super(message);
+    this.code = code;
+  }
+}
+
+class ServiceError extends Error {
+  statusCode: number;
+  retryAfter?: number;
+  constructor(statusCode: number, message: string, retryAfter?: number) {
+    super(message);
+    this.statusCode = statusCode;
+    this.retryAfter = retryAfter;
+  }
+}
+```
+
+**Structured Log Format** (from architecture.md):
+```typescript
+interface LogEntry {
+  timestamp: string;  // ISO8601
+  level: "debug" | "info" | "warn" | "error";
+  message: string;
+  context: {
+    requestId: string;  // UUID v4
+    operation: string;  // e.g., "search", "health_check"
+    duration?: number;  // milliseconds
+    metadata?: Record<string, any>;
+  };
+}
+```
+
+### Project Structure Notes
+
+**Existing Modules to Use** (DO NOT RECREATE):
+```
+src/utils/
+├── logger.ts                 # Epic 1 Story 1.3 - createLogger(), structured JSON
+└── error-handler.ts          # Epic 1 Story 1.3 - ValidationError, ServiceError classes
+
+src/api/
+├── mcp-handler.ts            # Story 4.1 - formatErrorResponse(), ERROR_CODES
+└── search-endpoint.ts        # Story 4.2 - executeSearch() with error handling
+
+src/index.ts                  # Epic 1 - Workers fetch handler, routing
+src/types.ts                  # Epic 1 + Stories 4.1-4.2 - ErrorResponse interface
+```
+
+**Modules to Enhance** (Story 4.3):
+```
+src/index.ts                  # Add global error handler with comprehensive logging
+src/utils/logger.ts           # Add logRequest(), logResponse(), sanitizeLogData() helpers
+wrangler.toml                 # Add LOG_LEVEL environment variable
+```
+
+**Alignment with Architecture**:
+- Error handling: Use existing ValidationError, ServiceError from Epic 1
+- Logging: Use existing createLogger() from Epic 1 Story 1.3
+- Error formatting: Use existing formatErrorResponse() from Story 4.1
+- Request correlation: Use requestId pattern from Story 4.1 (crypto.randomUUID())
+- No new error classes needed - Epic 1 foundation is sufficient
+
+### Learnings from Previous Story
+
+**From Story 4.2: Semantic Search Endpoint (Status: done)**
+
+✅ **Search Integration Complete**
+- **Search Endpoint Module:** src/api/search-endpoint.ts (199 lines) with executeSearch() and mapToSearchResult()
+- **AI Search Integration:** Calls searchCode() from Story 3.2 with env.AI_SEARCH binding
+- **Result Enrichment:** Calls enrichResults() from Story 3.3 with env.R2 binding
+- **MCP Format Mapping:** SearchResult includes all fields (repository, file_path, match_snippet, relevance_score, metadata)
+- **Test Coverage:** 18 unit tests + 10 integration tests, 142/142 total tests passing
+
+**New Files Created:**
+- src/api/search-endpoint.ts (199 lines) - executeSearch() orchestration
+- test/api/search-endpoint.test.ts (799 lines) - 18 unit tests
+
+**Modified Files:**
+- src/api/mcp-handler.ts - Added executeSearch import, replaced mock response, updated JSDoc
+- test/api/mcp-handler.test.ts - Added 10 integration tests for Story 4.2
+
+**Key Services/Patterns to REUSE:**
+```typescript
+// src/api/mcp-handler.ts - Story 4.1 (USE, DO NOT RECREATE)
+export function formatErrorResponse(error: unknown): Response
+export const ERROR_CODES = {
+  INVALID_QUERY, INVALID_LIMIT, INVALID_CONTENT_TYPE,
+  MALFORMED_JSON, PAYLOAD_TOO_LARGE, SEARCH_ERROR, INTERNAL_ERROR
+}
+
+// src/api/search-endpoint.ts - Story 4.2 (USE FOR LOGGING PATTERNS)
+const logger = createLogger(); // From Epic 1
+logger.warn('Slow AI Search query detected', { ... }); // Performance warning pattern
+logger.info('Search completed', { requestId, duration, resultCount }); // Completion logging
+
+// src/utils/logger.ts - Epic 1 Story 1.3 (ENHANCE, DO NOT RECREATE)
+export function createLogger(): Logger
+// Add helpers: logRequest(), logResponse(), sanitizeLogData()
+```
+
+**Integration Guidance from Story 4.2:**
+
+1. **Error Propagation Works Correctly:**
+   - executeSearch() throws ServiceError on AI Search/enrichment failures
+   - formatErrorResponse() in Story 4.1 correctly maps ServiceError → 503 JSON response
+   - No changes needed to error propagation - Story 4.3 focuses on LOGGING and GLOBAL HANDLING
+
+2. **Performance Logging Pattern Established:**
+   - Story 4.2 logs AI Search duration and warns if >800ms
+   - Story 4.2 logs total duration and warns if >2s
+   - Story 4.3 should generalize this pattern for ALL endpoints
+
+3. **Request Correlation Pattern:**
+   - Story 4.1 generates requestId via crypto.randomUUID()
+   - Story 4.1 passes requestId to executeSearch()
+   - Story 4.3 should ensure requestId is in ALL logs for correlation
+
+4. **Existing Logging in Story 4.2:**
+   ```typescript
+   logger.info('Search completed', {
+     requestId,
+     duration: took_ms,
+     resultCount: results.length,
+     aiSearchDuration,
+     enrichmentDuration
+   });
+   ```
+   - Story 4.3 should standardize this pattern across all endpoints
+
+**Pending Action Items from Story 4.2:**
+- ✅ All Story 4.2 tasks completed
+- No blocking issues for Story 4.3
+- Epic 3 modules (searchCode, enrichResults) work perfectly
+- Story 4.1 integration clean and maintainable
+
+**Advisory Notes from Story 4.2:**
+- Error handling via ServiceError propagates correctly ✓
+- Performance monitoring with separate AI Search/enrichment timing provides visibility ✓
+- Warnings for slow queries (>800ms AI Search, >2s total) aid debugging ✓
+- Story 4.3 should extend these patterns to global error handler and ALL endpoints ✓
+
+**Technical Debt from Story 4.2:**
+- File-level indexing: Returns "summary.txt" (whole-repo summary) - Phase 2 enhancement
+- Stars field: Hardcoded to 0 (not in R2 metadata) - Phase 2 enhancement
+- Neither affects Story 4.3 implementation
+
+**What Story 4.3 Should Focus On:**
+
+1. **Global Error Handler in src/index.ts:**
+   - Catch ALL unhandled errors at top level
+   - Use formatErrorResponse() from Story 4.1 for consistent error format
+   - Add comprehensive error logging with full context
+
+2. **Request/Response Logging Middleware:**
+   - Log request start: requestId, method, path, query
+   - Log request completion: requestId, duration, statusCode, resultCount
+   - Ensure correlation via requestId
+
+3. **Sensitive Data Filtering:**
+   - Never log secrets, API keys (not in MVP, but document pattern)
+   - Truncate large query strings (>100 chars → hash)
+   - Filter stack traces in production logs
+
+4. **Environment-Based Log Level:**
+   - Development: debug level (all logs)
+   - Production: info level (info, warn, error only)
+   - Configure via wrangler.toml LOG_LEVEL variable
+
+5. **Performance Warnings:**
+   - Generalize Story 4.2 slow query warnings to ALL endpoints
+   - Log at warn level if total duration >2s (NFR-1.1 threshold)
+
+**Files to Review Before Implementation:**
+- src/utils/logger.ts - Epic 1 logging foundation
+- src/utils/error-handler.ts - Epic 1 error classes
+- src/api/mcp-handler.ts - Story 4.1 formatErrorResponse()
+- src/api/search-endpoint.ts - Story 4.2 logging patterns
+- src/index.ts - Epic 1 Workers fetch handler
+
+### References
+
+- [Source: docs/epics.md#Story-4.3] - Story 4.3 acceptance criteria, error handling requirements, logging standards
+- [Source: docs/architecture.md#Error-Handling] - Custom error classes, retry logic pattern, error response format
+- [Source: docs/architecture.md#Logging-Strategy] - Structured log format, log levels, what to log/not log
+- [Source: .bmad-ephemeral/stories/4-2-semantic-search-endpoint-integrate-ai-search-with-mcp-response-format.md] - Story 4.2 completion notes, logging patterns, error propagation
+- [Source: .bmad-ephemeral/stories/4-1-mcp-v2-protocol-foundation-request-response-structure.md] - Story 4.1 formatErrorResponse(), ERROR_CODES, ValidationError handling
+
+## Dev Agent Record
+
+### Context Reference
+
+- .bmad-ephemeral/stories/4-3-api-error-handling-and-structured-logging.context.xml
+
+### Agent Model Used
+
+{{agent_model_name_version}}
+
+### Debug Log References
+
+### Completion Notes List
+
+### File List

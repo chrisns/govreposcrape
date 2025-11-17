@@ -1,0 +1,163 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>6</storyId>
+    <title>Ingestion Orchestrator - End-to-End Pipeline Integration</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-13</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>.bmad-ephemeral/stories/2-6-ingestion-orchestrator-end-to-end-pipeline-integration.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>pipeline engineer</asA>
+    <iWant>an orchestrator that coordinates the full ingestion pipeline</iWant>
+    <soThat>the complete workflow (fetch → cache check → gitingest → R2 upload) runs smoothly</soThat>
+    <tasks>
+      - Task 1: Create orchestrator module structure (AC: #1)
+      - Task 2: Integrate repos-fetcher from Story 2.1 (AC: #1)
+      - Task 3: Integrate cache checking from Story 2.2 (AC: #1)
+      - Task 4: Integrate gitingest processing from Story 2.3 (AC: #1)
+      - Task 5: Integrate R2 upload from Story 2.4 (AC: #1)
+      - Task 6: Implement progress reporting (AC: #1)
+      - Task 7: Implement final statistics summary (AC: #2)
+      - Task 8: Implement dry-run mode (AC: #3)
+      - Task 9: Implement graceful shutdown (AC: #3)
+      - Task 10: Create comprehensive tests (AC: #1, #2, #3)
+      - Task 11: Update container documentation (AC: #1, #2, #3)
+      - Task 12: Integration testing with all components (AC: #1, #2, #3)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="1">
+      <given>all pipeline components exist (Stories 2.1-2.5)</given>
+      <when>I run the orchestrator</when>
+      <then>it executes the pipeline in order: fetch repos.json → check cache → process uncached → upload to R2</then>
+      <and>progress is reported periodically: "Processed 500/21,000 repos (2.4%), cache hit rate: 91.2%"</and>
+      <and>errors don't halt the entire pipeline (fail-safe: log and continue)</and>
+    </criterion>
+    <criterion id="2">
+      <given>the pipeline completes</given>
+      <when>I review the final statistics</when>
+      <then>logs show: total repos, cached (skipped), processed (gitingest), failed, cache hit rate, total time</then>
+      <and>example: "Pipeline complete: 21,000 total, 19,000 cached (90.5%), 1,800 processed, 200 failed, completed in 5h 47m"</and>
+    </criterion>
+    <criterion id="3">
+      <and>Orchestrator supports dry-run mode: --dry-run (simulate without processing)</and>
+      <and>Orchestrator has graceful shutdown on SIGTERM (save progress, cleanup)</and>
+      <and>Final summary is logged in structured JSON for automated parsing</and>
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/epics.md" title="Epic 2: Data Ingestion Pipeline" section="Story 2.6">
+        Defines the orchestrator requirements: coordinates repos-fetcher, cache, gitingest, r2-storage components. Entry point: `python orchestrator.py --batch-size=10 --offset=0 [--dry-run]`. Progress logging every 100 repos processed. This completes Epic 2's data ingestion pipeline.
+      </doc>
+      <doc path="docs/PRD.md" title="Product Requirements Document" section="FR-1.1, FR-1.2, FR-1.3">
+        Functional requirements for repository discovery (FR-1.1), gitingest summary generation (FR-1.2), and smart caching via R2 metadata (FR-1.3). Performance target: 90%+ cache hit rate to keep costs &lt;£50/month.
+      </doc>
+      <doc path="docs/architecture.md" title="Architecture" section="Project Structure, Epic 2">
+        Project structure shows container/ directory with Python modules for ingestion pipeline. Write path / read path separation pattern. Fail-safe error handling with retry logic (3 attempts, exponential backoff [1s, 2s, 4s]).
+      </doc>
+      <doc path="container/README.md" title="Container Documentation" section="Parallel Execution Guide">
+        Comprehensive documentation of gitingest processing container with parallel execution support (Story 2.5). Documents CLI interface, retry logic, timeout enforcement, R2 storage integration, and parallel execution using modulo arithmetic filtering.
+      </doc>
+      <doc path=".bmad-ephemeral/stories/2-5-parallel-execution-support-cli-arguments-for-batch-processing.md" title="Story 2.5 Completion Notes" section="Dev Agent Record">
+        Previous story implemented fetch_repos_json(), filter_repos_for_batch(), process_repository(), and ProcessingStats class. Main function at container/ingest.py:406-547 shows current orchestration pattern. Story 2.6 should build on this pattern.
+      </doc>
+    </docs>
+    <code>
+      <artifact path="container/ingest.py" kind="module" symbol="fetch_repos_json" lines="209-242" reason="Fetch and parse repos.json feed with retry logic (Story 2.5). Returns list of repository dicts. REUSE this function, do not recreate." />
+      <artifact path="container/ingest.py" kind="module" symbol="filter_repos_for_batch" lines="245-277" reason="Modulo arithmetic filtering for parallel execution (Story 2.5). Takes repos list, batch_size, offset. Returns filtered repos for this batch." />
+      <artifact path="container/ingest.py" kind="module" symbol="process_repository" lines="165-250" reason="Processes single repository with gitingest and uploads to R2 (Story 2.3, 2.4). Includes timeout enforcement (5 min) and retry logic. Returns result dict with success, summary, duration." />
+      <artifact path="container/ingest.py" kind="module" symbol="ProcessingStats" lines="56-94" reason="Statistics tracking class with record_success(), record_failure(), get_average_time(), log_stats() methods. Tracks successful, failed, average time, batch context." />
+      <artifact path="container/ingest.py" kind="module" symbol="main" lines="406-547" reason="Current orchestration pattern in main() function. Already fetches repos, filters for batch, processes each repo, logs statistics. Story 2.6 should extract/enhance this logic." />
+      <artifact path="container/r2_client.py" kind="module" symbol="upload_with_retry" lines="216-257" reason="R2 upload with retry logic (Story 2.4). Used by process_repository() for R2 storage. Includes exponential backoff." />
+      <artifact path="src/ingestion/cache.ts" kind="module" symbol="checkCache" lines="68-140" reason="TypeScript cache checking function (Story 2.2). Workers API endpoint needed for container to check cache status via HTTP." />
+      <artifact path="src/ingestion/repos-fetcher.ts" kind="module" symbol="fetchReposJson" lines="180-280" reason="TypeScript repos fetcher (Story 2.1). Container implementation uses Python equivalent in ingest.py." />
+      <artifact path="container/test_ingest.py" kind="test" symbol="TestGitingestProcessing" lines="24-127" reason="Test patterns for gitingest processing with mocking, retry logic, timeout enforcement. Follow these patterns for orchestrator tests." />
+      <artifact path="container/test_ingest.py" kind="test" symbol="TestParallelExecution" lines="275-451" reason="Test patterns for parallel execution with batch filtering, coverage verification, no duplicate processing. Apply to orchestrator integration tests." />
+    </code>
+    <dependencies>
+      <typescript>
+        <dependency name="typescript" version="^5.5.2" />
+        <dependency name="vitest" version="~3.2.0" />
+        <dependency name="wrangler" version="^4.47.0" />
+        <dependency name="@cloudflare/vitest-pool-workers" version="^0.8.19" />
+        <dependency name="eslint" version="^9.39.1" />
+        <dependency name="prettier" version="^3.6.2" />
+      </typescript>
+      <python>
+        <dependency name="gitingest" version="latest" reason="LLM-ready code summarization library" />
+        <dependency name="boto3" version=">=1.34.0" reason="S3-compatible client for Cloudflare R2 storage" />
+        <dependency name="requests" version=">=2.31.0" reason="HTTP library for fetching repos.json feed" />
+        <dependency name="pytest" version=">=8.0.0" reason="Testing framework" />
+        <dependency name="pytest-mock" version=">=3.12.0" reason="Mocking support for tests" />
+      </python>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Module location: container/orchestrator.py (Python, runs in Docker container)</constraint>
+    <constraint>Reuse existing functions from container/ingest.py: fetch_repos_json(), filter_repos_for_batch(), process_repository(), ProcessingStats</constraint>
+    <constraint>CLI interface with argparse: --batch-size, --offset, --dry-run flags</constraint>
+    <constraint>Fail-safe error handling: errors logged, processing continues (no single failure halts pipeline)</constraint>
+    <constraint>Structured JSON logging matching existing pattern in ingest.py</constraint>
+    <constraint>Progress reporting every 100 repos: "Processed X/Y (Z%), cache hit: A%, elapsed: Bm, ETA: Ch"</constraint>
+    <constraint>Final statistics format from AC #2: total, cached, processed, failed, cache hit rate, elapsed time</constraint>
+    <constraint>Graceful shutdown on SIGTERM: save progress to state file, cleanup resources</constraint>
+    <constraint>Dry-run mode: skip gitingest and R2 upload, simulate processing time, log all actions</constraint>
+    <constraint>Test coverage target: 80%+ on core orchestration logic using pytest</constraint>
+    <constraint>Cache checking: Workers API endpoint required (TypeScript src/ingestion/cache.ts) or bulk cache check implementation</constraint>
+    <constraint>Follow established patterns from Story 2.5: batch processing, retry logic [1s, 2s, 4s], statistics tracking</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="fetch_repos_json" kind="function" signature="fetch_repos_json(feed_url: str = DEFAULT_URL) -> List[Dict[str, Any]]" path="container/ingest.py:209-242">
+      Fetches and parses repos.json feed with retry logic. Returns list of repository dicts with url, pushedAt, org, name fields.
+    </interface>
+    <interface name="filter_repos_for_batch" kind="function" signature="filter_repos_for_batch(repos: List[Dict[str, Any]], batch_size: int, offset: int) -> List[Dict[str, Any]]" path="container/ingest.py:245-277">
+      Filters repositories using modulo arithmetic for parallel execution. Returns repos where index % batch_size == offset.
+    </interface>
+    <interface name="process_repository" kind="function" signature="process_repository(repo_url: str, upload_to_r2: bool = True) -> Dict[str, Any]" path="container/ingest.py:165-250">
+      Processes single repository with gitingest and optionally uploads to R2. Returns dict with success, summary, duration, error fields.
+    </interface>
+    <interface name="ProcessingStats" kind="class" signature="ProcessingStats()" path="container/ingest.py:56-94">
+      Statistics tracking class with methods: record_success(duration), record_failure(), get_average_time(), log_stats(batch_size, offset). Tracks successful, failed, average_time, start_time.
+    </interface>
+    <interface name="checkCache" kind="function" signature="checkCache(repo: RepoMetadata, kv: KVNamespace): Promise<CacheCheckResult>" path="src/ingestion/cache.ts:68-140">
+      TypeScript cache checking function. Returns needsProcessing flag and reason. May require Workers API endpoint for container access.
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      pytest testing framework with 80%+ coverage target on core logic. Mock external dependencies (fetch, gitingest, R2) using pytest monkeypatch or unittest.mock. Follow test patterns from container/test_ingest.py. Test classes with descriptive test function names. Arrange-Act-Assert pattern. Structured logs validated with caplog.
+    </standards>
+    <locations>
+      - container/test_orchestrator.py (NEW for this story)
+      - container/test_ingest.py (existing, 25 tests passing)
+      - container/test_r2_client.py (existing, 19 tests passing)
+    </locations>
+    <ideas>
+      <idea ac="1" desc="Test pipeline execution order: fetch → cache → process → upload" />
+      <idea ac="1" desc="Test progress reporting logged every 100 repos with correct format" />
+      <idea ac="1" desc="Test fail-safe behavior: errors logged, processing continues" />
+      <idea ac="1" desc="Test batch filtering integration with filter_repos_for_batch" />
+      <idea ac="2" desc="Test final statistics calculation and format matching AC example" />
+      <idea ac="2" desc="Test cache hit rate calculation: (cached / total) * 100" />
+      <idea ac="2" desc="Test elapsed time tracking and formatting (e.g., '5h 47m')" />
+      <idea ac="3" desc="Test dry-run mode: no actual gitingest or R2 operations" />
+      <idea ac="3" desc="Test graceful shutdown: SIGTERM triggers state save" />
+      <idea ac="3" desc="Test structured JSON output for final summary" />
+      <idea ac="all" desc="Test parallel execution: multiple orchestrator instances, no duplicate processing" />
+      <idea ac="all" desc="Test statistics aggregation across multiple batch offsets" />
+      <idea ac="all" desc="Mock all external dependencies: fetch_repos_json, process_repository, R2 upload" />
+      <idea ac="all" desc="Test CLI argument validation: offset < batch_size" />
+      <idea ac="all" desc="Test empty repos list handling" />
+      <idea ac="all" desc="Test large repo list (21k repos) with progress reporting" />
+    </ideas>
+  </tests>
+</story-context>
