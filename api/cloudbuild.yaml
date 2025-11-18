@@ -76,7 +76,7 @@ steps:
       - '5'
       - '--retry-delay'
       - '10'
-      - 'https://govreposcrape-api-<hash>-uc.a.run.app/health'
+      - 'https://govreposcrape-api-1060386346356.us-central1.run.app/health'
     id: 'verify-health'
     waitFor: ['deploy-cloud-run']
 
