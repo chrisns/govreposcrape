@@ -11,5 +11,12 @@
 node_modules
 *.swp
 .bmad-ephemaral
-logs
+
+# Logs directory (ingestion logs, debug output)
+logs/
+
+# Google Cloud credentials
 google-credentials.json
+
+# Local Claude settings (contains project-specific paths)
+.claude/settings.local.json
