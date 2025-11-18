@@ -357,23 +357,8 @@ def process_repository(repo_url: str, upload_to_r2: bool = True) -> Dict[str, An
             duration = time.time() - start_time
             stats.record_success(duration)
 
-            # Truncate summary to 512KB max (524288 bytes)
-            MAX_SUMMARY_SIZE = 524288  # 512KB
-            original_length = len(summary) if isinstance(summary, str) else 0
-            truncated = False
-
-            if isinstance(summary, str) and len(summary) > MAX_SUMMARY_SIZE:
-                # Truncate and add notice
-                summary = summary[:MAX_SUMMARY_SIZE] + "\n\n[... Summary truncated at 512KB limit ...]"
-                truncated = True
-                logger.warning(
-                    f"Summary truncated from {original_length} to {MAX_SUMMARY_SIZE} bytes",
-                    extra={"metadata": {
-                        "repo_url": repo_url,
-                        "original_size": original_length,
-                        "truncated_size": MAX_SUMMARY_SIZE
-                    }}
-                )
+            # No truncation - Vertex AI Search handles large documents
+            summary_length = len(summary) if isinstance(summary, str) else 0
 
             logger.info(
                 "Summary generated successfully",
@@ -381,8 +366,7 @@ def process_repository(repo_url: str, upload_to_r2: bool = True) -> Dict[str, An
                     "repo_url": repo_url,
                     "duration_seconds": round(duration, 2),
                     "summary_type": str(type(summary)),
-                    "summary_length": len(summary) if isinstance(summary, str) else 0,
-                    "truncated": truncated
+                    "summary_length": summary_length
                 }}
             )
 

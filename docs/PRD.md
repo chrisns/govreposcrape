@@ -219,8 +219,8 @@ This is a **hybrid architecture serving multiple user types through phased deliv
 - Container-based gitingest processing (Python 3.11, Docker)
 - Generate gitingest summaries for each repository using Python library
 - **Smart caching:** Only regenerate gitingest when pushedAt timestamp changes (90%+ cache hit rate)
-- Store summaries in Cloudflare R2 with metadata (pushedAt, url, processed timestamp)
-- R2 object structure: `gitingest/{org}/{repo}/summary.txt` with custom metadata
+- Store summaries in Google Cloud Storage with metadata (pushedAt, url, processed timestamp)
+- Cloud Storage object structure: `gitingest/{org}/{repo}/summary.txt` with custom metadata
 - **Parallelization (MVP required for initial seeding):**
   - CLI arguments: `--batch-size=N --offset=M`
   - Example: Process every 10th repo starting at offset 0-9
@@ -229,18 +229,19 @@ This is a **hybrid architecture serving multiple user types through phased deliv
 - **Run locally on-demand** for MVP (manual execution when needed)
 
 **2. AI Search Auto-Indexing (Managed Service)**
-- **Cloudflare AI Search** (formerly AutoRAG) automatically indexes R2 bucket contents
-- **Zero custom embedding code** - AI Search handles embedding generation, vectorization, and indexing
-- Continuous updates as new gitingest files added to R2
+- **Google Vertex AI Search** provides production-grade semantic search with 99.9% SLA
+- **Zero custom embedding code** - Vertex AI Search handles embedding generation, vectorization, and indexing
+- Continuous updates as new gitingest files added to Cloud Storage bucket
 - Automatic query rewriting and similarity caching for performance
 - Managed RAG pipeline (retrieval-augmented generation)
+- **Migration Note:** Originally implemented with Google File Search (interim solution, deprecated due to 503 errors on files >10KB). Migrated to Vertex AI Search for production reliability (Story 7.5).
 
 **3. MCP v2 API Server (Read Path - Thin Wrapper)**
-- Cloudflare Workers hosting MCP v2 protocol endpoints
+- Google Cloud Run hosting MCP v2 protocol endpoints
 - JWT authentication for API access (15-minute tokens, refresh flow)
 - Rate limiting: 100 requests/minute per token
-- **Thin wrapper around AI Search API:**
-  - Receive MCP query → translate to AI Search API call → format response
+- **Thin wrapper around Vertex AI Search API:**
+  - Receive MCP query → translate to Vertex AI Search API call → format response
   - Return top 5 results with context
 - Result metadata: repo URL, org name, language, last updated, gitingest snippet
 - GitHub links and Codespaces/Gitpod quick-start URLs
@@ -259,8 +260,8 @@ This is a **hybrid architecture serving multiple user types through phased deliv
 
 **6. Monitoring & Ops**
 - Structured JSON logging (query patterns, latency, errors)
-- Cloudflare Analytics for usage metrics
-- Cost tracking dashboard (R2, AI Search, Workers spend)
+- Google Cloud Monitoring for usage metrics
+- Cost tracking dashboard (Cloud Storage, Vertex AI Search, Cloud Run spend)
 - Relevance feedback collection (thumbs up/down on results)
 - Error alerting for pipeline failures
 
@@ -309,7 +310,7 @@ This is a **hybrid architecture serving multiple user types through phased deliv
 **Container Automation:**
 - Migrate from local execution to **GitHub Actions**
 - Scheduled runs (every 6 hours) for automatic updates
-- Workflow: repos.json check → gitingest → R2 upload
+- Workflow: repos.json check → gitingest → Cloud Storage upload
 - Notifications on failures
 
 **Enhanced Discovery:**
@@ -611,24 +612,6 @@ These domain requirements directly shape:
 
 ---
 
-### 4. Metadata-Based Smart Caching (Technical Innovation)
-
-**The Innovation:**
-- Using R2 object metadata (pushedAt timestamp) as cache invalidation key
-- No separate cache database needed
-- 90%+ cache hit rate prevents expensive gitingest regeneration
-
-**Why Novel:**
-- Most systems use separate cache DB (Redis, KV store) with complex invalidation logic
-- Our approach: Metadata IS the cache, atomic with object storage
-- Simpler architecture, lower operational complexity
-
-**Validation:** Standard pattern is external cache. This consolidates cache + storage.
-
-**Impact:** Sub-£50/month infrastructure becomes feasible. Simpler ops.
-
----
-
 ## Validation Approach for Innovation
 
 **MVP Validates:**
@@ -712,7 +695,7 @@ These domain requirements directly shape:
    - Returns top 5 results with context
 
 2. **GET /mcp/health** - Health check
-   - Returns: Service status, AI Search connectivity, R2 availability
+   - Returns: Service status, Vertex AI Search connectivity, Cloud Storage availability
    - Used for monitoring and integration testing
 
 3. **GET /mcp/stats** (Phase 2) - Usage statistics
@@ -749,7 +732,7 @@ These domain requirements directly shape:
 - **400 Bad Request** - Invalid query format
 - **401 Unauthorized** - Invalid/expired JWT
 - **429 Too Many Requests** - Rate limit exceeded
-- **500 Internal Server Error** - AI Search failure, R2 unavailable
+- **500 Internal Server Error** - Vertex AI Search failure, Cloud Storage unavailable
 - **503 Service Unavailable** - Maintenance mode
 
 **Error Response Format:**
@@ -1221,16 +1204,16 @@ Expanded Result
 - **User Value:** Enables semantic search by creating searchable summaries
 - **Domain Constraint:** Public GitHub repos only, respects rate limits
 
-**FR-1.3: Smart Caching via R2 Metadata (MVP) ✨**
+**FR-1.3: Smart Caching via Cloud Storage Metadata (Production) ✨**
 - **Requirement:** Cache gitingest summaries to avoid expensive regeneration
 - **Acceptance Criteria:**
-  - Store summaries in R2: `gitingest/{org}/{repo}/summary.txt`
+  - Store summaries in Cloud Storage: `gitingest/{org}/{repo}/summary.txt`
   - Attach custom metadata: `pushedAt`, `url`, `processed` timestamp
   - Check object metadata before processing (HEAD request)
   - Only regenerate if pushedAt differs from cached value
   - Achieve 90%+ cache hit rate on subsequent runs
-- **User Value:** Keeps costs <£50/month, enables sustainable scaling
-- **Innovation:** Metadata IS the cache - no separate cache DB needed
+- **User Value:** Keeps costs at £50-80/month, enables sustainable scaling
+- **Innovation:** Metadata IS the cache - no separate cache DB needed, Cloud Storage handles deduplication
 - **Domain Constraint:** Cost-consciousness critical for public sector
 
 **FR-1.4: Parallel Container Execution (MVP)**
@@ -1252,16 +1235,18 @@ Expanded Result
 
 ### FR-2: AI-Powered Search (MVP)
 
-**FR-2.1: Cloudflare AI Search Integration (MVP) ✨**
-- **Requirement:** Automatically index R2 content with AI Search
+**FR-2.1: Vertex AI Search Integration (Production) ✨**
+- **Requirement:** Automatically index Cloud Storage content with Vertex AI Search
 - **Acceptance Criteria:**
-  - Configure AI Search to monitor R2 bucket
+  - Configure Vertex AI Search to monitor Cloud Storage bucket
   - Automatic indexing of new/updated gitingest files
   - Continuous updates without manual reindexing
-  - Query API accessible from Workers
-- **User Value:** Zero-code embedding generation, managed RAG pipeline
+  - Query API accessible from Cloud Run
+  - 99.9% SLA for production workloads
+- **User Value:** Zero-code embedding generation, managed RAG pipeline with enterprise reliability
 - **Innovation:** Validates gitingest quality without custom infrastructure
 - **Domain Constraint:** Must prove value with managed service before custom build
+- **Migration Note:** Replaced Google File Search (interim solution with 503 errors on files >10KB) with Vertex AI Search for production-grade reliability (Story 7.5).
 
 **FR-2.2: Semantic Search API (MVP) ✨**
 - **Requirement:** Natural language search over government code
@@ -1293,7 +1278,7 @@ Expanded Result
 **FR-3.1: MCP v2 Protocol Compliance (MVP)**
 - **Requirement:** Standards-compliant MCP API for AI assistant integration
 - **Acceptance Criteria:**
-  - MCP v2 protocol endpoints on Cloudflare Workers
+  - MCP v2 protocol endpoints on Google Cloud Run
   - JSON request/response format as specified
   - Protocol version negotiation
   - Standard error codes and formats
@@ -1325,7 +1310,7 @@ Expanded Result
 - **Requirement:** Observability for operations and debugging
 - **Acceptance Criteria:**
   - GET /mcp/health returns service status
-  - Checks: AI Search connectivity, R2 availability, Workers health
+  - Checks: Vertex AI Search connectivity, Cloud Storage availability, Cloud Run health
   - Structured JSON logging for all requests
   - Error alerting for failures
 - **User Value:** Reliable service, quick issue diagnosis
@@ -1472,7 +1457,7 @@ Expanded Result
 **FR-8.1: Cost Monitoring (MVP)**
 - **Requirement:** Track infrastructure spend for transparency
 - **Acceptance Criteria:**
-  - Daily cost breakdown (R2, AI Search, Workers)
+  - Daily cost breakdown (Cloud Storage, Vertex AI Search, Cloud Run)
   - Alert if approaching £50/month MVP budget
   - Projected monthly costs visible
   - Public cost reporting (transparency)
@@ -1504,7 +1489,7 @@ Expanded Result
 - **Requirement:** Scheduled ingestion without manual execution
 - **Acceptance Criteria:**
   - GitHub Actions workflow runs every 6 hours
-  - Fetches repos.json, runs gitingest, uploads to R2
+  - Fetches repos.json, runs gitingest, uploads to Cloud Storage
   - Notifications on failures
   - Manual trigger option
 - **User Value:** Always up-to-date without human intervention
@@ -1545,7 +1530,7 @@ Expanded Result
 - Developer experience: Slow search = abandonment (competitors: GitHub search, Google)
 - Ambient integration: AI assistants timeout after 5s
 - Procurement urgency: Officers need instant answers during budget windows
-- Edge deployment: Sub-200ms cold start on Cloudflare Workers
+- Serverless deployment: Sub-500ms cold start on Google Cloud Run
 
 **Performance Criteria:**
 
@@ -1561,7 +1546,7 @@ Expanded Result
 **NFR-1.2: Cold Start Latency**
 - **Metric:** < 200ms Workers cold start time
 - **Rationale:** Edge deployment, minimal dependencies
-- **Validation:** Cloudflare Workers dashboard metrics
+- **Validation:** Google Cloud Monitoring metrics
 
 **NFR-1.3: AI Search Indexing Throughput**
 - **Metric:** ~21,000 repos processed in < 6 hours (initial seeding)
@@ -1569,12 +1554,12 @@ Expanded Result
 - **Parallel (10 containers):** 58 hours ÷ 10 = 5.8 hours ✓
 - **Breakdown:** ~35 repos/minute aggregate with 10 parallel containers
 - **Rationale:** Initial seeding must be feasible for MVP validation
-- **Validation:** Container execution logs, R2 object count, wall-clock time
+- **Validation:** Container execution logs, Cloud Storage object count, wall-clock time
 
 **NFR-1.4: Cache Hit Rate**
 - **Metric:** 90%+ cache hit rate on subsequent ingestion runs
 - **Rationale:** Only 10-15% of repos update daily; avoid wasteful regeneration
-- **Measurement:** R2 HEAD requests vs full ingestions ratio
+- **Measurement:** Cloud Storage HEAD requests vs full ingestions ratio
 
 ---
 
@@ -1604,7 +1589,7 @@ Expanded Result
 - **Implementation:**
   - Read-only GitHub tokens (if used)
   - No git clone, only metadata + gitingest API calls
-  - R2 write access restricted to container IAM role
+  - Cloud Storage write access restricted to container service account
 - **Rationale:** Prevents supply chain compromise, aligns with least privilege
 
 **NFR-2.3: Audit Logging**
@@ -1617,13 +1602,13 @@ Expanded Result
 
 **NFR-2.4: Rate Limiting**
 - **Metric:** 60 queries/minute per IP (MVP), 600/min per API key (Phase 2)
-- **Implementation:** Cloudflare Workers rate limiting primitive
+- **Implementation:** Cloud Run rate limiting via Cloud Armor
 - **Rationale:** Prevent abuse, cost control (AI Search queries charged per request)
 
 **NFR-2.5: Dependency Security**
 - **Requirement:** Zero high/critical CVEs in production dependencies
 - **Process:** Weekly scans, 48-hour patching SLA for critical issues
-- **Tools:** npm audit, Dependabot, Cloudflare Workers security scanner
+- **Tools:** npm audit, Dependabot, Google Cloud Security Command Center
 - **Rationale:** Government trust, supply chain integrity
 
 ---
@@ -1650,15 +1635,15 @@ Expanded Result
 **NFR-3.2: Query Throughput**
 - **MVP:** 100 queries/day sustained
 - **Scale (12 months):** 10,000 queries/day sustained
-- **Architecture:** Cloudflare Workers auto-scaling (millions RPS capable)
+- **Architecture:** Cloud Run auto-scaling (thousands RPS capable with instance scaling)
 - **Bottleneck:** AI Search query limits (unknown, monitor early)
 
 **NFR-3.3: Storage Capacity**
 - **Current Estimate:** ~21,000 repos × 50KB avg gitingest = ~1GB
 - **Target (30,000 repos):** ~1.5GB gitingest summaries
-- **R2 Limits:** 10GB free tier, well within capacity
-- **Vector Storage:** AI Search managed, no explicit limits published
-- **Cost Impact:** R2 storage effectively free at this scale
+- **Cloud Storage Limits:** 10GB storage at $0.020/GB = ~£0.20/month
+- **Vector Storage:** Vertex AI Search managed, enterprise capacity
+- **Cost Impact:** Cloud Storage minimal cost at this scale
 
 **NFR-3.4: Ingestion Parallelization (MVP)**
 - **Requirement:** Support concurrent container execution via CLI arguments
@@ -1730,7 +1715,7 @@ Expanded Result
 - **Requirement:** Graceful degradation if AI Search unavailable
 - **Fallback:** Return cached results with staleness warning
 - **Monitoring:** Health check endpoint, PagerDuty alerts
-- **Rationale:** Cloudflare AI Search is Preview (not GA), expect occasional issues
+- **Rationale:** Vertex AI Search provides 99.9% SLA, but graceful degradation ensures resilience
 
 **NFR-5.4: Digital Marketplace Integration Readiness (Phase 3)**
 - **Requirement:** Support G-Cloud listing technical requirements
@@ -1750,14 +1735,14 @@ Expanded Result
 - Government infrastructure expectations: "Always available"
 - Procurement urgency: Officers need answers during budget windows (time-sensitive)
 - Developer trust: Broken search = switch to GitHub/Google
-- Cloudflare SLA: 99.99% Workers uptime, 99.9% R2 availability
+- Google Cloud SLA: 99.95% Cloud Run uptime, 99.9% Cloud Storage availability, 99.9% Vertex AI Search
 
 **Reliability Criteria:**
 
 **NFR-6.1: API Uptime**
 - **Target:** 99.9% uptime (MVP), 99.95% (Phase 2)
 - **Downtime Budget:** ~43 minutes/month (MVP), ~22 minutes/month (Phase 2)
-- **Measurement:** Cloudflare Workers Analytics, uptime monitoring (e.g., Pingdom)
+- **Measurement:** Google Cloud Monitoring, uptime checks, alerting policies
 - **Rationale:** Government infrastructure expectations
 
 **NFR-6.2: Data Freshness**
@@ -1767,16 +1752,16 @@ Expanded Result
 
 **NFR-6.3: Error Rate**
 - **Target:** < 0.1% API error rate (5xx responses)
-- **Monitoring:** Cloudflare Workers exception tracking, Sentry integration
+- **Monitoring:** Cloud Run error logging, Error Reporting integration
 - **Alerting:** PagerDuty for error rate > 1%
 - **Rationale:** High error rate = broken user experience
 
 **NFR-6.4: Disaster Recovery**
-- **Requirement:** Full data recovery from R2 within 24 hours
+- **Requirement:** Full data recovery from Cloud Storage within 24 hours
 - **Backup Strategy:**
-  - R2 object versioning enabled (30-day retention)
+  - Cloud Storage object versioning enabled (30-day retention)
   - repos.json feed externally hosted (GitHub)
-  - AI Search index can be rebuilt from R2 contents
+  - Vertex AI Search index can be rebuilt from Cloud Storage contents
 - **RTO (Recovery Time Objective):** 24 hours for full rebuild
 - **RPO (Recovery Point Objective):** 6 hours (last successful ingestion)
 - **Rationale:** Government data integrity requirements
@@ -1795,17 +1780,18 @@ Expanded Result
 
 **Cost Criteria:**
 
-**NFR-7.1: MVP Infrastructure Cost**
-- **Target:** < £50/month for ~21,000 repos, 100 queries/day
-- **Breakdown (estimated):**
-  - Cloudflare Workers: £0 (free tier: 100k req/day)
-  - Cloudflare R2: £0 (free tier: 10GB storage, 1M reads/month, ~1GB actual usage)
-  - Cloudflare AI Search: £TBD (Preview pricing unknown, likely < £30/month for 21k docs)
-  - Local container hosting: £0 (manual parallel execution on-demand)
+**NFR-7.1: Production Infrastructure Cost**
+- **Target:** £50-80/month for ~21,000 repos, 100-1000 queries/day
+- **Breakdown (actual Google Cloud costs):**
+  - Google Cloud Run (API): ~£10-15/month (4GB memory, 2 vCPU, pay-per-request pricing)
+  - Google Cloud Run (Ingestion Jobs): ~£10/month (scheduled daily runs)
+  - Google Cloud Storage: ~£0.20/month (10GB storage at $0.020/GB)
+  - Google Vertex AI Search: ~£20-40/month (production-grade search with 99.9% SLA)
+  - Google Cloud operations (logging, monitoring): ~£5-10/month
   - Domain: £10/year (govscraperepo.uk)
-- **Risk:** AI Search pricing unclear in Preview; may need to optimize or switch to custom embeddings if costs exceed budget
-- **Validation:** Cloudflare billing dashboard, weekly cost review
-- **Rationale:** Strategic constraint, prove concept before scaling
+- **Migration Note:** Originally targeted <£50/month with Cloudflare services. Google Cloud Platform provides enterprise reliability (99.9% SLA) at £50-80/month, justified by production-grade search quality.
+- **Validation:** Google Cloud billing dashboard, Cloud Monitoring cost tracking
+- **Rationale:** Strategic constraint balanced with production reliability requirements
 
 **NFR-7.2: Scale Economics (Phase 2+)**
 - **Target:** < £150/month for 30,000 repos, 10,000 queries/day

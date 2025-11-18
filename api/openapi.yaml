@@ -1,0 +1,343 @@
+openapi: 3.0.3
+info:
+  title: GovRepoScrape Cloud Run API
+  description: |
+    MCP (Model Context Protocol) API server for semantic search across UK Government code repositories.
+
+    This API provides production-grade semantic search capabilities using Google Vertex AI Search,
+    integrated with repository summaries from UK government organizations on GitHub.
+
+    **Features:**
+    - MCP v2 compliant search endpoint
+    - Vertex AI Search integration (99.9% SLA)
+    - Structured JSON logging
+    - Request timeout protection (10s)
+    - Comprehensive error handling
+
+    **Performance:**
+    - Response time: <2s (p95)
+    - Concurrency: 80 requests per instance
+    - Auto-scaling: 0-10 instances
+  version: 1.0.0
+  contact:
+    name: CDDO
+    url: https://github.com/alphagov/govreposcrape
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://govreposcrape-api-{hash}-uc.a.run.app
+    description: Production (Cloud Run - us-central1)
+    variables:
+      hash:
+        default: xxxxx
+        description: Cloud Run service hash
+  - url: http://localhost:8080
+    description: Local development
+
+tags:
+  - name: search
+    description: Semantic search operations
+  - name: health
+    description: Health and monitoring
+
+paths:
+  /mcp/search:
+    post:
+      tags:
+        - search
+      summary: Perform semantic search
+      description: |
+        Search across UK government code repositories using semantic search powered by Vertex AI Search.
+
+        Returns repository summaries matching the query, ranked by relevance.
+      operationId: search
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchRequest'
+            examples:
+              basicSearch:
+                summary: Basic search with query only
+                value:
+                  query: "authentication patterns in UK government repos"
+              limitedSearch:
+                summary: Search with result limit
+                value:
+                  query: "OAuth2 implementation"
+                  limit: 10
+      responses:
+        '200':
+          description: Successful search
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+              examples:
+                searchResults:
+                  summary: Sample search results
+                  value:
+                    results:
+                      - title: "alphagov/govuk-frontend"
+                        url: "https://github.com/alphagov/govuk-frontend"
+                        snippet: "Authentication patterns using OAuth2..."
+                        metadata:
+                          org: "alphagov"
+                          repo: "govuk-frontend"
+                          pushedAt: "2025-01-15T10:30:00Z"
+                          processedAt: "2025-01-15T11:00:00Z"
+                    metadata:
+                      query: "authentication patterns"
+                      limit: 20
+                      resultCount: 1
+                      duration: 342
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingQuery:
+                  summary: Missing query parameter
+                  value:
+                    error:
+                      code: "INVALID_REQUEST"
+                      message: "Missing or invalid required field: query (must be a non-empty string)"
+                invalidLimit:
+                  summary: Invalid limit parameter
+                  value:
+                    error:
+                      code: "INVALID_REQUEST"
+                      message: "Invalid field: limit (must be a number between 1 and 100)"
+        '408':
+          description: Request timeout
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                timeout:
+                  summary: Request exceeded timeout
+                  value:
+                    error:
+                      code: "TIMEOUT"
+                      message: "Request exceeded 10000ms timeout"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                internalError:
+                  summary: Vertex AI Search API failure
+                  value:
+                    error:
+                      code: "INTERNAL_ERROR"
+                      message: "An internal error occurred while processing your search request"
+
+  /health:
+    get:
+      tags:
+        - health
+      summary: Health check
+      description: |
+        Health check endpoint for monitoring and load balancers.
+
+        Returns service status and timestamp.
+      operationId: health
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              examples:
+                healthy:
+                  summary: Healthy service response
+                  value:
+                    status: "ok"
+                    timestamp: "2025-01-17T12:00:00.000Z"
+                    service: "govreposcrape-api"
+                    version: "1.0.0"
+
+components:
+  schemas:
+    SearchRequest:
+      type: object
+      required:
+        - query
+      properties:
+        query:
+          type: string
+          description: Search query text
+          minLength: 1
+          example: "authentication patterns in UK government repos"
+        limit:
+          type: integer
+          description: Maximum number of results to return
+          minimum: 1
+          maximum: 100
+          default: 20
+          example: 20
+
+    SearchResponse:
+      type: object
+      required:
+        - results
+        - metadata
+      properties:
+        results:
+          type: array
+          description: Array of search results
+          items:
+            $ref: '#/components/schemas/SearchResult'
+        metadata:
+          $ref: '#/components/schemas/SearchMetadata'
+
+    SearchResult:
+      type: object
+      required:
+        - title
+        - url
+        - snippet
+        - metadata
+      properties:
+        title:
+          type: string
+          description: Repository title (org/repo format)
+          example: "alphagov/govuk-frontend"
+        url:
+          type: string
+          format: uri
+          description: GitHub repository URL
+          example: "https://github.com/alphagov/govuk-frontend"
+        snippet:
+          type: string
+          description: Relevant snippet from repository summary
+          example: "Authentication patterns using OAuth2 for secure user login..."
+        metadata:
+          $ref: '#/components/schemas/ResultMetadata'
+
+    ResultMetadata:
+      type: object
+      required:
+        - org
+        - repo
+      properties:
+        org:
+          type: string
+          description: GitHub organization name
+          example: "alphagov"
+        repo:
+          type: string
+          description: Repository name
+          example: "govuk-frontend"
+        pushedAt:
+          type: string
+          format: date-time
+          description: Last push timestamp from GitHub
+          example: "2025-01-15T10:30:00Z"
+        processedAt:
+          type: string
+          format: date-time
+          description: When the repository was processed
+          example: "2025-01-15T11:00:00Z"
+
+    SearchMetadata:
+      type: object
+      required:
+        - query
+        - limit
+        - resultCount
+        - duration
+      properties:
+        query:
+          type: string
+          description: Original search query
+          example: "authentication patterns"
+        limit:
+          type: integer
+          description: Maximum results requested
+          example: 20
+        resultCount:
+          type: integer
+          description: Actual number of results returned
+          example: 5
+        duration:
+          type: integer
+          description: Query execution time in milliseconds
+          example: 342
+
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - timestamp
+        - service
+        - version
+      properties:
+        status:
+          type: string
+          enum: [ok]
+          description: Service health status
+          example: "ok"
+        timestamp:
+          type: string
+          format: date-time
+          description: Current server timestamp
+          example: "2025-01-17T12:00:00.000Z"
+        service:
+          type: string
+          description: Service name
+          example: "govreposcrape-api"
+        version:
+          type: string
+          description: API version
+          example: "1.0.0"
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          $ref: '#/components/schemas/Error'
+
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Error code
+          enum:
+            - INVALID_REQUEST
+            - TIMEOUT
+            - NOT_FOUND
+            - INTERNAL_ERROR
+          example: "INVALID_REQUEST"
+        message:
+          type: string
+          description: Human-readable error message
+          example: "Missing or invalid required field: query"
+        details:
+          type: object
+          description: Additional error details (development mode only)
+          additionalProperties: true
+
+  securitySchemes:
+    noAuth:
+      type: http
+      scheme: bearer
+      description: API is publicly accessible (--allow-unauthenticated)
+
+security:
+  - noAuth: []

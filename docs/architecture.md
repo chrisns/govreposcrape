@@ -2,50 +2,50 @@
 
 ## Executive Summary
 
-govscraperepo is a Cloudflare Workers-based MCP API server providing semantic code search over ~21k UK government repositories. The architecture follows a **write path / read path separation** pattern: a Python containerized ingestion pipeline (gitingest) processes repositories with smart caching (90%+ hit rate), stores summaries in R2, which are automatically indexed by Cloudflare AI Search (managed service), and exposed via a TypeScript MCP v2 API with no authentication. The architecture prioritizes managed services, cost efficiency (<£50/month), and AI agent implementation consistency through strict naming conventions and typed interfaces.
+govscraperepo is a Google Cloud Platform-based MCP API server providing semantic code search over ~21k UK government repositories. The architecture follows a **write path / read path separation** pattern: a Python containerized ingestion pipeline (gitingest) processes repositories, stores summaries as Markdown files in Google Cloud Storage with custom metadata (one file per repo: `{org}/{repo}.md`), which are automatically indexed by Vertex AI Search (managed service), and exposed via a TypeScript MCP v2 API deployed on Cloud Run. The architecture prioritizes managed services, incremental updates (based on `pushedAt` timestamp comparison), and simple URI-based metadata extraction.
 
 ## Project Initialization
 
 **First implementation story must execute:**
 
 ```bash
-npm create cloudflare@latest govreposcrape -- --type hello-world --ts
-cd govreposcrape
-npm install
+npm init -y
+npm install typescript @types/node --save-dev
+npm install @google-cloud/discoveryengine @google-cloud/storage express --save
 ```
 
-This establishes the base Cloudflare Workers architecture with these decisions:
+This establishes the base Google Cloud Platform architecture with these decisions:
 
-### Provided by Starter Template
+### Provided by Setup
 
 | Decision | Value | Notes |
 |----------|-------|-------|
-| Language | TypeScript | Strict typing with @cloudflare/workers-types |
-| Build Tool | esbuild | Via wrangler CLI |
-| Runtime | workerd | Cloudflare Workers runtime |
-| Dev Server | wrangler dev | Local development at localhost:8787 |
-| Deployment | wrangler deploy | CLI-based deployment |
-| Project Structure | src/ pattern | Entry point: src/index.ts |
-| Config File | wrangler.toml | Workers configuration |
+| Language | TypeScript | Strict typing with @types/node |
+| Build Tool | tsc | TypeScript compiler |
+| Runtime | Node.js 20 | Cloud Run managed runtime |
+| Dev Server | npm run dev | Local development at localhost:8080 |
+| Deployment | gcloud run deploy | CLI-based deployment |
+| Project Structure | api/ pattern | Entry point: api/src/index.ts |
+| Config File | package.json | Node.js configuration |
 
 ## Decision Summary
 
 | Category | Decision | Version | Affects Epics | Rationale |
 | -------- | -------- | ------- | ------------- | --------- |
-| Platform | Cloudflare Workers | Latest | All | Edge compute, <£50/month target, managed services |
-| Language | TypeScript | 5.9+ | All | Type safety, @cloudflare/workers-types, strict mode |
-| Starter Template | create-cloudflare hello-world | @latest | Epic 1 | Standard Workers setup with TypeScript |
-| Build Tool | esbuild (via wrangler) | 4.47.0+ | All | Fast builds, tree-shaking, Workers-optimized |
-| Test Framework | Vitest | 4.0+ | All | Fast, ESM native, @cloudflare/vitest-pool-workers |
+| Platform | Google Cloud Platform | Latest | All | Managed services, Cloud Run, Vertex AI Search |
+| Language | TypeScript | 5.9+ | All | Type safety, Node.js 20+, strict mode |
+| API Runtime | Cloud Run (Node 20) | 20+ | Epic 4 | Managed Node.js runtime, auto-scaling |
+| Build Tool | esbuild (via tsc) | Latest | All | Fast TypeScript compilation |
+| Test Framework | Vitest | 4.0+ | All | Fast, ESM native, Node.js compatible |
 | Container Runtime | Docker + Python 3.11 | 3.11+ | Epic 2 | gitingest library requirement |
-| Data Storage | Cloudflare R2 | Managed | Epic 2, 3 | Object storage for gitingest summaries |
-| Cache | Cloudflare KV | Managed | Epic 2 | Smart caching, 90%+ hit rate target |
-| Search | Cloudflare AI Search | Managed | Epic 3, 4 | Zero-code semantic search, validates hypothesis |
+| Data Storage | Google Cloud Storage | Managed | Epic 2, 3 | Object storage for Markdown summaries (`{org}/{repo}.md`) |
+| Metadata Storage | GCS Custom Metadata | Managed | Epic 2, 3 | org, repo, url, pushedAt, processedAt (no separate DB) |
+| Search | Vertex AI Search | Managed | Epic 3, 4 | Semantic search with content schema |
 | API Protocol | MCP v2 | v2 | Epic 4 | Standards compliance, Claude/Copilot compatible |
 | TypeScript Config | strict: true, target: ES2022 | 5.9+ | All | Maximum type safety, modern JS features |
 | Error Handling | Custom error classes + retry | - | All | 3 attempts, exponential backoff (1s, 2s, 4s) |
-| Logging | Structured JSON | - | All | Cloudflare log streaming, requestId correlation |
-| API Response Format | Typed MCP SearchResult | - | Epic 4 | Type-safe metadata from repos.json |
+| Logging | Structured JSON | - | All | Cloud Run logging, requestId correlation |
+| API Response Format | Typed MCP SearchResult | - | Epic 4 | Type-safe metadata from GCS URI parsing |
 | File Naming | kebab-case.ts | - | All | Consistency for AI agents |
 | Function Naming | camelCase | - | All | JavaScript convention |
 | Module Pattern | Named exports | - | All | Tree-shaking, explicit imports |
@@ -54,46 +54,37 @@ This establishes the base Cloudflare Workers architecture with these decisions:
 
 ```
 govreposcrape/
-├── src/
-│   ├── index.ts              # Workers entry point
-│   ├── ingestion/            # Epic 2: Data pipeline
-│   │   ├── repos-fetcher.ts
-│   │   ├── cache.ts
-│   │   └── orchestrator.ts
-│   ├── search/               # Epic 3: AI Search integration
-│   │   ├── ai-search-client.ts
-│   │   └── result-enricher.ts
-│   ├── api/                  # Epic 4: MCP API
-│   │   ├── mcp-handler.ts
-│   │   ├── search-endpoint.ts
-│   │   └── health.ts
-│   ├── utils/                # Epic 1, 6: Shared utilities
-│   │   ├── logger.ts
-│   │   ├── error-handler.ts
-│   │   └── types.ts
-│   └── types.ts              # Shared TypeScript types
-├── container/                # Epic 2: Python gitingest
+├── api/                      # Epic 4: MCP API (Cloud Run)
+│   ├── src/
+│   │   ├── index.ts          # Express server entry point
+│   │   ├── services/
+│   │   │   └── vertexSearchService.ts  # Vertex AI Search integration
+│   │   └── types/
+│   │       └── mcp.ts        # MCP protocol types
+│   ├── scripts/
+│   │   ├── trigger-import.ts  # Vertex AI import operations
+│   │   └── deploy-setup.sh    # Cloud Run deployment script
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── Dockerfile            # Cloud Run container
+├── container/                # Epic 2: Python gitingest (Docker)
 │   ├── Dockerfile
 │   ├── requirements.txt
-│   ├── ingest.py
-│   ├── r2_client.py
-│   └── orchestrator.py
-├── examples/                 # Epic 5: Integration examples
-│   ├── curl.sh
-│   ├── node.js
-│   └── python.py
+│   ├── orchestrator.py       # Main ingestion orchestrator
+│   ├── gcs_client.py         # GCS upload with metadata
+│   └── test_gcs_client.py    # Unit tests
 ├── docs/                     # Epic 5: Documentation
-│   ├── integration/
-│   │   ├── claude-desktop.md
-│   │   └── github-copilot.md
-│   └── usage-guide.md
-├── static/                   # Epic 5: OpenAPI spec
-│   └── openapi.json
+│   ├── architecture.md       # This file
+│   ├── epics.md              # Epic breakdown
+│   ├── google-file-search-testing-results.md
+│   └── vertex-ai-migration-results.md
 ├── scripts/                  # Epic 6: Operations
-│   ├── cost-monitoring.ts
-│   └── security-audit.sh
-├── wrangler.toml            # Cloudflare Workers config
-├── package.json
+│   ├── import-jsonl-to-vertex.py
+│   └── smoke-test.sh
+├── .bmad-ephemeral/          # Development tracking (not deployed)
+│   ├── stories/
+│   └── sprint-status.yaml
+├── package.json              # Root package.json (workspace)
 ├── tsconfig.json
 ├── .env.example
 ├── .gitignore
@@ -106,95 +97,109 @@ govreposcrape/
 
 | Epic | Primary Modules/Services | Technologies |
 |------|-------------------------|--------------|
-| Epic 1: Foundation & Infrastructure | src/utils/, wrangler.toml, package.json | TypeScript, Cloudflare Workers, wrangler CLI |
-| Epic 2: Data Ingestion Pipeline | src/ingestion/, container/ | TypeScript (Workers), Python 3.11 (container), KV, R2, gitingest |
-| Epic 3: AI Search Integration | src/search/ | Cloudflare AI Search, R2 auto-indexing |
-| Epic 4: MCP API Server | src/api/, src/index.ts | MCP v2, TypeScript, Workers fetch API |
-| Epic 5: Developer Experience | docs/, examples/, static/ | Markdown, OpenAPI 3.0, bash/node/python examples |
-| Epic 6: Operational Excellence | scripts/, SECURITY.md, DEPLOYMENT.md | Cloudflare Analytics, npm audit, documentation |
+| Epic 1: Foundation & Infrastructure | api/src/, package.json, tsconfig.json | TypeScript, Node.js 20, Cloud Run |
+| Epic 2: Data Ingestion Pipeline | container/ | Python 3.11 (Docker), GCS, gitingest |
+| Epic 3: AI Search Integration | api/src/services/ | Vertex AI Search, GCS auto-indexing |
+| Epic 4: MCP API Server | api/src/index.ts | MCP v2, TypeScript, Express, Cloud Run |
+| Epic 5: Developer Experience | docs/, scripts/ | Markdown, gcloud CLI, bash scripts |
+| Epic 6: Operational Excellence | scripts/, SECURITY.md, DEPLOYMENT.md | Cloud Run metrics, npm audit, documentation |
 
 ## Technology Stack Details
 
 ### Core Technologies
 
-**Cloudflare Workers Runtime:**
-- Platform: Cloudflare Workers (edge compute)
-- Runtime: workerd (V8-based)
-- Deployment: wrangler CLI 4.47.0+
-- Configuration: wrangler.toml
+**Cloud Run Runtime:**
+- Platform: Google Cloud Run (managed containers)
+- Runtime: Node.js 20 (managed runtime)
+- Deployment: gcloud run deploy
+- Configuration: Dockerfile + package.json
 
 **TypeScript 5.9+:**
 - strict: true (strictNullChecks, noImplicitAny, etc.)
 - target: ES2022
 - module: ESNext
-- Types: @cloudflare/workers-types
+- Types: @types/node, @google-cloud/discoveryengine
 
 **Python 3.11+ (Container):**
 - Runtime: Docker container
 - Library: gitingest (pip install gitingest)
-- Dependencies: boto3 (R2 access), requests
-- Orchestration: Manual CLI execution for MVP, GitHub Actions for Phase 2
+- Dependencies: google-cloud-storage, requests
+- Orchestration: Manual docker run for MVP, automated batch processing for Phase 2
 
-### Cloudflare Services
+### Google Cloud Services
 
-**R2 (Object Storage):**
-- Path structure: `gitingest/{org}/{repo}/summary.txt`
-- Custom metadata: pushedAt, url, processedAt
-- Content-Type: text/plain (AI Search compatibility)
-- Auto-indexing by AI Search
+**Google Cloud Storage (Object Storage):**
+- Bucket: `govreposcrape-summaries` (us-central1)
+- Path structure: `{org}/{repo}.md` (one Markdown file per repository)
+- Content: Plain text gitingest summary (Markdown format)
+- Custom metadata: org, repo, url, pushedAt, processedAt, size
+- Content-Type: text/markdown; charset=utf-8
+- Incremental updates: Compare `pushedAt` timestamp, skip if unchanged
+- Auto-indexing by Vertex AI Search (content schema)
 
-**KV (Key-Value Store):**
-- Cache keys: `repo:{org}/{name}`
-- Cache values: `{ pushedAt, processedAt, status: "complete" }`
-- TTL: Not set (cache persists, invalidated by pushedAt comparison)
-- Hit rate target: 90%+
-
-**AI Search (Managed RAG):**
-- Source: R2 bucket auto-monitoring
-- Embedding: Automatic (managed by Cloudflare)
-- Index: Real-time (minutes after R2 upload)
-- Query: Natural language semantic search
+**Vertex AI Search (Managed Semantic Search):**
+- Data Store ID: `govreposcrape-summaries`
+- Search Engine: `govreposcrape-search`
+- Source: GCS bucket auto-monitoring (`gs://govreposcrape-summaries/**/*.md`)
+- Data Schema: `content` (plain text/markdown indexing)
+- Embedding: Automatic (managed by Vertex AI)
+- Index: Real-time (5-15 minutes after GCS upload)
+- Query: Natural language semantic search via SearchServiceClient
+- Import: Incremental mode (add/update documents without full reindex)
 
 ### Testing Stack
 
-**Vitest 4.0+:**
-- Test runner: Vitest with @cloudflare/vitest-pool-workers
-- Location: Co-located `*.test.ts` files
-- Coverage: 80%+ target for core logic
-- Commands: `npm test`, `npm run test:coverage`
-
 **Python Testing:**
 - Framework: pytest
-- Location: container/tests/
-- Scope: gitingest processing, R2 uploads
+- Location: container/test_*.py
+- Scope: gitingest processing, GCS uploads, incremental update logic
+- Commands: `pytest container/`
+
+**TypeScript Testing (Future):**
+- Framework: Jest or Vitest
+- Location: Co-located `*.test.ts` files
+- Scope: Vertex AI Search service, MCP API endpoints
+- Commands: `npm test`
 
 ### Integration Points
 
 **Data Flow:**
 ```
-repos.json feed → Workers (fetch) → KV (cache check)
-  → Container (gitingest) → R2 (upload) → AI Search (auto-index)
-  → Workers (query) → MCP API (response)
+repos.json feed → Container (gitingest) → GCS (upload .md with metadata)
+  → Vertex AI Search (auto-index) → Cloud Run API (query)
+  → MCP API (response with org/repo from URI parsing)
 ```
 
-**Service Bindings (wrangler.toml):**
-```toml
-[[r2_buckets]]
-binding = "R2"
-bucket_name = "govscraperepo-gitingest"
+**Incremental Update Flow:**
+```
+1. Container reads repos.json
+2. For each repo: Check GCS for existing file
+3. Compare existing pushedAt metadata with new value
+4. If unchanged: Skip (⊘ symbol)
+5. If changed: Update file (↻ symbol)
+6. If new: Create file (+ symbol)
+7. Vertex AI Search auto-detects changes and reindexes
+```
 
-[[kv_namespaces]]
-binding = "KV"
-id = "..."
+**Google Cloud Configuration:**
+```bash
+# Project ID
+GOOGLE_PROJECT_ID=govreposcrape
 
-[[ai]]
-binding = "AI_SEARCH"
+# GCS Bucket
+GCS_BUCKET_NAME=govreposcrape-summaries
+
+# Vertex AI Search
+VERTEX_AI_SEARCH_ENGINE_ID=projects/1060386346356/locations/global/collections/default_collection/engines/govreposcrape-search
+
+# Authentication
+GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account-key.json
 ```
 
 **External Integrations:**
 - repos.json feed: HTTPS fetch from GitHub
-- gitingest: Python library (containerized)
-- MCP clients: Claude Desktop, GitHub Copilot (via https://govreposcrape.cloud.cns.me)
+- gitingest: Python library (containerized with Docker)
+- MCP clients: Claude Desktop, GitHub Copilot (via Cloud Run URL)
 
 ## Implementation Patterns
 
@@ -205,16 +210,16 @@ These patterns ensure consistent implementation across all AI agents:
 **File Naming:**
 - TypeScript files: `kebab-case.ts` (e.g., `search-endpoint.ts`, `repos-fetcher.ts`)
 - Test files: `kebab-case.test.ts` (e.g., `search-endpoint.test.ts`)
-- Python files: `snake_case.py` (e.g., `r2_client.py`, `orchestrator.py`)
+- Python files: `snake_case.py` (e.g., `gcs_client.py`, `orchestrator.py`)
 
 **Module Exports:**
 - **Prefer named exports** for tree-shaking and explicit imports
-- Default export **only** for Workers entry point (src/index.ts)
+- Default export **only** for API entry point (api/src/index.ts)
 - Example: `export { searchCode, enrichResult }` not `export default`
 
 **Import Organization:**
 1. Node/external modules (e.g., `import { parse } from 'node:url'`)
-2. @cloudflare/* modules (e.g., `import type { Env } from '@cloudflare/workers-types'`)
+2. @google-cloud/* modules (e.g., `import { SearchServiceClient } from '@google-cloud/discoveryengine'`)
 3. Internal imports (relative paths, e.g., `import { logger } from '../utils/logger'`)
 4. Type imports last (e.g., `import type { SearchResult } from './types'`)
 
@@ -254,18 +259,20 @@ These patterns ensure consistent implementation across all AI agents:
 ### Code Organization
 
 **Test Files:**
-- Co-located with source: `src/api/search-endpoint.ts` → `src/api/search-endpoint.test.ts`
-- Test structure: describe blocks for grouping, it/test for cases
-- Mock external services (R2, KV, AI Search) in tests
+- Python: `test_*.py` in container/ (e.g., `test_gcs_client.py`)
+- TypeScript (future): Co-located `*.test.ts` files
+- Test structure: pytest for Python, describe/it blocks for TypeScript
+- Mock external services (GCS, Vertex AI Search) in tests
 
 **Utility Functions:**
-- Place in `src/utils/` when used across multiple modules
+- Place in `api/src/utils/` when used across multiple modules
 - Keep module-specific helpers within the module
 
 **Configuration:**
-- Environment-specific: wrangler.toml (dev/staging/production)
-- Secrets: Cloudflare Workers secrets (JWT_SECRET, API keys)
+- Environment-specific: .env files (dev/staging/production)
+- Secrets: Google Cloud Secret Manager or environment variables
 - No hardcoded secrets in code
+- Service account authentication via GOOGLE_APPLICATION_CREDENTIALS
 
 ## Consistency Rules
 
@@ -338,8 +345,8 @@ async function withRetry<T>(
 **Where to Apply Retries:**
 - repos.json fetch
 - gitingest container processing
-- R2 uploads
-- AI Search queries (with shorter timeout)
+- GCS uploads (handled by google-cloud-storage library with retry.Retry)
+- Vertex AI Search queries (with shorter timeout)
 
 ### Logging Strategy
 
@@ -399,28 +406,30 @@ interface RepoMetadata {
 }
 ```
 
-**CacheEntry (KV):**
-```typescript
-interface CacheEntry {
-  pushedAt: string;      // ISO8601 from repos.json
-  processedAt: string;   // ISO8601 when gitingest completed
-  status: "complete";    // Future: "processing", "failed"
+**GCS Custom Metadata:**
+```python
+metadata = {
+  'org': 'alphagov',
+  'repo': 'govuk-frontend',
+  'url': 'https://github.com/alphagov/govuk-frontend',
+  'pushedAt': '2025-10-15T14:30:00Z',
+  'processedAt': '2025-11-17T10:45:00Z',
+  'size': '12345'  # Content size in bytes
 }
 ```
 
 **SearchResult (API Response):**
 ```typescript
 interface SearchResult {
-  repo_url: string;           // Full GitHub URL
-  repo_org: string;           // Organization name
-  repo_name: string;          // Repository name
-  snippet: string;            // Code snippet from AI Search
-  last_updated: string;       // ISO8601 (pushedAt)
-  language?: string;          // Detected language (optional)
-  similarity_score: number;   // 0.0-1.0 from AI Search
-  github_link: string;        // https://github.com/{org}/{repo}
-  codespaces_link: string;    // https://github.dev/{org}/{repo}
-  metadata: RepoMetadata;     // Full repos.json entry
+  title: string;              // "{org}/{repo}"
+  url: string;                // Full GitHub URL
+  snippet: string;            // Code snippet from Vertex AI Search
+  metadata: {
+    org: string;              // Extracted from GCS URI
+    repo: string;             // Extracted from GCS URI
+    pushedAt?: string;        // Optional (not in current implementation)
+    processedAt?: string;     // Optional (not in current implementation)
+  };
 }
 ```
 
@@ -444,31 +453,33 @@ interface MCPResponse {
 
 **Write Path (Ingestion):**
 1. Fetch repos.json → Parse JSON → Extract RepoMetadata[]
-2. For each repo: Check KV cache (key: `repo:{org}/{name}`)
-3. If pushedAt differs or no cache: Process with gitingest
-4. Upload to R2 (`gitingest/{org}/{repo}/summary.txt`) with metadata
-5. Update KV cache with new CacheEntry
-6. AI Search auto-indexes R2 content
+2. For each repo: Check GCS for existing file (`{org}/{repo}.md`)
+3. Compare pushedAt metadata: Skip if unchanged, update if changed
+4. Process with gitingest (if needed)
+5. Upload to GCS (`{org}/{repo}.md`) with custom metadata
+6. Vertex AI Search auto-indexes new/updated content (5-15 min)
 
 **Read Path (Query):**
-1. Receive MCPRequest via POST /mcp/search
-2. Query AI Search with natural language
-3. AI Search returns results with similarity scores
-4. Enrich results with metadata from R2 object metadata
-5. Format as MCPResponse
+1. Receive MCP search request via Cloud Run API
+2. Query Vertex AI Search with natural language
+3. Vertex AI Search returns results with snippets
+4. Extract org/repo from GCS URI using regex pattern
+5. Format as MCP SearchResult
 6. Return to client
 
 ### Storage Patterns
 
-**R2 Object Naming:**
-- Pattern: `gitingest/{org}/{repo}/summary.txt`
-- Example: `gitingest/alphagov/govuk-frontend/summary.txt`
-- Metadata: Stored in R2 object custom metadata (no separate DB)
+**GCS Object Naming:**
+- Pattern: `{org}/{repo}.md` (one file per repository)
+- Example: `alphagov/govuk-frontend.md`
+- Content-Type: `text/markdown; charset=utf-8`
+- Metadata: Stored in GCS custom metadata (org, repo, url, pushedAt, processedAt, size)
 
-**KV Cache Keys:**
-- Pattern: `repo:{org}/{name}`
-- Example: `repo:alphagov/govuk-frontend`
-- No TTL (persist indefinitely, invalidated by pushedAt comparison)
+**Incremental Update Logic:**
+- Check existing file with `blob.reload()` to fetch metadata
+- Compare `pushedAt` values (existing vs new from repos.json)
+- Skip if equal (⊘), update if different (↻), create if not exists (+)
+- No separate cache DB needed - GCS metadata serves as cache
 
 ## API Contracts
 
@@ -476,13 +487,13 @@ interface MCPResponse {
 
 **Request:**
 ```http
-POST /mcp/search HTTP/1.1
-Host: govreposcrape.cloud.cns.me
+POST /search HTTP/1.1
+Host: <cloud-run-url>
 Content-Type: application/json
 
 {
   "query": "authentication methods",
-  "limit": 5
+  "limit": 20
 }
 ```
 
@@ -491,24 +502,15 @@ Content-Type: application/json
 {
   "results": [
     {
-      "repo_url": "https://github.com/alphagov/govuk-frontend",
-      "repo_org": "alphagov",
-      "repo_name": "govuk-frontend",
+      "title": "alphagov/govuk-frontend",
+      "url": "https://github.com/alphagov/govuk-frontend",
       "snippet": "// Authentication middleware...",
-      "last_updated": "2025-10-15T14:30:00Z",
-      "language": "TypeScript",
-      "similarity_score": 0.92,
-      "github_link": "https://github.com/alphagov/govuk-frontend",
-      "codespaces_link": "https://github.dev/alphagov/govuk-frontend",
       "metadata": {
-        "url": "https://github.com/alphagov/govuk-frontend",
-        "pushedAt": "2025-10-15T14:30:00Z",
         "org": "alphagov",
-        "name": "govuk-frontend"
+        "repo": "govuk-frontend"
       }
     }
-  ],
-  "took_ms": 234
+  ]
 }
 ```
 
@@ -527,8 +529,7 @@ Content-Type: application/json
 {
   "error": {
     "code": "SEARCH_ERROR",
-    "message": "AI Search service temporarily unavailable",
-    "retry_after": 60
+    "message": "Vertex AI Search service temporarily unavailable"
   }
 }
 ```
@@ -536,22 +537,22 @@ Content-Type: application/json
 ### MCP Protocol Compliance
 
 **Headers:**
-- `X-MCP-Version: 2` (protocol version negotiation)
 - `Content-Type: application/json`
-- `X-Request-ID: <uuid>` (correlation ID, optional but recommended)
+- Standard HTTP headers
 
 **CORS:**
-- `Access-Control-Allow-Origin: *` (open access)
-- `Access-Control-Allow-Methods: POST, OPTIONS`
-- `Access-Control-Allow-Headers: Content-Type, X-MCP-Version`
+- Configured via Cloud Run service settings
+- Allow methods: POST, OPTIONS, GET
+- Allow headers: Content-Type
 
 ## Security Architecture
 
 ### Authentication and Authorization
 
-**No Authentication Required:**
+**No Authentication Required (MVP):**
 - MCP API is open access (no JWT, no API keys)
-- Cloudflare handles abuse prevention via platform-level rate limiting
+- Cloud Run handles rate limiting via platform-level controls
+- Future: API key authentication for production use
 
 ### Input Validation
 
@@ -575,12 +576,13 @@ Content-Type: application/json
 
 **Transport Security:**
 - HTTPS only (TLS 1.3)
-- Cloudflare automatic HTTPS enforcement
+- Cloud Run automatic HTTPS enforcement
 - No unencrypted connections
 
 **Secrets Management:**
-- Cloudflare Workers secrets for API keys (if needed)
-- Environment variables via wrangler.toml (non-sensitive config)
+- Google Cloud Secret Manager for API keys (if needed)
+- Service account authentication via GOOGLE_APPLICATION_CREDENTIALS
+- Environment variables for non-sensitive config
 - No secrets in code or logs
 
 ### NCSC Compliance (NFR-2.1)
@@ -594,12 +596,12 @@ Content-Type: application/json
 
 **Audit Logging:**
 - All API requests logged with requestId, query, response time
-- Log retention: Cloudflare Workers logs (7 days), export for long-term storage
+- Log retention: Cloud Run logs (configurable via Cloud Logging)
 - No secrets in logs
 
 **Access Controls:**
 - Read-only access to GitHub (no write operations)
-- R2 and KV: Workers-only access (service bindings)
+- GCS and Vertex AI: Service account access with least privilege IAM roles
 - Principle of least privilege
 
 ### Dependency Security
@@ -619,16 +621,16 @@ Content-Type: application/json
 ### Response Time Targets (NFR-1.1)
 
 **Target: <2s end-to-end (p95)**
-- AI Search query: <800ms (managed service)
-- Result enrichment: <100ms (R2 metadata fetch)
-- Network latency: <500ms (edge deployment)
+- Vertex AI Search query: <1500ms (managed service)
+- Metadata extraction: <50ms (URI regex parsing)
+- Network latency: <300ms (Cloud Run regional deployment)
 - Serialization: <50ms (JSON response)
-- Buffer: ~550ms for variance
+- Buffer: ~100ms for variance
 
 **Optimization Strategies:**
-- Edge deployment (Cloudflare Workers global network)
-- Minimal processing (thin API wrapper)
-- Parallel operations where possible (future: concurrent AI Search + metadata fetch)
+- Regional deployment (us-central1 for low latency to Vertex AI)
+- Minimal processing (thin API wrapper around Vertex AI Search)
+- URI parsing instead of metadata fetches (no additional API calls)
 
 ### Ingestion Performance (NFR-1.3)
 
@@ -644,82 +646,101 @@ Content-Type: application/json
 
 ### Caching Strategy
 
-**Smart Caching (90%+ hit rate):**
-- KV cache: pushedAt comparison (only reprocess on changes)
-- Observation: 10-15% of repos update daily → 85-90% cache hits
-- Cache invalidation: pushedAt timestamp comparison (no TTL)
+**Smart Incremental Updates (90%+ skip rate):**
+- GCS metadata comparison: pushedAt timestamp check before processing
+- Observation: 10-15% of repos update daily → 85-90% skip on re-runs
+- No separate cache DB: GCS custom metadata serves as cache
+- Logic: Skip (⊘) if pushedAt unchanged, Update (↻) if changed, Create (+) if new
 
 ### Cost Optimization (NFR-7.1)
 
 **Target: <£50/month**
-- Workers: Free tier (100k requests/day)
-- R2: ~1GB storage × £0.015/GB = £0.015/month
-- KV: Free tier (1GB storage, 100k reads/day)
-- AI Search: Pay-per-query (validate pricing during MVP)
-- **Key:** Smart caching reduces AI Search queries by 90%
+- Cloud Run: Free tier (2 million requests/month) + minimal compute
+- GCS: ~1GB storage × $0.020/GB = $0.02/month
+- Vertex AI Search: Pay-per-query (pricing validated during MVP)
+- Data transfer: Minimal (within us-central1 region)
+- **Key:** Incremental updates reduce gitingest processing by 90%
 
 ## Deployment Architecture
 
 ### Environments
 
 **Development (Local):**
-- `wrangler dev` on localhost:8787
-- Uses development service bindings
+- `npm run dev` on localhost:8080
+- Uses local service account credentials
 - Debug logging enabled
+- Docker containers for gitingest testing
 
-**Staging (Cloudflare):**
-- Domain: staging.govreposcrape.cloud.cns.me
-- Separate R2/KV/AI Search instances
-- Production-like config, test data
+**Staging (Google Cloud):**
+- Cloud Run service: govreposcrape-api-staging
+- Separate GCS bucket and Vertex AI Search instance
+- Production-like config, test data (100 repos)
 
-**Production (Cloudflare):**
-- Domain: govreposcrape.cloud.cns.me
-- Production service bindings
+**Production (Google Cloud):**
+- Cloud Run service: govreposcrape-api
+- Production GCS bucket (govreposcrape-summaries)
+- Production Vertex AI Search engine
 - Info-level logging only
 - Monitoring and alerting active
 
 ### Deployment Process
 
-**CI/CD Pipeline:**
-- GitHub Actions (Phase 2)
-- On push to main: Run tests → Deploy to staging → Manual approval → Deploy to production
-- Rollback: `wrangler rollback` or redeploy previous version
+**CI/CD Pipeline (Future):**
+- GitHub Actions
+- On push to main: Run tests → Build container → Deploy to staging → Manual approval → Deploy to production
+- Rollback: `gcloud run services update-traffic` to previous revision
 
-**Manual Deployment (MVP):**
+**Manual Deployment (Current):**
 ```bash
-# Staging
-wrangler deploy --env staging
+# Build and deploy API to Cloud Run
+cd api
+gcloud builds submit --tag gcr.io/govreposcrape/api
+gcloud run deploy govreposcrape-api \
+  --image gcr.io/govreposcrape/api \
+  --region us-central1 \
+  --allow-unauthenticated
 
-# Production (after validation)
-wrangler deploy --env production
+# Build and run ingestion container
+cd container
+docker build -t govreposcrape-container .
+docker run --rm \
+  -e GOOGLE_APPLICATION_CREDENTIALS=/app/google-credentials.json \
+  -e GCS_BUCKET_NAME=govreposcrape-summaries \
+  -v "$PWD/google-credentials.json:/app/google-credentials.json:ro" \
+  govreposcrape-container python orchestrator.py --limit=100
 ```
 
 ### Infrastructure as Code
 
-**wrangler.toml:**
-- All service bindings defined
-- Environment-specific overrides
+**Configuration Files:**
+- package.json: Node.js dependencies and scripts
+- Dockerfile: Cloud Run container definition
+- .env.example: Environment variable template
 - Version controlled
 
 **Secrets:**
-- `wrangler secret put JWT_SECRET` (if needed in future)
-- Not in version control
+- Service account key: google-credentials.json (not in version control)
+- Environment variables: GOOGLE_APPLICATION_CREDENTIALS, GCS_BUCKET_NAME, VERTEX_AI_SEARCH_ENGINE_ID
+- Managed via Cloud Run environment variables
 
 ### Monitoring and Alerting
 
-**Cloudflare Analytics:**
+**Cloud Run Metrics:**
 - Request volume, latency, error rates
-- Built-in dashboard
+- Built-in Cloud Monitoring dashboard
+- Container CPU and memory usage
 
-**Custom Metrics:**
+**Custom Metrics (Future):**
 - Cost per query
-- Cache hit rate
+- Incremental update skip rate
 - Query response time distribution
+- Vertex AI Search indexing lag
 
-**Alerts:**
+**Alerts (Future):**
 - Error rate >1%
 - p95 response time >2s
-- Daily query volume <10 (low adoption)
+- Container failures
+- GCS upload failures
 
 ## Development Environment
 
@@ -729,155 +750,229 @@ wrangler deploy --env production
 - Node.js 20+ (LTS)
 - npm 10+ or pnpm 8+
 - Docker 24+ (for gitingest container)
-- Cloudflare account with Workers enabled
-- wrangler CLI 4.47.0+
+- Google Cloud account with billing enabled
+- gcloud CLI (latest version)
+- Python 3.11+ (for container development)
 
 **Optional:**
 - VS Code with TypeScript ESLint extension
-- Cloudflare Workers extension for VS Code
+- Google Cloud Code extension for VS Code
 
 ### Setup Commands
 
 ```bash
-# Clone and initialize
+# Clone repository
 git clone <repository-url> govreposcrape
 cd govreposcrape
 
-# Run the starter template (Story 1.1)
-npm create cloudflare@latest govreposcrape -- --type hello-world --ts
-cd govreposcrape
+# Install API dependencies
+cd api
 npm install
 
-# Install additional dependencies
-npm install @cloudflare/workers-types --save-dev
-npm install vitest @cloudflare/vitest-pool-workers --save-dev
-
-# Configure TypeScript (tsconfig.json)
+# Configure TypeScript (already in tsconfig.json)
 # - strict: true
 # - target: ES2022
 # - module: ESNext
 
-# Provision Cloudflare services (via dashboard or wrangler)
-wrangler d1 create govreposcrape-db
-wrangler kv:namespace create govreposcrape-cache
-wrangler r2 bucket create govreposcrape-gitingest
-# (Configure AI Search via dashboard)
+# Install Python dependencies for container
+cd ../container
+pip3 install -r requirements.txt
 
-# Update wrangler.toml with service IDs
-# (See Project Structure section for bindings)
+# Authenticate with Google Cloud
+gcloud auth login
+gcloud auth application-default login
+gcloud config set project govreposcrape
 
-# Create .env.example
-cat > .env.example << 'EOF'
-CLOUDFLARE_ACCOUNT_ID=your_account_id
-CLOUDFLARE_API_TOKEN=your_api_token
+# Create GCS bucket (if not exists)
+gcloud storage buckets create gs://govreposcrape-summaries \
+  --location=us-central1
+
+# Set up Vertex AI Search (via Console or gcloud)
+# 1. Enable Discovery Engine API
+# 2. Create data store (govreposcrape-summaries)
+# 3. Create search engine (govreposcrape-search)
+
+# Create service account and download credentials
+gcloud iam service-accounts create govreposcrape-sa
+gcloud projects add-iam-policy-binding govreposcrape \
+  --member="serviceAccount:govreposcrape-sa@govreposcrape.iam.gserviceaccount.com" \
+  --role="roles/storage.objectAdmin"
+gcloud iam service-accounts keys create google-credentials.json \
+  --iam-account=govreposcrape-sa@govreposcrape.iam.gserviceaccount.com
+
+# Create .env file
+cat > .env << 'EOF'
+GOOGLE_APPLICATION_CREDENTIALS=./google-credentials.json
+GCS_BUCKET_NAME=govreposcrape-summaries
+VERTEX_AI_SEARCH_ENGINE_ID=projects/1060386346356/locations/global/collections/default_collection/engines/govreposcrape-search
 EOF
 
-# Run development server
-wrangler dev
+# Run development server (API)
+cd api
+npm run dev
 
-# Run tests
-npm test
-
-# Build for production
-wrangler deploy --env production --dry-run
+# Run ingestion container (test)
+cd container
+docker build -t govreposcrape-container .
+docker run --rm \
+  -e GOOGLE_APPLICATION_CREDENTIALS=/app/google-credentials.json \
+  -e GCS_BUCKET_NAME=govreposcrape-summaries \
+  -v "$PWD/google-credentials.json:/app/google-credentials.json:ro" \
+  govreposcrape-container python orchestrator.py --limit=5
 ```
 
 ### Local Development Workflow
 
-1. **Start Workers dev server:** `wrangler dev`
-2. **Edit code:** Changes auto-reload
-3. **Run tests:** `npm test` (watch mode: `npm test -- --watch`)
-4. **Test API:** `curl http://localhost:8787/mcp/search -X POST -d '{"query":"test"}'`
-5. **Deploy to staging:** `wrangler deploy --env staging`
+1. **Start API dev server:** `cd api && npm run dev` (localhost:8080)
+2. **Edit code:** Changes require restart (or use nodemon)
+3. **Run tests:** `cd container && pytest` (Python tests)
+4. **Test API:** `curl http://localhost:8080/search -X POST -d '{"query":"test","limit":5}' -H "Content-Type: application/json"`
+5. **Deploy to Cloud Run:** `cd api && gcloud run deploy`
 
 ## Architecture Decision Records (ADRs)
 
-### ADR-001: Cloudflare Workers as Primary Platform
+### ADR-001: Google Cloud Platform as Primary Platform
 
-**Context:** Need edge compute platform with global distribution, low cost, and managed services.
+**Context:** Need managed cloud platform with semantic search, object storage, and container runtime for ~21k UK government repositories.
 
-**Decision:** Use Cloudflare Workers with managed R2, KV, and AI Search.
+**Decision:** Migrate from Cloudflare to Google Cloud Platform with Cloud Run, GCS, and Vertex AI Search.
 
 **Rationale:**
-- <£50/month cost target achievable with free/low-cost tiers
-- Edge deployment for <2s response time globally
-- Managed AI Search validates hypothesis before custom infrastructure
-- Strong TypeScript support with @cloudflare/workers-types
+- **Enterprise Reliability:** 99.9% SLA for Vertex AI Search vs Cloudflare AI Search experimental service
+- **Unified Platform:** Single cloud provider (GCP) instead of mixed Cloudflare/Docker architecture
+- **Cost Justification:** £50-80/month (Google Cloud) vs <£50/month (Cloudflare) - justified by production-grade reliability
+- **Managed Services:** Cloud Run (auto-scaling), GCS (object storage), Vertex AI Search (semantic search with auto-indexing)
+- **Container Support:** Cloud Run Jobs for Python gitingest pipeline (scheduled daily runs)
+- **Incremental Updates:** GCS custom metadata enables 90%+ skip rate (only reprocess changed repos)
+- **Strong TypeScript Support:** @google-cloud/* SDKs with comprehensive type definitions
+
+**Migration Timeline:**
+- **Phase 1 (Story 7.1):** Container migrated to Google File Search (interim solution)
+- **Phase 2 (Story 7.2):** Testing revealed Google File Search limitations (503 errors on files >10KB)
+- **Phase 3 (Story 7.5):** Migrated to Cloud Storage + Vertex AI Search (production-grade, 99.9% SLA)
+- **Phase 4 (Story 7.3):** Cloud Run API updated to integrate with Vertex AI Search
 
 **Consequences:**
-- Locked into Cloudflare ecosystem (acceptable for MVP)
-- Container processing separate from Workers (Python gitingest)
-- Migration complexity if outgrowing platform (unlikely)
+- Migrated from Cloudflare R2/KV/AI Search to GCS/Vertex AI Search
+- Cloud Run provides managed Node.js runtime (regional deployment vs global edge)
+- Regional deployment (us-central1) optimized for low latency to Vertex AI Search
+- Simplified architecture: one platform instead of mixed Cloudflare/Docker infrastructure
+- Google File Search deprecated (interim solution, not production-ready)
 
 ### ADR-002: No Authentication for MCP API
 
 **Context:** MCP protocol integration with Claude Desktop and GitHub Copilot.
 
-**Decision:** Open access API with no JWT/API keys. Cloudflare handles rate limiting.
+**Decision:** Open access API with no JWT/API keys. Cloud Run handles rate limiting.
 
 **Rationale:**
 - Simplifies integration (<5 minute setup time)
 - All data is public (GitHub public repos)
 - No PII or sensitive information
-- Cloudflare platform-level rate limiting prevents abuse
+- Cloud Run platform-level rate limiting prevents abuse
 
 **Consequences:**
 - No user tracking or usage attribution
-- Potential for abuse (mitigated by Cloudflare rate limiting)
+- Potential for abuse (mitigated by Cloud Run rate limiting)
 - Easier developer adoption
 
-### ADR-003: Managed AI Search vs Custom Embeddings
+### ADR-003: Vertex AI Search vs Custom Embeddings
 
-**Context:** Need semantic search over 21k repositories.
+**Context:** Need semantic search over 21k repositories with metadata extraction.
 
-**Decision:** Use Cloudflare AI Search (managed service) for MVP, defer custom embeddings to Phase 2.
+**Decision:** Use Vertex AI Search (managed service) with "content" schema and URI-based metadata extraction.
 
 **Rationale:**
-- Zero-code semantic search (auto-indexing from R2)
+- Auto-indexing from GCS bucket (`**/*.md` pattern)
 - Validates gitingest quality hypothesis before infrastructure investment
 - Saves weeks of development time
-- Can migrate to custom Vectorize + embeddings if quality insufficient
+- Simple metadata extraction via URI regex parsing (no structured data complexity)
+- Can migrate to custom embeddings if quality insufficient
 
 **Consequences:**
-- Dependent on AI Search quality (validated in Epic 3.4)
+- Dependent on Vertex AI Search quality (validated in Story 7.5)
 - Less control over embedding model
-- Potential cost scaling with queries (monitored in Epic 6.1)
+- 5-15 minute indexing lag after GCS uploads
+- Metadata extraction from URI instead of structured fields
 
-### ADR-004: Smart Caching with KV
+### ADR-004: GCS Custom Metadata for Incremental Updates
 
 **Context:** Reprocessing 21k repos daily with gitingest is expensive and slow.
 
-**Decision:** Use pushedAt timestamp comparison in KV to only reprocess changed repositories.
+**Decision:** Store metadata (org, repo, pushedAt) as GCS custom metadata and use pushedAt comparison for incremental updates.
 
 **Rationale:**
-- 90%+ cache hit rate (only 10-15% of repos update daily)
+- 90%+ skip rate (only 10-15% of repos update daily)
 - Reduces gitingest processing by 90%
 - Keeps costs <£50/month
+- No separate cache DB needed (GCS metadata serves as cache)
 - Simple invalidation logic (timestamp comparison)
 
 **Consequences:**
-- Stale data for unchanged repos (acceptable: content reflects last update)
-- KV storage costs (negligible: free tier covers 1GB)
+- No stale data: only updated repos are reprocessed
+- GCS metadata access requires `blob.reload()` call
+- Simplified architecture (one storage system instead of two)
 
 ### ADR-005: Containerized Python for gitingest
 
-**Context:** gitingest is a Python library, Workers are JavaScript/TypeScript.
+**Context:** gitingest is a Python library, Cloud Run API is Node.js/TypeScript.
 
-**Decision:** Run gitingest in Docker container, separate from Workers.
+**Decision:** Run gitingest in Docker container, separate from Cloud Run API.
 
 **Rationale:**
 - gitingest requires Python runtime
-- Workers can't run Python natively
+- Cloud Run API uses Node.js 20 (different runtime)
 - Container enables local development and CI/CD
-- Manual orchestration acceptable for MVP (automated in Phase 2)
+- Manual orchestration acceptable for MVP (automated batch processing in Phase 2)
+- Both containers and API can run on Cloud Run if needed
 
 **Consequences:**
-- Two runtime environments (Workers + Container)
-- Manual container execution for MVP
+- Two runtime environments (Node.js API + Python container)
+- Manual container execution for MVP (docker run)
 - Requires Docker in development environment
+
+### ADR-006: Markdown Files with One File Per Repo
+
+**Context:** Need to store gitingest summaries in GCS for Vertex AI Search indexing.
+
+**Decision:** Use `{org}/{repo}.md` path pattern (one Markdown file per repository) instead of commit-based paths.
+
+**Rationale:**
+- Simplifies storage: one file per repo instead of multiple per commit
+- Natural incremental updates: compare pushedAt metadata, update file if changed
+- Markdown format makes sense for code summaries
+- Cleaner GCS bucket structure
+- Easier metadata extraction from URI (regex: `\/([^\/]+)\/([^\/]+)\.md$`)
+
+**Consequences:**
+- Only stores latest state of each repository (not historical commits)
+- File updates replace previous content (acceptable: only latest needed for search)
+- Incremental update logic required to avoid re-processing unchanged repos
+
+### ADR-007: Vertex AI Search Migration (Production-Grade Search)
+
+**Context:** Initial migration to Google Cloud used Google File Search (Story 7.1) as interim solution, but testing (Story 7.2) revealed critical limitations: 503 errors on files >10KB, affecting 86% of content (e.g., BathApp truncated from 512KB to 86KB).
+
+**Decision:** Migrate from Google File Search to Cloud Storage + Vertex AI Search for production deployment (Story 7.5).
+
+**Rationale:**
+- **Reliability:** 99.9% SLA vs unreliable Google File Search (503 errors on large files)
+- **No Size Limits:** Vertex AI Search handles full gitingest summaries (100KB-500KB) without truncation
+- **Auto-Indexing:** Monitors Cloud Storage bucket for new/updated files, automatic reindexing (5-15 min lag)
+- **Managed RAG Pipeline:** Zero custom embedding code, Vertex AI handles vectorization and similarity search
+- **Enterprise-Grade:** Production-ready service vs deprecated Google File Search (interim solution)
+- **Cost Justified:** £20-40/month for Vertex AI Search (within £50-80/month budget) justified by reliability
+
+**Consequences:**
+- Cloud Storage bucket: `govreposcrape-summaries` (us-central1) stores full gitingest summaries
+- Vertex AI Search: Auto-indexes `**/*.md` files with content schema
+- No 512KB truncation limit (removed from container/ingest.py:360-376)
+- Google File Search deprecated: Interim solution only, not production-ready
+- Migration completed: Story 7.2 findings → Story 7.5 resolution
+- Testing validated: docs/vertex-ai-migration-results.md shows successful production deployment
 
 ---
 
-_Generated by BMAD Decision Architecture Workflow v1.3.2_
-_Date: 2025-11-12_
+_Originally generated by BMAD Decision Architecture Workflow v1.3.2_
+_Last updated: 2025-11-18 (Vertex AI Search migration complete)_
 _For: cns_

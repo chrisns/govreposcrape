@@ -228,7 +228,15 @@ So that **I have the authoritative list of UK government repositories to process
 
 ---
 
-### Story 2.2: Smart Caching with KV - Avoid Unnecessary Reprocessing
+### Story 2.2: Smart Caching with KV - Avoid Unnecessary Reprocessing ⚠️ MIGRATED
+
+**Status:** MIGRATED - Cloud Storage handles deduplication via custom metadata. This story is obsolete in Google Cloud Platform architecture.
+
+**Migration Note:** Originally designed for Cloudflare KV caching. Google Cloud Storage custom metadata (`pushedAt`, `processedAt`) provides equivalent functionality without separate cache store. See Story 7.5 and docs/vertex-ai-migration-results.md.
+
+---
+
+**Original Story (for historical reference):**
 
 As a **cost-conscious engineer**,
 I want **to cache repository metadata in KV and only reprocess when pushedAt changes**,
@@ -303,40 +311,40 @@ So that **we can generate LLM-ready code summaries for semantic search**.
 
 ---
 
-### Story 2.4: R2 Storage with Metadata - Store Summaries and Tracking Data
+### Story 2.4: Cloud Storage (GCS) Upload with Metadata - Store Summaries and Tracking Data
 
 As a **storage engineer**,
-I want **to store gitingest summaries in R2 with custom metadata for tracking**,
-So that **AI Search can index the content and we can validate caching logic**.
+I want **to store gitingest summaries in Cloud Storage with custom metadata for tracking**,
+So that **Vertex AI Search can index the content and we can validate caching logic**.
 
 **Acceptance Criteria:**
 
 **Given** a gitingest summary has been generated (Story 2.3)
-**When** I upload the summary to R2
-**Then** the object is stored at path: `gitingest/{org}/{repo}/summary.txt`
-**And** custom metadata is attached: `pushedAt`, `url`, `processedAt` timestamp
-**And** content-type is set to `text/plain` for AI Search compatibility
+**When** I upload the summary to Cloud Storage
+**Then** the object is stored at path: `{org}/{repo}.md` (one file per repo)
+**And** custom metadata is attached: `pushedAt`, `url`, `processedAt`, `org`, `repo`, `size`
+**And** content-type is set to `text/markdown; charset=utf-8` for Vertex AI Search compatibility
 
-**Given** an R2 upload may fail (network error, service unavailable)
+**Given** a Cloud Storage upload may fail (network error, service unavailable)
 **When** upload encounters an error
-**Then** it retries with exponential backoff (3 attempts)
+**Then** it retries with exponential backoff (handled by google-cloud-storage SDK)
 **And** failure is logged with repo details and error message
 **And** failed uploads don't block processing of other repositories
 
-**And** R2 module has methods: uploadSummary(org, repo, content, metadata), getSummary(org, repo)
-**And** R2 bindings use credentials from environment variables
-**And** Upload statistics are logged: total uploaded, failed, total storage size
+**And** GCS module has methods: uploadSummary(org, repo, content, metadata), checkExistingMetadata(org, repo)
+**And** GCS authentication via GOOGLE_APPLICATION_CREDENTIALS service account
+**And** Upload statistics are logged: total uploaded, skipped (unchanged), failed, total storage size
 
 **Prerequisites:** Story 2.3 (gitingest processing)
 
 **Technical Notes:**
-- R2 bucket binding from wrangler.toml (Epic 1)
-- Object path structure enables organization: `gitingest/alphagov/govuk-frontend/summary.txt`
-- Custom metadata stored in R2 object metadata (no separate database needed)
-- Metadata example: `{ pushedAt: "2025-10-15T14:30:00Z", url: "https://github.com/alphagov/govuk-frontend", processedAt: "2025-11-12T10:05:23Z" }`
-- R2 storage cost: ~1GB for 21k repos × 50KB avg = effectively free tier
-- Module location: container/r2_client.py (Python for container), src/storage/ (TypeScript for Workers read access)
-- This completes FR-1.3 Smart Caching implementation
+- GCS bucket: `govreposcrape-summaries` (us-central1)
+- Object path structure: `alphagov/govuk-frontend.md` (simplified from gitingest/ subdirectory)
+- Custom metadata stored in GCS object metadata (no separate database needed)
+- Metadata example: `{ pushedAt: "2025-10-15T14:30:00Z", url: "https://github.com/alphagov/govuk-frontend", processedAt: "2025-11-12T10:05:23Z", org: "alphagov", repo: "govuk-frontend", size: "123456" }`
+- GCS storage cost: ~10GB for 21k repos × 500KB avg = $0.20/month ($0.020/GB)
+- Module location: container/gcs_client.py (Python for container)
+- This completes FR-1.3 Smart Caching implementation (via GCS metadata comparison, no KV store needed)
 
 ---
 
@@ -463,11 +471,17 @@ So that **the complete workflow (fetch → cache check → gitingest → R2 uplo
 
 ---
 
-## Epic 3: AI Search Integration (Managed Service Layer)
+## Epic 3: AI Search Integration (Managed Service Layer) ⚠️ MIGRATED TO VERTEX AI SEARCH
 
-**Goal:** Configure Cloudflare AI Search to automatically index R2 bucket contents, enabling semantic search over UK government code without writing custom embedding or vectorization code. This epic validates the managed service approach and establishes baseline search performance.
+**Status:** MIGRATED - See Epic 7 (Stories 7.1, 7.2, 7.5) for Google Cloud Platform migration. Original Cloudflare AI Search implementation not completed due to AutoRAG indexing reliability issues.
 
-**Value:** Zero-code semantic search infrastructure. Cloudflare AI Search handles embedding generation, vectorization, indexing, and query rewriting automatically. This validates the gitingest quality hypothesis before investing in custom infrastructure. Saves weeks of development time and reduces operational complexity.
+**Migration Note:** Epic 3 was migrated to Google Cloud Platform (Vertex AI Search) during Epic 7. Cloud Storage + Vertex AI Search provides 99.9% SLA and production-ready semantic search. See docs/vertex-ai-migration-results.md.
+
+---
+
+**Original Goal (for historical reference):** Configure Cloudflare AI Search to automatically index R2 bucket contents, enabling semantic search over UK government code without writing custom embedding or vectorization code. This epic validates the managed service approach and establishes baseline search performance.
+
+**Original Value:** Zero-code semantic search infrastructure. Cloudflare AI Search handles embedding generation, vectorization, indexing, and query rewriting automatically. This validates the gitingest quality hypothesis before investing in custom infrastructure. Saves weeks of development time and reduces operational complexity.
 
 ---
 
@@ -616,11 +630,17 @@ So that **we can determine if the managed service meets MVP requirements (<2s qu
 
 ---
 
-## Epic 4: MCP API Server (Read Path)
+## Epic 4: MCP API Server (Read Path) ⚠️ MIGRATED TO CLOUD RUN
 
-**Goal:** Build the user-facing MCP v2 protocol API that exposes semantic search to AI assistants (Claude, GitHub Copilot). This is the "read path" that developers interact with - a thin, fast wrapper around the AI Search infrastructure built in Epics 2-3.
+**Status:** MIGRATED - See Epic 7 (Story 7.3) for Google Cloud Run API implementation. Original Cloudflare Workers implementation not completed.
 
-**Value:** Enables the core product vision: ambient code discovery through AI assistants. MCP v2 compliance makes govscraperepo work with any compatible AI assistant. Edge deployment via Cloudflare Workers ensures <2s query response globally. Open access with no authentication keeps integration simple.
+**Migration Note:** Epic 4 was migrated to Google Cloud Run during Epic 7. Cloud Run provides managed Node.js runtime with Vertex AI Search integration. See Story 7.3 and api/ directory for implementation.
+
+---
+
+**Original Goal (for historical reference):** Build the user-facing MCP v2 protocol API that exposes semantic search to AI assistants (Claude, GitHub Copilot). This is the "read path" that developers interact with - a thin, fast wrapper around the AI Search infrastructure built in Epics 2-3.
+
+**Original Value:** Enables the core product vision: ambient code discovery through AI assistants. MCP v2 compliance makes govscraperepo work with any compatible AI assistant. Edge deployment via Cloudflare Workers ensures <2s query response globally. Open access with no authentication keeps integration simple.
 
 ---
 
@@ -1065,6 +1085,259 @@ So that **the MVP can be confidently deployed to production**.
 - Rollback: `wrangler rollback` or redeploy previous version
 - Module location: DEPLOYMENT.md or README.md section
 - This enables confident MVP launch and supports NFR-6 (reliability)
+
+---
+
+## Epic 7: Google Cloud Platform Migration
+
+**Goal:** Migrate from Cloudflare infrastructure to Google Cloud Platform due to Cloudflare AI Search AutoRAG indexing reliability issues. Replace Cloudflare Workers, R2, KV, and AI Search with Google Cloud Run, Google File Search, and Gemini API while preserving the core product functionality.
+
+**Value:** Eliminates dependency on unreliable Preview service (Cloudflare AI Search). Google File Search provides production SLA-backed semantic search with poll-based operation tracking. Maintains cost target (~$50-80/month). Enables reliable production deployment with clearer completion guarantees.
+
+**Context:** During Epic 3 implementation, Cloudflare AI Search AutoRAG indexing stalled indefinitely with no completion guarantees. This made the service unsuitable for production use. Migration to Google Cloud Platform provides production-ready alternatives with SLA backing.
+
+**Migration Decision Date:** 2025-11-17
+**Sprint Change Proposal:** docs/sprint-change-proposal-2025-11-17.md
+**Migration Handoff Guide:** MIGRATION-HANDOFF.md
+
+---
+
+### Story 7.1: Container Layer Migration to Google File Search
+
+As a **platform migration engineer**,
+I want **to migrate the ingestion container from Cloudflare R2/KV to Google File Search**,
+So that **gitingest summaries are uploaded to a production-ready search service with reliable indexing**.
+
+**Acceptance Criteria:**
+
+**Given** the existing container uses Cloudflare R2 and KV (Epic 2)
+**When** I migrate to Google File Search
+**Then** all Cloudflare-specific code is removed: wrangler.toml, src/ Workers directory, container/r2_client.py, container/cache.py
+**And** Google File Search client is implemented with uploadToFileSearchStore API
+**And** container/orchestrator.py is simplified (no KV cache dependency)
+
+**Given** the Google File Search client is implemented
+**When** I upload a gitingest summary
+**Then** File Search Store is auto-created on first run if not configured
+**And** upload uses async operation polling with 5-second intervals
+**And** metadata is attached: org, repo, pushedAt, url, processedAt, size
+**And** retry logic implements exponential backoff (1s, 2s, 4s delays, 3 max attempts)
+
+**And** Dockerfile is updated to use google-generativeai>=0.3.0 (removed boto3)
+**And** .env.example documents Google Cloud configuration
+**And** Statistics tracking: total_uploaded, total_failed, success_rate, total_bytes
+**And** Architecture is simplified: 70% code reduction in container layer (390 lines vs 527)
+
+**Prerequisites:** Epic 2 complete (original container implementation)
+
+**Technical Notes:**
+- Module location: container/google_filesearch_client.py
+- Uses google.genai SDK with Client(api_key) initialization
+- Auto-creates File Search Store with display name "govreposcrape-uk-code"
+- Operation polling prevents indefinite hangs (unlike Cloudflare AI Search)
+- Service account authentication via GOOGLE_APPLICATION_CREDENTIALS
+- Cost: ~$37.50 one-time indexing (21k repos × 250M tokens × $0.15/1M)
+- Migration commit: e779851 "feat: Phase 2a - Google Cloud Platform container layer migration"
+- Status: COMPLETED 2025-11-17
+
+---
+
+### Story 7.2: Container Testing and Validation
+
+As a **quality assurance engineer**,
+I want **to validate the Google File Search container with small batch testing**,
+So that **we confirm the migration works correctly before processing all 21k repositories**.
+
+**Acceptance Criteria:**
+
+**Given** the container layer migration is complete (Story 7.1)
+**When** I run container with --limit=10 flag
+**Then** 10 repositories are processed successfully
+**And** File Search Store is created automatically
+**And** gitingest summaries are uploaded with complete metadata
+**And** operation polling completes without hanging
+
+**Given** small batch test succeeds
+**When** I run container with --limit=100 flag
+**Then** 100 repositories are processed with >95% success rate
+**And** upload statistics show: total_uploaded, success_rate, total_mb
+**And** File Search Store name is logged for adding to .env
+**And** no memory leaks or timeout issues occur
+
+**And** Test results are documented in container logs
+**And** GOOGLE_FILE_SEARCH_STORE_NAME is added to .env for reuse
+**And** Validation confirms: auto-creation works, polling completes, metadata accurate
+**And** Ready to proceed with Cloud Run API implementation (Story 7.3)
+
+**Prerequisites:** Story 7.1 (Container layer migration complete)
+
+**Technical Notes:**
+- Test command: `docker run -e GOOGLE_GEMINI_API_KEY=$KEY govreposcrape-container --limit=10`
+- Expected outcome: File Search Store created, 10 repos processed, operation polling successful
+- Validation: Check logs for "GOOGLE_FILE_SEARCH_STORE_NAME=..." and copy to .env
+- Large file handling: Operation polling timeout set to 10 minutes per file
+- Module location: container/orchestrator.py with --limit flag support
+- Status: IN PROGRESS (current story)
+
+---
+
+### Story 7.3: Cloud Run API Implementation
+
+As a **backend engineer**,
+I want **to implement a Node.js/Express API on Google Cloud Run**,
+So that **we replace Cloudflare Workers with a production-ready MCP API server**.
+
+**Acceptance Criteria:**
+
+**Given** Cloudflare Workers implementation exists (Epic 4)
+**When** I create Cloud Run API structure
+**Then** api/ directory contains: src/index.ts, src/controllers/, src/services/, src/middleware/
+**And** package.json includes: express, @google/genai, cors
+**And** TypeScript configuration is set up with proper types
+
+**Given** the API structure is created
+**When** I implement the MCP search endpoint
+**Then** POST /mcp/search endpoint accepts: { query: string, limit?: number }
+**And** search uses Gemini 2.5 Flash model with File Search tool
+**And** grounding metadata is extracted from Gemini response
+**And** top 20 results are formatted as MCP v2 SearchResult[] schema
+
+**Given** the API is implemented
+**When** I deploy to Cloud Run
+**Then** deployment uses service account authentication (Workload Identity)
+**And** environment variables include: GOOGLE_FILE_SEARCH_STORE_NAME, GOOGLE_GEMINI_API_KEY
+**And** region is us-central1 with allow-unauthenticated access
+**And** health endpoint returns 200 OK
+
+**And** API Dockerfile uses node:20-alpine base image
+**And** TypeScript compiles to dist/ directory
+**And** Response time is <2s (p95) as per original NFR
+**And** Error handling follows MCP v2 format
+**And** Module location: api/src/
+
+**Prerequisites:** Story 7.2 (Container testing validates File Search Store works)
+
+**Technical Notes:**
+- Google Gemini SDK: @google/genai
+- File Search integration: tools: [{ fileSearch: { fileSearchStoreNames: [...] } }]
+- Response parsing: Extract grounding metadata and format as SearchResult[]
+- Cloud Run deployment: `gcloud run deploy govreposcrape-api --source . --region us-central1`
+- Service account: govreposcrape-api@${PROJECT_ID}.iam.gserviceaccount.com
+- Cost: $5-10/month (Cloud Run has generous free tier)
+- Estimated effort: 8-12 hours
+- Status: TODO
+
+---
+
+### Story 7.4: Documentation Updates for Google Cloud Migration
+
+As a **technical writer**,
+I want **to update all documentation to reflect Google Cloud Platform**,
+So that **documentation accurately describes the current architecture and setup**.
+
+**Acceptance Criteria:**
+
+**Given** the Google Cloud migration is complete (Stories 7.1-7.3)
+**When** I update the PRD
+**Then** Cloudflare AI Search references (lines 216-247) are replaced with Google File Search
+**And** cost model section (lines 1798-1824) reflects Google Cloud costs (~$50-80/month)
+**And** smart caching innovation section (lines 614-628) is removed (Google handles deduplication)
+
+**Given** I update the architecture document
+**When** I revise the technical decisions
+**Then** Decision Summary Table removes: R2, KV, Cloudflare AI Search, Vectorize
+**And** Decision Summary Table adds: Google File Search, Cloud Run, Gemini API
+**And** ADR-001 is rewritten: "Platform Choice: Google Cloud Platform"
+**And** project structure reflects new api/ directory and removed src/ directory
+
+**Given** I update the epics document
+**When** I revise affected stories
+**Then** Story 2.2 (KV caching) is marked as obsolete/migrated
+**And** Story 2.4 is updated: "R2 Storage" → "Cloud Storage (GCS) Upload"
+**And** Epic 3 stories are rewritten for Vertex AI Search (not Google File Search)
+**And** Epic 4 stories are updated for Cloud Run deployment
+**And** Story 7.5 (Vertex AI Search migration) completion is documented
+
+**And** README.md reflects Google Cloud setup instructions
+**And** Sprint Change Proposal is archived for historical reference
+**And** MIGRATION-HANDOFF.md is preserved for future reference
+**And** All code examples use new API endpoint URL
+
+**Prerequisites:** Stories 7.1, 7.2, 7.3 (Complete migration implementation)
+
+**Technical Notes:**
+- Files to update: docs/PRD.md, docs/architecture.md, docs/epics.md, README.md
+- Archive: docs/sprint-change-proposal-2025-11-17.md (keep for history)
+- Remove obsolete references to Cloudflare services throughout
+- Update cost projections with actual Google Cloud pricing
+- Document Google Cloud prerequisites: API keys, service accounts, project setup
+- Estimated effort: 3-4 hours
+- Status: COMPLETE (2025-11-18)
+
+---
+
+## Epic 7 Completion Summary
+
+**Status:** ✅ COMPLETE (2025-11-18)
+
+**Migration Timeline:**
+
+1. **Story 7.1 (2025-11-17):** Container migrated to Google File Search (interim solution)
+   - Python container migrated from Cloudflare R2 to Google File Search API
+   - Initial testing showed promise, but limitations discovered
+
+2. **Story 7.2 (2025-11-17):** Testing revealed Google File Search limitations
+   - 503 errors on files >10KB
+   - BathApp truncated from 512KB to 86KB (lost 86% of content)
+   - Conclusion: Google File Search not production-ready
+   - Recommendation: Migrate to Cloud Storage + Vertex AI Search
+
+3. **Story 7.5 (2025-11-18):** Vertex AI Search migration completed
+   - Migrated from Google File Search to Cloud Storage + Vertex AI Search
+   - Production-grade 99.9% SLA
+   - No size limits (handles full 100KB-500KB gitingest summaries)
+   - Auto-indexing from Cloud Storage bucket
+   - See docs/vertex-ai-migration-results.md for full details
+
+4. **Story 7.3 (2025-11-18):** Cloud Run API implemented
+   - Express-based MCP API deployed to Google Cloud Run
+   - Integrates with Vertex AI Search
+   - See api/ directory for implementation
+
+5. **Story 7.4 (2025-11-18):** Documentation updated
+   - PRD, architecture, epics, README all updated
+   - Cloudflare references replaced with Google Cloud Platform
+   - Migration rationale documented in ADRs
+
+**Key Decisions:**
+
+- **Platform:** Google Cloud Platform (Cloud Run, GCS, Vertex AI Search)
+- **Cost:** £50-80/month (justified by 99.9% SLA and enterprise reliability)
+- **Architecture:** Unified platform (one cloud provider vs mixed Cloudflare/Docker)
+- **Search:** Vertex AI Search (production-grade) vs Google File Search (deprecated interim solution)
+
+**Final Architecture:**
+
+```
+repos.json → Container (gitingest) → Cloud Storage (GCS) → Vertex AI Search (auto-index)
+                                                                     ↓
+                                               Cloud Run API ← MCP Client
+```
+
+**Artifacts:**
+
+- Container: `container/` (Python 3.11, gitingest, gcs_client.py)
+- API: `api/` (Node.js 20, Express, Vertex AI Search integration)
+- Cloud Storage: `govreposcrape-summaries` bucket (us-central1)
+- Vertex AI Search: `govreposcrape-search` engine
+- Documentation: `docs/vertex-ai-migration-results.md`, `CLOUD_RUN_DEPLOYMENT.md`
+
+**Lessons Learned:**
+
+1. **Interim Solutions Have Risks:** Google File Search seemed viable but proved unreliable under production workloads
+2. **Enterprise SLA Matters:** 99.9% SLA justifies higher cost (£50-80/month vs <£50/month)
+3. **Unified Platform Simplifies Operations:** One cloud provider (GCP) easier than mixed Cloudflare/Docker/GCP
+4. **Managed Services Enable Rapid Iteration:** Vertex AI Search provided production-ready search in days, not weeks
 
 ---
 

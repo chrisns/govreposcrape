@@ -1,0 +1,167 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>7</epicId>
+    <storyId>3</storyId>
+    <title>Cloud Run API Implementation</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-17</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>.bmad-ephemeral/stories/7-3-cloud-run-api-implementation.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>backend engineer</asA>
+    <iWant>to implement a Node.js/Express API on Google Cloud Run</iWant>
+    <soThat>we replace Cloudflare Workers with a production-ready MCP API server</soThat>
+    <tasks>
+      <task id="1" ac="1">Create Cloud Run API Structure</task>
+      <task id="2" ac="2">Implement MCP Search Endpoint</task>
+      <task id="3" ac="3">Implement Health and Middleware</task>
+      <task id="4" ac="3,4">Cloud Run Deployment Configuration</task>
+      <task id="5" ac="2,4">Testing and Validation</task>
+      <task id="6" ac="4">Documentation and Migration</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="1">
+      <title>API Structure Creation</title>
+      <description>Given Cloudflare Workers implementation exists (Epic 4), when I create Cloud Run API structure, then api/ directory contains: src/index.ts, src/controllers/, src/services/, src/middleware/, and package.json includes: express, @google/genai, cors, and TypeScript configuration is set up with proper types</description>
+    </criterion>
+    <criterion id="2">
+      <title>MCP Search Endpoint Implementation</title>
+      <description>Given the API structure is created, when I implement the MCP search endpoint, then POST /mcp/search endpoint accepts: { query: string, limit?: number }, and search uses Gemini 2.5 Flash model with File Search tool, and grounding metadata is extracted from Gemini response, and top 20 results are formatted as MCP v2 SearchResult[] schema</description>
+    </criterion>
+    <criterion id="3">
+      <title>Cloud Run Deployment</title>
+      <description>Given the API is implemented, when I deploy to Cloud Run, then deployment uses service account authentication (Workload Identity), and environment variables include: GOOGLE_FILE_SEARCH_STORE_NAME, GOOGLE_GEMINI_API_KEY, and region is us-central1 with allow-unauthenticated access, and health endpoint returns 200 OK</description>
+    </criterion>
+    <criterion id="4">
+      <title>Production Readiness</title>
+      <description>And API Dockerfile uses node:20-alpine base image, and TypeScript compiles to dist/ directory, and response time is &lt;2s (p95) as per original NFR, and error handling follows MCP v2 format, and module location: api/src/</description>
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic 7: Google Cloud Platform Migration</title>
+        <section>Story 7.3: Cloud Run API Implementation</section>
+        <snippet>Replace Cloudflare Workers with Node.js/Express API on Google Cloud Run. Implement POST /mcp/search endpoint using Gemini 2.5 Flash model with File Search tool. Deploy to us-central1 with service account authentication.</snippet>
+      </doc>
+      <doc>
+        <path>docs/google-file-search-testing-results.md</path>
+        <title>Google File Search Testing Results - Story 7.2</title>
+        <section>Migration Decision</section>
+        <snippet>Google File Search failed production validation with 503 errors on files >10KB. Decision: Migrate to Cloud Storage + Vertex AI Search (Story 7.5) for production-grade reliability. Story 7.3 is BLOCKED pending Story 7.5 completion.</snippet>
+      </doc>
+      <doc>
+        <path>DEPLOYMENT.md</path>
+        <title>Production Deployment Guide</title>
+        <section>Google Cloud Platform Deployment</section>
+        <snippet>Container deployment procedures, environment configuration (.env vars, service account), smoke testing automation. Production readiness checklist covers tests, security, cost monitoring, documentation. Established in Story 6.4.</snippet>
+      </doc>
+      <doc>
+        <path>SECURITY.md</path>
+        <title>Security Compliance Validation</title>
+        <section>NCSC Standards</section>
+        <snippet>Security audit procedures, secrets management, dependency scanning. Cloud Run API must follow same security patterns: service account authentication, environment variable protection, HTTPS-only access.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>container/google_filesearch_client.py</path>
+        <kind>service</kind>
+        <symbol>GoogleFileSearchClient</symbol>
+        <lines>1-200</lines>
+        <reason>Reference implementation for Google File Search integration. Cloud Run API will use similar pattern but with Vertex AI Search (pending Story 7.5).</reason>
+      </artifact>
+      <artifact>
+        <path>package.json</path>
+        <kind>config</kind>
+        <symbol>scripts</symbol>
+        <lines>6-33</lines>
+        <reason>Existing npm scripts patterns for deployment, testing, type-checking, linting. Cloud Run API should follow same script naming conventions.</reason>
+      </artifact>
+      <artifact>
+        <path>scripts/smoke-test.sh</path>
+        <kind>test</kind>
+        <symbol>smoke_test</symbol>
+        <lines>1-205</lines>
+        <reason>Smoke testing pattern for Docker container validation. Cloud Run API needs similar api/smoke-test.sh for endpoint validation.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <node>
+        <express>^4.18.0</express>
+        <@google/genai>^0.3.0</@google/genai>
+        <cors>^2.8.5</cors>
+        <typescript>^5.5.2</typescript>
+        <@types/express>^4.17.0</@types/express>
+        <@types/node>^20.0.0</@types/node>
+        <vitest>~3.2.0</vitest>
+        <tsx>^4.20.6</tsx>
+      </node>
+      <cloud>
+        <google-cloud-run>Cloud Run service</google-cloud-run>
+        <google-gemini-api>Gemini 2.5 Flash model</google-gemini-api>
+        <vertex-ai-search>Pending Story 7.5 migration</vertex-ai-search>
+      </cloud>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint category="deployment">Cloud Run deployment to us-central1 region with allow-unauthenticated access for public MCP API</constraint>
+    <constraint category="authentication">Service account authentication using Workload Identity for Google Cloud services</constraint>
+    <constraint category="performance">Response time must be &lt;2s p95 as per NFR-4 from PRD</constraint>
+    <constraint category="error-handling">All errors must follow MCP v2 format for client compatibility</constraint>
+    <constraint category="dependency-blocking">Story blocked pending Story 7.5 (Vertex AI Search migration) - Google File Search unsuitable for production (503 errors on files &gt;10KB)</constraint>
+    <constraint category="testing">Integration tests must use Vitest framework (consistent with Epic 1-6 testing patterns)</constraint>
+    <constraint category="operational">Must integrate with Epic 6 operational tools: cost monitoring, security audit, observability dashboard</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>POST /mcp/search</name>
+      <kind>REST endpoint</kind>
+      <signature>POST /mcp/search { query: string, limit?: number } → SearchResult[]</signature>
+      <path>api/src/controllers/searchController.ts</path>
+    </interface>
+    <interface>
+      <name>GET /health</name>
+      <kind>REST endpoint</kind>
+      <signature>GET /health → { status: "ok", timestamp: ISO8601 }</signature>
+      <path>api/src/index.ts</path>
+    </interface>
+    <interface>
+      <name>GeminiService</name>
+      <kind>service interface</kind>
+      <signature>class GeminiService { search(query: string, limit: number): Promise&lt;SearchResult[]&gt; }</signature>
+      <path>api/src/services/geminiService.ts</path>
+    </interface>
+    <interface>
+      <name>MCP v2 SearchResult Schema</name>
+      <kind>type definition</kind>
+      <signature>interface SearchResult { url: string, title: string, snippet: string, metadata?: Record&lt;string,any&gt; }</signature>
+      <path>api/src/types/mcp.ts</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>Vitest for unit and integration testing (consistent with Epics 1-6). Supertest for API endpoint testing. K6 or autocannon for performance validation (p95 &lt;2s requirement). Smoke tests using bash scripts following scripts/smoke-test.sh pattern. Test coverage target: 80%+ on core logic per Epic 2 standards.</standards>
+    <locations>
+      <location>test/integration/search.test.ts</location>
+      <location>test/integration/health.test.ts</location>
+      <location>api/smoke-test.sh</location>
+    </locations>
+    <ideas>
+      <idea ac="1">Test API structure creation: verify api/src/ directory structure, package.json dependencies, TypeScript compilation</idea>
+      <idea ac="2">Test /mcp/search endpoint: valid query returns SearchResult[], invalid query returns 400, missing query returns 400, Gemini API failure returns 503</idea>
+      <idea ac="2">Test MCP v2 schema compliance: validate SearchResult[] structure matches MCP v2 specification</idea>
+      <idea ac="3">Test /health endpoint: returns 200 OK with JSON { status: "ok", timestamp: ISO8601 }</idea>
+      <idea ac="4">Performance test: 10 concurrent requests all respond within 2s (p95 requirement)</idea>
+      <idea ac="4">Test error handling: Gemini 503 errors, rate limits, network timeouts all return MCP v2 error format</idea>
+    </ideas>
+  </tests>
+</story-context>

@@ -1,6 +1,524 @@
 # govreposcrape - Deployment Guide
 
-This document provides setup instructions, configuration steps, and troubleshooting guidance for deploying govreposcrape to Cloudflare Workers.
+This document provides setup instructions, configuration steps, and troubleshooting guidance for deploying govreposcrape to Google Cloud Platform.
+
+## Table of Contents
+
+- [Production Readiness Checklist](#production-readiness-checklist)
+- [Deployment Procedure](#deployment-procedure)
+- [Post-Deployment Verification](#post-deployment-verification)
+- [Rollback Procedure](#rollback-procedure)
+- [Smoke Tests](#smoke-tests)
+- [Escalation Procedures](#escalation-procedures)
+- [Prerequisites](#prerequisites)
+- [Environment Setup](#environment-setup)
+- [Monitoring](#monitoring)
+- [Troubleshooting](#troubleshooting)
+
+---
+
+## Production Readiness Checklist
+
+**Use this checklist before deploying to production.** All items must be checked before proceeding with deployment.
+
+### Tests and Quality
+
+- [ ] **All tests passing:** Run `npm test` - 100% pass rate required
+- [ ] **Integration tests complete:** Container ingestion pipeline tested with 100+ repos
+- [ ] **Type checking passes:** Run `npm run type-check` - zero errors
+- [ ] **Linting passes:** Run `npm run lint` - zero errors
+- [ ] **Code formatted:** Run `npm run format:check` - all files formatted
+
+### Security
+
+- [ ] **Security audit complete:** Run `npm run security-audit` - zero high/critical findings
+- [ ] **SECURITY.md reviewed:** Verify NCSC compliance checklist is current
+- [ ] **No secrets in code:** Verify `.env` not committed, secrets use environment variables
+- [ ] **Dependency scan clean:** Run `npm run security-audit:dependencies` - zero high/critical CVEs
+
+### Cost Monitoring
+
+- [ ] **Cost monitoring active:** Run `npm run cost-monitor` - dashboard accessible
+- [ ] **Cost alerts configured:** Verify alerts set for >£40/month threshold
+- [ ] **Cost projections reviewed:** Estimated monthly cost <£50/month (NFR-7.1 requirement)
+
+### Documentation
+
+- [ ] **README.md complete:** Quick start, API reference, integration examples present
+- [ ] **SECURITY.md current:** NCSC standards documented, security checklist up-to-date
+- [ ] **DEPLOYMENT.md current:** This guide reviewed and updated (if needed)
+- [ ] **OpenAPI spec accessible:** Verify openapi.json available and valid
+
+### Environment Configuration
+
+- [ ] **Environment variables set:** All required vars in `.env` (see `.env.example`)
+  - `GOOGLE_GEMINI_API_KEY` - Google Gemini API key
+  - `GOOGLE_PROJECT_ID` - GCP project ID
+  - `GOOGLE_PROJECT_NUMBER` - GCP project number
+  - `GOOGLE_FILE_SEARCH_STORE_NAME` - File Search store (created on first run)
+- [ ] **Service account configured:** `google-credentials.json` file present and valid
+- [ ] **Docker available:** Run `docker --version` - Docker 20.10+ required
+- [ ] **Container builds:** Run `docker build -t govreposcrape-container .` - builds successfully
+
+### Deployment Prerequisites
+
+- [ ] **Google Cloud account:** GCP project with Gemini API enabled
+- [ ] **Gemini API key:** Valid API key from https://aistudio.google.com/apikey
+- [ ] **Docker installed:** Docker Desktop or Docker Engine 20.10+
+- [ ] **Node.js 18+:** Run `node --version` - v18.0.0 or higher
+- [ ] **npm packages installed:** Run `npm install` - no errors
+
+### Pre-Deployment Validation
+
+- [ ] **Git status clean:** Run `git status` - no uncommitted changes (or commit them)
+- [ ] **Branch up to date:** Pull latest from `main` branch
+- [ ] **Smoke tests ready:** Verify `scripts/smoke-test.sh` is executable
+- [ ] **Observability dashboard:** Metrics export working (Story 6.3)
+
+---
+
+## Deployment Procedure
+
+Follow these steps in order to deploy govreposcrape to production.
+
+### Step 1: Pre-Deployment Validation
+
+```bash
+# 1. Review production readiness checklist above
+#    Ensure ALL items are checked before continuing
+
+# 2. Verify git status
+git status
+# Expected: Clean working directory or ready to commit
+
+# 3. Run full test suite
+npm test
+# Expected: All tests pass (100% pass rate)
+
+# 4. Run security audit
+npm run security-audit
+# Expected: Zero high/critical findings
+
+# 5. Run type checking
+npm run type-check
+# Expected: Zero type errors
+```
+
+### Step 2: Container Deployment
+
+The govreposcrape project uses a Docker-based ingestion pipeline with Google File Search integration.
+
+```bash
+# 1. Build Docker container
+docker build -t govreposcrape-container ./container
+
+# Expected: Build completes successfully
+# Build time: ~2-5 minutes depending on Docker cache
+
+# 2. Verify container health
+docker run --rm govreposcrape-container python -c "print('Container OK')"
+# Expected: "Container OK" output
+
+# 3. Test container with small ingestion run (10 repos)
+docker run --rm \
+  -e GOOGLE_GEMINI_API_KEY="$GOOGLE_GEMINI_API_KEY" \
+  govreposcrape-container \
+  python orchestrator.py --limit=10
+
+# Expected: Successfully processes 10 repos, uploads to Google File Search
+# Duration: ~2-5 minutes
+# Success indicators:
+#   - "Successfully processed: 10" in output
+#   - No Python exceptions or errors
+#   - File Search upload confirmations
+```
+
+### Step 3: Environment Configuration
+
+```bash
+# 1. Copy environment template
+cp .env.example .env
+
+# 2. Edit .env with production values
+# Set required variables:
+#   - GOOGLE_GEMINI_API_KEY (from https://aistudio.google.com/apikey)
+#   - GOOGLE_PROJECT_ID (from GCP console)
+#   - GOOGLE_PROJECT_NUMBER (from GCP console)
+
+# 3. Verify service account credentials
+ls -la google-credentials.json
+# Expected: File exists and is readable
+
+# 4. Test Google Cloud authentication
+docker run --rm \
+  -v "$(pwd)/google-credentials.json:/app/google-credentials.json" \
+  -e GOOGLE_APPLICATION_CREDENTIALS=/app/google-credentials.json \
+  govreposcrape-container \
+  python -c "from google.oauth2 import service_account; print('Auth OK')"
+# Expected: "Auth OK" output
+```
+
+### Step 4: Full Production Deployment
+
+```bash
+# 1. Run full ingestion pipeline (all ~20k repos)
+# WARNING: This will take 6-10 hours to complete
+docker run --rm \
+  -v "$(pwd)/google-credentials.json:/app/google-credentials.json" \
+  -e GOOGLE_GEMINI_API_KEY="$GOOGLE_GEMINI_API_KEY" \
+  -e GOOGLE_APPLICATION_CREDENTIALS=/app/google-credentials.json \
+  govreposcrape-container \
+  python orchestrator.py
+
+# Expected outcomes:
+#   - All repos processed successfully
+#   - Summaries uploaded to Google File Search
+#   - Search store created/updated
+#   - No critical errors (some individual repo failures acceptable)
+
+# 2. Monitor ingestion progress (optional - in separate terminal)
+docker logs -f <container-id>
+
+# 3. Verify ingestion completion
+# Check final statistics in container output:
+#   - Total repos processed
+#   - Success rate (target: >95%)
+#   - Upload confirmation count
+```
+
+### Deployment Timing Expectations
+
+| Stage | Expected Duration | Acceptable Variance |
+|-------|------------------|---------------------|
+| Container build | 2-5 minutes | ±50% |
+| Small test (10 repos) | 2-5 minutes | ±50% |
+| Full ingestion (20k repos) | 6-10 hours | ±20% |
+| File Search indexing lag | < 5 minutes | Per NFR-1.4 |
+
+---
+
+## Post-Deployment Verification
+
+Run these checks immediately after deployment to verify success.
+
+### Automated Smoke Tests
+
+```bash
+# Run smoke test suite
+npm run smoke-test
+
+# Expected output:
+#   ✅ Container health check passed
+#   ✅ Google File Search accessible
+#   ✅ Test query returns results
+#   ✅ Orchestrator import succeeds
+
+# Test duration: ~30 seconds
+```
+
+### Manual Verification Steps
+
+```bash
+# 1. Health Check: Verify container environment
+docker run --rm govreposcrape-container python -c "
+from google_filesearch_client import GoogleFileSearchClient
+client = GoogleFileSearchClient()
+print(f'File Search store: {client.get_or_create_store()}')
+"
+# Expected: Store name printed (e.g., "govreposcrape-uk-code")
+
+# 2. Test Query: Search for a known repository
+docker run --rm \
+  -e GOOGLE_GEMINI_API_KEY="$GOOGLE_GEMINI_API_KEY" \
+  govreposcrape-container \
+  python -c "
+from google_filesearch_client import GoogleFileSearchClient
+client = GoogleFileSearchClient()
+results = client.search('authentication middleware', limit=5)
+print(f'Search returned {len(results)} results')
+for r in results[:3]:
+    print(f'  - {r.get(\"metadata\", {}).get(\"url\", \"unknown\")}')
+"
+# Expected:
+#   - "Search returned 5 results" (or similar)
+#   - List of GitHub URLs
+
+# 3. Verify Metrics Dashboard
+npm run metrics-export
+# Expected: Metrics exported successfully (from Story 6.3)
+```
+
+### Monitoring Dashboard Check
+
+```bash
+# Verify observability dashboard is receiving data
+npm run cost-monitor
+# Expected: Current costs displayed, no errors
+
+# Check for alert configuration
+npm run cost-monitor:alert
+# Expected: Alerts configured and active
+```
+
+---
+
+## Rollback Procedure
+
+Use this procedure if deployment fails or critical issues are discovered.
+
+### When to Rollback
+
+Rollback immediately if:
+- **Critical bug discovered:** Application crashes, data corruption, security vulnerability
+- **Performance degradation:** Query response time >5s (vs. target <2s)
+- **Cost spike:** Projected monthly cost >£75/month (1.5x target)
+- **Integration failures:** Google File Search unavailable, Gemini API errors
+
+### Rollback Steps
+
+#### Option 1: Container Rollback (Recommended)
+
+```bash
+# 1. Identify previous working container
+docker images | grep govreposcrape-container
+# Find previous image tag/ID
+
+# 2. Re-tag previous working image
+docker tag <previous-image-id> govreposcrape-container:latest
+
+# 3. Verify rollback
+docker run --rm govreposcrape-container:latest python -c "print('Rollback OK')"
+
+# 4. Run smoke tests against rolled-back version
+npm run smoke-test
+```
+
+#### Option 2: Git Rollback
+
+```bash
+# 1. Identify last working commit
+git log --oneline -10
+# Find commit hash before problematic changes
+
+# 2. Create rollback branch
+git checkout -b rollback/<issue-description> <commit-hash>
+
+# 3. Rebuild container from rolled-back code
+docker build -t govreposcrape-container ./container
+
+# 4. Verify rollback
+npm run smoke-test
+```
+
+#### Option 3: File Search Store Rollback
+
+```bash
+# If File Search store is corrupted, create new store:
+
+# 1. Set new store name in .env
+GOOGLE_FILE_SEARCH_STORE_NAME=govreposcrape-uk-code-rollback-$(date +%Y%m%d)
+
+# 2. Re-run ingestion to populate new store
+docker run --rm \
+  -e GOOGLE_GEMINI_API_KEY="$GOOGLE_GEMINI_API_KEY" \
+  -e GOOGLE_FILE_SEARCH_STORE_NAME="$GOOGLE_FILE_SEARCH_STORE_NAME" \
+  govreposcrape-container \
+  python orchestrator.py --limit=100  # Start with 100 repos to test
+
+# 3. Verify new store works
+npm run smoke-test
+
+# 4. Full re-ingestion (if test successful)
+# (Remove --limit flag for full ingestion)
+```
+
+### Rollback Verification
+
+After rollback, verify:
+- [ ] Smoke tests pass (`npm run smoke-test`)
+- [ ] Container health check passes
+- [ ] Test queries return results
+- [ ] No errors in container logs
+- [ ] Monitoring dashboard shows normal metrics
+
+### Rollback Decision Criteria
+
+| Severity | Issue Type | Decision | Timeline |
+|----------|-----------|----------|----------|
+| **P1 (Critical)** | Service unavailable, data loss, security breach | Rollback immediately | < 5 minutes |
+| **P2 (High)** | Degraded performance, high error rate (>5%) | Rollback within 30 minutes | Assess impact first |
+| **P3 (Medium)** | Minor bugs, cosmetic issues | Fix forward | No rollback needed |
+
+---
+
+## Smoke Tests
+
+Automated smoke tests are provided to quickly validate deployment success.
+
+### Running Smoke Tests
+
+```bash
+# Default: Test local Docker container
+npm run smoke-test
+
+# Verbose output (for debugging)
+./scripts/smoke-test.sh --verbose
+
+# Syntax validation only (no actual execution)
+./scripts/smoke-test.sh --test
+```
+
+### What Smoke Tests Validate
+
+1. **Container Health:** Docker container runs without errors
+2. **Python Environment:** All required packages importable
+3. **Google File Search Client:** Can instantiate client and access store
+4. **Orchestrator:** Main ingestion script imports successfully
+5. **Environment Variables:** Required env vars are set
+
+### Expected Smoke Test Output
+
+```
+🧪 govreposcrape Smoke Tests
+============================
+
+📦 Checking dependencies...
+✅ Docker available (version 20.10.x)
+✅ Python container image built
+
+🔍 Running smoke tests...
+Test 1/4: Container health check...     ✅ PASS (0.5s)
+Test 2/4: Google File Search client...  ✅ PASS (1.2s)
+Test 3/4: Test query execution...       ✅ PASS (2.1s)
+Test 4/4: Orchestrator imports...       ✅ PASS (0.8s)
+
+============================
+✅ All tests passed (4/4)
+Total duration: 4.6s
+```
+
+### Smoke Test Failure Handling
+
+If smoke tests fail:
+
+1. **Review error output:** Smoke test script provides detailed error messages
+2. **Check environment variables:** Verify `.env` file has all required values
+3. **Verify Docker status:** Run `docker ps` to see running containers
+4. **Check Google Cloud credentials:** Ensure `google-credentials.json` is valid
+5. **Review container logs:** Run `docker logs <container-id>` for details
+
+---
+
+## Escalation Procedures
+
+Use these procedures when deployment issues cannot be resolved quickly.
+
+### Escalation Contacts
+
+| Role | Contact | Response Time |
+|------|---------|---------------|
+| **On-Call Engineer** | cns@example.com | P1: Immediate<br>P2: 2 hours<br>P3: Next business day |
+| **Project Lead** | (To be assigned) | Business hours only |
+| **Google Cloud Support** | https://cloud.google.com/support | Per support plan SLA |
+
+### Incident Severity Levels
+
+#### P1 - Critical Outage
+**Definition:** Service completely unavailable, data loss, security breach
+
+**Response:**
+- Immediate escalation to on-call engineer
+- Page project lead (if after hours)
+- Rollback immediately (don't wait for approval)
+- Document incident in post-mortem
+
+**Examples:**
+- Container fails to start
+- Google File Search store inaccessible
+- Gemini API authentication failures
+- Cost spike >£200/month
+
+#### P2 - Degraded Service
+**Definition:** Service functional but degraded, high error rate, performance issues
+
+**Response:**
+- Notify on-call engineer within 2 hours
+- Assess impact and timeline for fix
+- Consider rollback if fix ETA >4 hours
+- Monitor closely
+
+**Examples:**
+- Ingestion failure rate >10%
+- Query response time >5s
+- Individual repo processing failures
+
+#### P3 - Minor Issues
+**Definition:** Cosmetic issues, minor bugs, documentation gaps
+
+**Response:**
+- Create GitHub issue for tracking
+- Fix in next sprint
+- No immediate escalation needed
+
+**Examples:**
+- Smoke test output formatting issues
+- Documentation typos
+- Non-critical log warnings
+
+### Common Deployment Issues - Runbook
+
+#### Issue: Container build fails
+
+**Symptoms:** `docker build` command exits with error
+
+**Resolution:**
+1. Check Docker daemon is running: `docker ps`
+2. Review build error output for missing dependencies
+3. Clear Docker cache: `docker builder prune`
+4. Retry build with no cache: `docker build --no-cache -t govreposcrape-container ./container`
+
+#### Issue: Gemini API authentication failure
+
+**Symptoms:** "API key invalid" or 401 Unauthorized errors
+
+**Resolution:**
+1. Verify API key in `.env` file: `grep GOOGLE_GEMINI_API_KEY .env`
+2. Test API key directly: Visit https://aistudio.google.com/apikey
+3. Regenerate API key if needed
+4. Update `.env` with new key
+5. Rebuild container to pick up new env var
+
+#### Issue: File Search store not found
+
+**Symptoms:** "Store not found" or "Failed to create store" errors
+
+**Resolution:**
+1. Check GCP project has Gemini API enabled
+2. Verify service account has necessary permissions
+3. Try creating new store manually:
+   ```python
+   from google_filesearch_client import GoogleFileSearchClient
+   client = GoogleFileSearchClient()
+   store_name = client.get_or_create_store()
+   print(f"Store: {store_name}")
+   ```
+4. Update `GOOGLE_FILE_SEARCH_STORE_NAME` in `.env` with store name
+
+#### Issue: Ingestion takes longer than expected
+
+**Symptoms:** Full ingestion >12 hours (vs. expected 6-10 hours)
+
+**Resolution:**
+1. Check network connectivity: `ping google.com`
+2. Verify Gemini API rate limits not exceeded
+3. Monitor container logs for errors: `docker logs <container-id>`
+4. Consider breaking ingestion into batches:
+   ```bash
+   docker run ... --limit=5000  # First 5000 repos
+   docker run ... --offset=5000 --limit=5000  # Next 5000 repos
+   ```
+
+---
 
 ## Prerequisites
 

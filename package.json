@@ -27,6 +27,9 @@
 		"metrics-export": "tsx scripts/export-metrics.ts",
 		"metrics-export:weekly": "tsx scripts/export-metrics.ts --format json",
 		"metrics-export:monthly": "tsx scripts/export-metrics.ts --format json --start-date $(date -v -30d +%Y-%m-%d) --end-date $(date +%Y-%m-%d)",
+		"smoke-test": "./scripts/smoke-test.sh",
+		"smoke-test:verbose": "./scripts/smoke-test.sh --verbose",
+		"smoke-test:test": "./scripts/smoke-test.sh --test",
 		"prepare": "husky"
 	},
 	"devDependencies": {
@@ -42,5 +45,8 @@
 		"typescript": "^5.5.2",
 		"vitest": "~3.2.0",
 		"wrangler": "^4.47.0"
+	},
+	"dependencies": {
+		"@modelcontextprotocol/sdk": "^1.22.0"
 	}
 }

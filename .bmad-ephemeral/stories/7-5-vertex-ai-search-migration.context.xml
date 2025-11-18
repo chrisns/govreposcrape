@@ -1,0 +1,183 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>7</epicId>
+    <storyId>5</storyId>
+    <title>Vertex AI Search Migration</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-17</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>.bmad-ephemeral/stories/7-5-vertex-ai-search-migration.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>platform migration engineer</asA>
+    <iWant>to migrate from Google File Search to Vertex AI Search with Cloud Storage backend</iWant>
+    <soThat>we achieve production-grade reliability with 99.9% SLA guarantees</soThat>
+    <tasks>
+      <task id="1" ac="1">Create GCS Bucket and Configure Access</task>
+      <task id="2" ac="1,3">Implement Cloud Storage Client</task>
+      <task id="3" ac="2">Create Vertex AI Search Datastore</task>
+      <task id="4" ac="3">Update Container Ingestion Pipeline</task>
+      <task id="5" ac="4">Production Validation Testing</task>
+      <task id="6" ac="1,2,3,4">Full Migration and Monitoring</task>
+      <task id="7" ac="2,4">Update Documentation and Unblock Stories</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="1">
+      <title>Cloud Storage Backend Implementation</title>
+      <description>Given Google File Search is unsuitable for production (Story 7.2 findings), when I implement Cloud Storage backend, then gitingest summaries are stored as text files in GCS bucket, and naming convention follows: {org}/{repo}/{commit-sha}.txt, and metadata is stored in file custom attributes (org, repo, pushedAt, url, processedAt, size), and storage provides 99.999999999% durability (11 nines)</description>
+    </criterion>
+    <criterion id="2">
+      <title>Vertex AI Search Configuration</title>
+      <description>Given Cloud Storage backend is implemented, when I configure Vertex AI Search, then Vertex AI Search datastore is created and linked to GCS bucket, and indexing configuration supports semantic search over code summaries, and custom metadata filtering is enabled (by org, repo, date range), and service has 99.9% SLA guarantee</description>
+    </criterion>
+    <criterion id="3">
+      <title>Container Migration from File Search to Cloud Storage</title>
+      <description>Given Vertex AI Search is configured, when I update container ingestion pipeline, then container/google_filesearch_client.py is replaced with gcs_client.py, and upload logic writes text files to GCS with metadata, and retry logic implements exponential backoff (1s, 2s, 4s delays, 3 max attempts), and statistics tracking includes: total_uploaded, total_failed, success_rate, total_bytes</description>
+    </criterion>
+    <criterion id="4">
+      <title>Production Validation and Testing</title>
+      <description>Given container migration is complete, when I run production validation tests, then test with files of all sizes (1KB to 512KB) achieves 100% success rate, and no 503 errors occur (vs. Google File Search 503 errors on files &gt;10KB), and upload performance is consistent across all file sizes, and Vertex AI Search indexing completes for all uploaded files</description>
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/google-file-search-testing-results.md</path>
+        <title>Google File Search Testing Results - Story 7.2</title>
+        <section>Story 7.5 Recommendation</section>
+        <snippet>Comprehensive testing revealed Google File Search fails on files >10KB with persistent 503 errors. Decision: Migrate to Cloud Storage + Vertex AI Search for production-grade reliability. Vertex AI Search provides 99.9% SLA, handles all file sizes, supports custom metadata filtering. Migration benefits: reliability, scalability, metadata support, monitoring integration, cost control.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic 7: Google Cloud Platform Migration</title>
+        <section>Stories 7.1-7.2</section>
+        <snippet>Story 7.1 completed container migration to Google File Search. Story 7.2 testing revealed limitations. Story 7.3 (Cloud Run API) and 7.4 (Documentation) blocked pending production-grade search solution.</snippet>
+      </doc>
+      <doc>
+        <path>container/google_filesearch_client.py</path>
+        <title>Google File Search Client Implementation</title>
+        <section>Reference Implementation</section>
+        <snippet>Existing implementation pattern: retry logic with exponential backoff, statistics tracking (total_uploaded, total_failed, success_rate), structured logging. Cloud Storage client should follow similar patterns but with GCS SDK.</snippet>
+      </doc>
+      <doc>
+        <path>DEPLOYMENT.md</path>
+        <title>Production Deployment Guide</title>
+        <section>Google Cloud Platform Deployment</section>
+        <snippet>Established deployment patterns: service account authentication, environment variable configuration, smoke testing automation. Vertex AI Search deployment must integrate with existing operational procedures.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>container/google_filesearch_client.py</path>
+        <kind>service</kind>
+        <symbol>GoogleFileSearchClient</symbol>
+        <lines>1-200</lines>
+        <reason>Reference implementation for retry logic, statistics tracking, structured logging. Pattern to follow for gcs_client.py but with Cloud Storage SDK instead of File Search.</reason>
+      </artifact>
+      <artifact>
+        <path>container/orchestrator.py</path>
+        <kind>orchestrator</kind>
+        <symbol>main</symbol>
+        <lines>1-150</lines>
+        <reason>Main ingestion pipeline that currently uses GoogleFileSearchClient. Needs to be updated to use CloudStorageClient after migration.</reason>
+      </artifact>
+      <artifact>
+        <path>container/requirements.txt</path>
+        <kind>config</kind>
+        <symbol>dependencies</symbol>
+        <lines>1-20</lines>
+        <reason>Python dependencies including google-genai. Need to add google-cloud-storage and potentially remove google-genai file search dependencies.</reason>
+      </artifact>
+      <artifact>
+        <path>container/Dockerfile</path>
+        <kind>config</kind>
+        <symbol>build</symbol>
+        <lines>1-50</lines>
+        <reason>Docker build configuration. Ensure google-cloud-storage is installed and service account credentials are properly mounted.</reason>
+      </artifact>
+      <artifact>
+        <path>.env.example</path>
+        <kind>config</kind>
+        <symbol>environment_variables</symbol>
+        <lines>1-20</lines>
+        <reason>Environment variable template. Replace GOOGLE_FILE_SEARCH_STORE_NAME with GCS_BUCKET_NAME and ensure GOOGLE_APPLICATION_CREDENTIALS is documented.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <python>
+        <google-cloud-storage>^2.10.0</google-cloud-storage>
+        <google-cloud-aiplatform>^1.38.0</google-cloud-aiplatform>
+        <google-auth>^2.23.0</google-auth>
+      </python>
+      <cloud>
+        <gcs-bucket>govreposcrape-summaries (us-central1)</gcs-bucket>
+        <vertex-ai-search>Production datastore with 99.9% SLA</vertex-ai-search>
+        <service-account>govreposcrape-storage@PROJECT_ID.iam.gserviceaccount.com</service-account>
+      </cloud>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint category="reliability">100% upload success rate required (user explicit requirement from Story 7.2)</constraint>
+    <constraint category="sla">99.9% SLA guarantee for Vertex AI Search (production requirement)</constraint>
+    <constraint category="durability">99.999999999% durability for Cloud Storage (11 nines)</constraint>
+    <constraint category="file-size">Must handle all file sizes from 1KB to 512KB without errors (vs. Google File Search 503 on &gt;10KB)</constraint>
+    <constraint category="migration">Replace google_filesearch_client.py with gcs_client.py, maintain existing retry and statistics patterns</constraint>
+    <constraint category="metadata">Custom metadata must be preserved: org, repo, pushedAt, url, processedAt, size</constraint>
+    <constraint category="naming">Hierarchical naming convention: {org}/{repo}/{commit-sha}.txt for GCS objects</constraint>
+    <constraint category="unblocking">Story completion unblocks Stories 7.3 (Cloud Run API) and 7.4 (Documentation)</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>CloudStorageClient.upload_summary</name>
+      <kind>method</kind>
+      <signature>upload_summary(org: str, repo: str, content: str, metadata: dict) -&gt; bool</signature>
+      <path>container/gcs_client.py</path>
+    </interface>
+    <interface>
+      <name>CloudStorageClient.get_or_create_bucket</name>
+      <kind>method</kind>
+      <signature>get_or_create_bucket() -&gt; str</signature>
+      <path>container/gcs_client.py</path>
+    </interface>
+    <interface>
+      <name>CloudStorageClient.print_stats</name>
+      <kind>method</kind>
+      <signature>print_stats() -&gt; None</signature>
+      <path>container/gcs_client.py</path>
+    </interface>
+    <interface>
+      <name>GCS Custom Metadata</name>
+      <kind>object_metadata</kind>
+      <signature>x-goog-meta-org, x-goog-meta-repo, x-goog-meta-pushedAt, x-goog-meta-url, x-goog-meta-processedAt, x-goog-meta-size</signature>
+      <path>GCS object custom metadata</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>pytest for Python unit and integration testing. Production validation test suite covering all file sizes (1KB to 512KB). Performance testing for upload latency distribution (p50, p95, p99). End-to-end testing: container upload → GCS storage → Vertex AI indexing → search results. Cloud Storage emulator for local testing (optional). Target: 100% success rate across all test cases (critical requirement).</standards>
+    <locations>
+      <location>test/test_vertex_ai_migration.py</location>
+      <location>test/integration/test_gcs_client.py</location>
+      <location>test/e2e/test_vertex_ai_search.py</location>
+    </locations>
+    <ideas>
+      <idea ac="1">Test GCS bucket creation: verify bucket exists, correct region (us-central1), proper IAM permissions</idea>
+      <idea ac="1">Test file upload with metadata: upload sample file, verify GCS object exists, verify custom metadata attributes set correctly</idea>
+      <idea ac="1">Test hierarchical naming: verify files stored as {org}/{repo}/{commit-sha}.txt pattern</idea>
+      <idea ac="2">Test Vertex AI Search datastore creation: verify datastore linked to GCS bucket, indexing configuration correct</idea>
+      <idea ac="2">Test metadata filtering: query Vertex AI Search with org filter, repo filter, date range filter</idea>
+      <idea ac="3">Test retry logic: simulate transient GCS errors, verify exponential backoff (1s, 2s, 4s), verify 3 max attempts</idea>
+      <idea ac="3">Test statistics tracking: verify total_uploaded, total_failed, success_rate, total_bytes metrics accurate</idea>
+      <idea ac="4">Test small files (≤10KB): upload 10 files, verify 100% success (baseline)</idea>
+      <idea ac="4">Test medium files (50KB-100KB): upload 10 files, verify 100% success (vs. Google File Search failures)</idea>
+      <idea ac="4">Test large files (200KB-512KB): upload 10 files, verify 100% success, no 503 errors</idea>
+      <idea ac="4">Test Vertex AI indexing: verify all uploaded files are indexed and searchable within expected timeframe</idea>
+    </ideas>
+  </tests>
+</story-context>

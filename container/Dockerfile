@@ -1,8 +1,8 @@
 # govreposcrape - gitingest Processing Container
-# Story 2.3: Container-Based gitingest Processing with Retry Logic
+# Google Cloud Platform Migration - Vertex AI Search Backend
 #
 # Base image: Python 3.11 slim for gitingest compatibility
-# Dependencies: gitingest (code summarization), boto3 (R2 access), pytest (testing)
+# Dependencies: gitingest (code summarization), google-cloud-storage (Vertex AI backend), pytest (testing)
 
 FROM python:3.11-slim
 
@@ -24,24 +24,21 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install --no-cache-dir \
     pytest \
     pytest-cov \
-    pytest-asyncio \
-    moto
+    pytest-asyncio
 
 # Copy application code
 COPY ingest.py .
-COPY r2_client.py .
-COPY cache.py .
+COPY google_filesearch_client.py .
+COPY gcs_client.py .
 COPY orchestrator.py .
 COPY test_ingest.py .
-COPY test_r2_client.py .
 COPY test_orchestrator.py .
-COPY test_cache.py .
+COPY test_gcs_client.py .
+COPY test_cloudrun.py .
 
 # Set environment variables (will be overridden by runtime)
-ENV R2_BUCKET=""
-ENV R2_ENDPOINT=""
-ENV R2_ACCESS_KEY=""
-ENV R2_SECRET_KEY=""
+ENV GCS_BUCKET_NAME="govreposcrape-summaries"
+# Note: GOOGLE_APPLICATION_CREDENTIALS not needed in Cloud Run - uses service account metadata
 
-# Default command: run ingest.py with help
-CMD ["python", "ingest.py", "--help"]
+# Default command: run full ingestion (can be overridden with --args)
+CMD ["python", "orchestrator.py", "--batch-size=1", "--offset=0"]

@@ -1,6 +1,6 @@
 # govreposcrape
 
-Semantic code search over ~21k UK government repositories using Cloudflare Workers and AI Search.
+Semantic code search over ~21k UK government repositories using Google Cloud Run and Vertex AI Search.
 
 ## Quick Start: Integrate with Claude Desktop
 
@@ -305,30 +305,33 @@ govreposcrape is a Cloudflare Workers-based MCP API server that provides semanti
 
 ## Architecture
 
-- **Platform**: Cloudflare Workers (edge compute)
-- **Language**: TypeScript 5.9+ (strict mode)
-- **Runtime**: workerd (Cloudflare Workers runtime)
-- **Build Tool**: esbuild (via wrangler CLI)
-- **Test Framework**: Vitest 4.0+ with @cloudflare/vitest-pool-workers
+- **Platform**: Google Cloud Platform (Cloud Run, GCS, Vertex AI Search)
+- **Language**: TypeScript 5.9+ (strict mode) for API, Python 3.11+ for ingestion container
+- **Runtime**: Node.js 20 (Cloud Run managed runtime)
+- **Build Tool**: esbuild / tsc (TypeScript compiler)
+- **Test Framework**: Vitest 4.0+ (API), pytest (container)
 
-### Service Bindings
+### Google Cloud Services
 
-All Cloudflare services configured in `wrangler.jsonc`:
+All services configured via `gcloud` CLI and environment variables:
 
-| Service | Name | Binding | Purpose |
-|---------|------|---------|---------|
-| D1 Database | govreposcrape-db | `DB` | Metadata storage |
-| KV Namespace | govreposcrape-cache | `KV` | Smart caching (90%+ hit rate) |
-| R2 Bucket | govreposcrape-gitingest | `R2` | gitingest summary storage |
-| Vectorize Index | govscraperepo-code-index | `VECTORIZE` | 768-dim cosine similarity |
+| Service | Name/ID | Purpose |
+|---------|---------|---------|
+| Cloud Storage | `govreposcrape-summaries` | gitingest summary storage (`{org}/{repo}.md`) |
+| Vertex AI Search | `govreposcrape-search` | Semantic search with 99.9% SLA, auto-indexing from GCS |
+| Cloud Run | `govreposcrape-api` | MCP API server (Node.js 20, Express) |
+| Cloud Run Jobs | `govreposcrape-ingestion` | Daily ingestion pipeline (Python 3.11, gitingest) |
+
+**Migration Note:** Originally built for Cloudflare Workers. Migrated to Google Cloud Platform (Epic 7) for production-grade reliability. See docs/vertex-ai-migration-results.md for migration details.
 
 ## Prerequisites
 
 - Node.js 20+ (LTS)
 - npm 10+ or pnpm 8+
 - Docker 24+ (for gitingest container)
-- Cloudflare account with Workers enabled
-- wrangler CLI 4.47.0+
+- Google Cloud account with billing enabled
+- gcloud CLI (latest version)
+- Python 3.11+ (for container development)
 
 ## Setup
 
@@ -340,32 +343,42 @@ npm install
 
 ### 2. Configure Environment
 
-Copy `.env.example` to `.env` and add your Cloudflare credentials:
+Copy `.env.example` to `.env` and add your Google Cloud credentials:
 
 ```bash
 cp .env.example .env
 ```
 
 Edit `.env` and add:
-- `CLOUDFLARE_ACCOUNT_ID`: Your Cloudflare account ID (find in dashboard)
-- `CLOUDFLARE_API_TOKEN`: API token with Workers and Storage permissions
+- `GOOGLE_PROJECT_ID`: Your Google Cloud project ID (e.g., `govreposcrape`)
+- `GCS_BUCKET_NAME`: Cloud Storage bucket name (e.g., `govreposcrape-summaries`)
+- `VERTEX_AI_SEARCH_ENGINE_ID`: Vertex AI Search engine ID (format: `projects/{project}/locations/{location}/collections/{collection}/engines/{engine}`)
+- `GOOGLE_APPLICATION_CREDENTIALS`: Path to service account JSON key file
 
-### 3. Verify Service Bindings
+### 3. Authenticate with Google Cloud
 
-All service bindings are pre-configured in `wrangler.jsonc`. Service IDs:
+```bash
+# Authenticate with Google Cloud
+gcloud auth login
+gcloud auth application-default login
+gcloud config set project govreposcrape
 
-- **D1 Database ID**: `REDACTED_CLOUDFLARE_D1_ID`
-- **KV Namespace ID**: `REDACTED_CLOUDFLARE_KV_ID`
-- **R2 Bucket**: `govreposcrape-gitingest`
-- **Vectorize Index**: `govscraperepo-code-index` (768-dim, cosine)
+# Create service account and download credentials
+gcloud iam service-accounts create govreposcrape-sa
+gcloud projects add-iam-policy-binding govreposcrape \
+  --member="serviceAccount:govreposcrape-sa@govreposcrape.iam.gserviceaccount.com" \
+  --role="roles/storage.admin"
+gcloud iam service-accounts keys create google-credentials.json \
+  --iam-account=govreposcrape-sa@govreposcrape.iam.gserviceaccount.com
+```
 
 ### 4. Generate TypeScript Types
 
 ```bash
-npm run cf-typegen
+npm run build
 ```
 
-This generates type definitions for Cloudflare Workers bindings in `worker-configuration.d.ts`.
+This compiles TypeScript code for the Cloud Run API.
 
 ### 5. Run Development Server
 

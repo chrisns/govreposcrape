@@ -1,5 +1,16 @@
 # Google File Search Testing Results - Story 7.2
 
+**🔄 MIGRATED TO VERTEX AI SEARCH**
+
+**Migration Date:** 2025-11-17
+**Migration Story:** 7.5 (Vertex AI Search Migration)
+**New Architecture:** Cloud Storage (GCS) + Vertex AI Search
+**Production Status:** ✅ Operational with 99.9% SLA guarantee
+
+This document is preserved for historical reference and to document the technical rationale for migrating away from Google File Search to Vertex AI Search.
+
+---
+
 **Date:** 2025-11-17
 **Status:** Complete with Limitations
 **Decision:** Migrate to Cloud Storage + Vertex AI Search (Story 7.5)

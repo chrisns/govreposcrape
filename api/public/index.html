@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UK Government Code Search</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        .search-box {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .search-input-wrapper {
+            display: flex;
+            gap: 10px;
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 15px 20px;
+            font-size: 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        input[type="text"]:focus {
+            border-color: #667eea;
+        }
+        button {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .examples {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #64748b;
+        }
+        .example-query {
+            display: inline-block;
+            margin: 5px 5px 5px 0;
+            padding: 5px 12px;
+            background: #f1f5f9;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .example-query:hover {
+            background: #e2e8f0;
+        }
+        .results {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        .result-item {
+            padding: 20px;
+            border-bottom: 1px solid #e2e8f0;
+            transition: background 0.2s;
+        }
+        .result-item:last-child {
+            border-bottom: none;
+        }
+        .result-item:hover {
+            background: #f8fafc;
+        }
+        .result-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+        .result-title a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        .result-title a:hover {
+            text-decoration: underline;
+        }
+        .result-meta {
+            font-size: 14px;
+            color: #64748b;
+        }
+        .result-org {
+            color: #0ea5e9;
+            font-weight: 500;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #64748b;
+        }
+        .spinner {
+            border: 3px solid #e2e8f0;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .stats {
+            text-align: center;
+            color: #64748b;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏛️ UK Government Code Search</h1>
+            <p class="subtitle">Search across ~21,000 UK government repositories</p>
+        </div>
+
+        <div class="search-box">
+            <div class="search-input-wrapper">
+                <input
+                    type="text"
+                    id="searchInput"
+                    placeholder="Search for code, libraries, patterns..."
+                    autocomplete="off"
+                >
+                <button id="searchBtn" onclick="performSearch()">Search</button>
+            </div>
+            <div class="examples">
+                Try:
+                <span class="example-query" onclick="fillQuery(this)">authentication middleware</span>
+                <span class="example-query" onclick="fillQuery(this)">postcode validation</span>
+                <span class="example-query" onclick="fillQuery(this)">NHS API integration</span>
+                <span class="example-query" onclick="fillQuery(this)">GOV.UK frontend</span>
+            </div>
+        </div>
+
+        <div id="errorMsg" class="error hidden"></div>
+        <div id="resultsContainer" class="hidden">
+            <div class="results">
+                <div id="stats" class="stats"></div>
+                <div id="results"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://govreposcrape-api-1060386346356.us-central1.run.app/mcp/search';
+
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') performSearch();
+        });
+
+        function fillQuery(element) {
+            document.getElementById('searchInput').value = element.textContent;
+            performSearch();
+        }
+
+        async function performSearch() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) return;
+
+            const searchBtn = document.getElementById('searchBtn');
+            const resultsContainer = document.getElementById('resultsContainer');
+            const results = document.getElementById('results');
+            const stats = document.getElementById('stats');
+            const errorMsg = document.getElementById('errorMsg');
+
+            // Hide error, show loading
+            errorMsg.classList.add('hidden');
+            resultsContainer.classList.remove('hidden');
+            searchBtn.disabled = true;
+            searchBtn.textContent = 'Searching...';
+            results.innerHTML = '<div class="loading"><div class="spinner"></div>Searching UK government repositories...</div>';
+            stats.textContent = '';
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query, limit: 20 })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error?.message || 'Search failed');
+                }
+
+                // Display stats
+                stats.textContent = `Found ${data.metadata.resultCount} results in ${data.metadata.duration}ms`;
+
+                // Display results
+                if (data.results.length === 0) {
+                    results.innerHTML = '<div class="loading">No results found. Try a different search term.</div>';
+                } else {
+                    results.innerHTML = data.results.map(result => `
+                        <div class="result-item">
+                            <div class="result-title">
+                                <a href="${result.url}" target="_blank">${result.title}</a>
+                            </div>
+                            <div class="result-meta">
+                                <span class="result-org">${result.metadata.org}</span> / ${result.metadata.repo}
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                errorMsg.textContent = `Error: ${error.message}`;
+                errorMsg.classList.remove('hidden');
+                resultsContainer.classList.add('hidden');
+            } finally {
+                searchBtn.disabled = false;
+                searchBtn.textContent = 'Search';
+            }
+        }
+
+        // Auto-search on page load if query param present
+        const urlParams = new URLSearchParams(window.location.search);
+        const initialQuery = urlParams.get('q');
+        if (initialQuery) {
+            document.getElementById('searchInput').value = initialQuery;
+            performSearch();
+        }
+    </script>
+</body>
+</html>

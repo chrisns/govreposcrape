@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
 govreposcrape - Pipeline Orchestrator (Google Cloud Platform)
-Simplified orchestrator for Google File Search integration
+Orchestrator for Vertex AI Search via Cloud Storage backend
 
 Coordinates the complete ingestion pipeline:
-fetch repos.json → gitingest → upload to Google File Search
+fetch repos.json → gitingest → upload to Cloud Storage → Vertex AI Search indexing
 
 Usage:
     # Sequential (process all repos)
@@ -23,8 +23,8 @@ Usage:
     python orchestrator.py --limit=100
 
 Environment Variables:
-    GOOGLE_GEMINI_API_KEY: Google Gemini API key
-    GOOGLE_FILE_SEARCH_STORE_NAME: File Search Store name (optional, will create if missing)
+    GOOGLE_APPLICATION_CREDENTIALS: Path to service account JSON key
+    GCS_BUCKET_NAME: Cloud Storage bucket name (default: govreposcrape-summaries)
 """
 
 import sys
@@ -45,8 +45,8 @@ from ingest import (
     logger
 )
 
-# Import Google File Search client
-from google_filesearch_client import GoogleFileSearchClient
+# Import Cloud Storage client (Vertex AI Search backend)
+from gcs_client import CloudStorageClient
 
 
 # Global state for graceful shutdown
@@ -151,12 +151,16 @@ def graceful_shutdown(signum, frame):
 
 def main():
     """Main orchestrator entry point"""
+    # Log startup immediately
+    print("Starting orchestrator.py...", flush=True)
+    logger.info("Orchestrator starting", extra={"metadata": {}})
+
     # Register signal handler for graceful shutdown
     signal.signal(signal.SIGTERM, graceful_shutdown)
 
     # Parse CLI arguments
     parser = argparse.ArgumentParser(
-        description="Orchestrate gitingest pipeline with Google File Search",
+        description="Orchestrate gitingest pipeline with Cloud Storage + Vertex AI Search",
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
 
@@ -185,6 +189,24 @@ def main():
 
     args = parser.parse_args()
 
+    # Check for Cloud Run Task Index (for parallel execution)
+    task_index = os.getenv('CLOUD_RUN_TASK_INDEX')
+    task_count = os.getenv('CLOUD_RUN_TASK_COUNT')
+
+    if task_index is not None and task_count is not None:
+        # Running as Cloud Run Job with multiple tasks - use task index
+        args.batch_size = int(task_count)
+        args.offset = int(task_index)
+        logger.info(
+            f"Cloud Run Task Mode: task {task_index}/{task_count} (batch_size={args.batch_size}, offset={args.offset})",
+            extra={"metadata": {
+                "task_index": task_index,
+                "task_count": task_count,
+                "batch_size": args.batch_size,
+                "offset": args.offset
+            }}
+        )
+
     # Validate arguments
     if args.offset >= args.batch_size:
         parser.error(f"offset ({args.offset}) must be less than batch-size ({args.batch_size})")
@@ -193,19 +215,19 @@ def main():
     current_state["batch_size"] = args.batch_size
     current_state["offset"] = args.offset
 
-    # Initialize Google File Search client
+    # Initialize Cloud Storage client
     if not args.dry_run:
         try:
-            google_client = GoogleFileSearchClient()
-            # Get or create File Search Store
-            store_name = google_client.get_or_create_store()
+            gcs_client = CloudStorageClient()
+            # Get or verify bucket exists
+            bucket_name = gcs_client.get_or_create_bucket()
             logger.info(
-                f"Using Google File Search Store: {store_name}",
-                extra={"metadata": {"store_name": store_name}}
+                f"Using Cloud Storage bucket: {bucket_name}",
+                extra={"metadata": {"bucket_name": bucket_name}}
             )
         except Exception as e:
             logger.error(
-                f"Failed to initialize Google File Search client: {str(e)}",
+                f"Failed to initialize Cloud Storage client: {str(e)}",
                 extra={"metadata": {"error": str(e)}}
             )
             sys.exit(1)
@@ -302,7 +324,7 @@ def main():
                 result = process_repository(repo_url, upload_to_r2=False)
 
                 if result.get("success"):
-                    # Upload to Google File Search
+                    # Upload to Cloud Storage
                     summary_content = result.get("summary", "")
                     if summary_content:
                         metadata = {
@@ -311,7 +333,7 @@ def main():
                             "processedAt": datetime.utcnow().isoformat() + "Z"
                         }
 
-                        upload_success = google_client.upload_summary(
+                        upload_success = gcs_client.upload_summary(
                             org=org,
                             repo=name,
                             summary_content=summary_content,
@@ -323,7 +345,7 @@ def main():
                         else:
                             stats.record_failure()
                             logger.warning(
-                                f"Google File Search upload failed: {repo_url}",
+                                f"Cloud Storage upload failed: {repo_url}",
                                 extra={"metadata": {"repo_url": repo_url}}
                             )
                     else:
@@ -363,9 +385,9 @@ def main():
             }}
         )
 
-        # Print Google File Search stats
+        # Print Cloud Storage stats
         if not args.dry_run:
-            google_client.print_stats()
+            gcs_client.print_stats()
 
         # Exit with success
         sys.exit(0)

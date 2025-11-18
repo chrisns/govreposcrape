@@ -1,0 +1,411 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>6</epicId>
+    <storyId>4</storyId>
+    <title>Production Readiness Checklist and Deployment Guide</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-17</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>.bmad-ephemeral/stories/6-4-production-readiness-checklist-and-deployment-guide.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>deployment engineer</asA>
+    <iWant>a production readiness checklist and step-by-step deployment guide</iWant>
+    <soThat>the MVP can be confidently deployed to production</soThat>
+    <tasks>
+### Task 1: Create Production Readiness Checklist (AC: #1)
+- [ ] 1.1 Create DEPLOYMENT.md with production readiness section
+- [ ] 1.2 Add checklist items for all tests passing (unit, integration, E2E)
+- [ ] 1.3 Add checklist items for security audit completion (SECURITY.md, dependency scanning)
+- [ ] 1.4 Add checklist items for cost monitoring active (dashboard configured, alerts set)
+- [ ] 1.5 Add checklist items for documentation complete (README, OpenAPI, integration guides)
+- [ ] 1.6 Add checklist items for environment configuration (service bindings, secrets, domain DNS)
+- [ ] 1.7 Add checklist items for deployment prerequisites (Cloudflare account, wrangler CLI v3.x, permissions)
+
+### Task 2: Document Environment Configuration (AC: #1, #3)
+- [ ] 2.1 Document production environment requirements in DEPLOYMENT.md
+- [ ] 2.2 List all required service bindings with IDs: D1, KV, Vectorize, R2
+- [ ] 2.3 Document secret configuration: API keys, environment variables
+- [ ] 2.4 Document domain DNS setup: CNAME records, SSL/TLS configuration
+- [ ] 2.5 Document staging environment differences (separate bindings, domain)
+- [ ] 2.6 Add wrangler.toml environment section examples
+
+### Task 3: Create Step-by-Step Deployment Guide (AC: #2, #3)
+- [ ] 3.1 Add "Deployment Procedure" section to DEPLOYMENT.md
+- [ ] 3.2 Document pre-deployment validation steps (checklist review, git status, tests)
+- [ ] 3.3 Document wrangler deploy command with flags: `wrangler deploy --env production`
+- [ ] 3.4 Document post-deployment verification steps (health check, smoke tests)
+- [ ] 3.5 Add deployment timing expectations (build time, propagation delay)
+- [ ] 3.6 Document monitoring verification (dashboard check, alert confirmation)
+
+### Task 4: Document Rollback Procedure (AC: #2)
+- [ ] 4.1 Add "Rollback Procedure" section to DEPLOYMENT.md
+- [ ] 4.2 Document `wrangler rollback` command usage
+- [ ] 4.3 Document version identification (list deployments, find previous version)
+- [ ] 4.4 Document rollback verification steps (same as post-deployment)
+- [ ] 4.5 Add emergency rollback scenarios (critical bug, security issue, performance degradation)
+- [ ] 4.6 Document rollback decision criteria and escalation process
+
+### Task 5: Define Smoke Tests (AC: #2, #3)
+- [ ] 5.1 Create scripts/smoke-test.sh for automated smoke testing
+- [ ] 5.2 Add health check endpoint test: `curl https://govreposcrape.cloud.cns.me/health`
+- [ ] 5.3 Add test query: `curl -X POST /mcp/search -d '{"query":"authentication","limit":5}'`
+- [ ] 5.4 Add response validation: check status 200, validate JSON structure
+- [ ] 5.5 Add monitoring dashboard check: verify metrics appearing
+- [ ] 5.6 Add npm script: `smoke-test`, `smoke-test:production`, `smoke-test:staging`
+- [ ] 5.7 Document smoke test usage in DEPLOYMENT.md
+
+### Task 6: Add Escalation and Contact Information (AC: #3)
+- [ ] 6.1 Add "Escalation Procedures" section to DEPLOYMENT.md
+- [ ] 6.2 Document on-call engineer contact (if applicable) or support email
+- [ ] 6.3 Document incident severity levels (P1: critical outage, P2: degraded, P3: minor)
+- [ ] 6.4 Document escalation timeline (P1: immediate, P2: within 2 hours, P3: next business day)
+- [ ] 6.5 Link to monitoring dashboards and alert channels (Cloudflare, email, Slack)
+- [ ] 6.6 Document runbook for common deployment issues (DNS not propagating, service binding errors)
+
+### Task 7: Testing and Validation (AC: #1, #2, #3)
+- [ ] 7.1 Test pre-deployment checklist completeness (all items reviewable)
+- [ ] 7.2 Test deployment guide: perform staging deployment following guide
+- [ ] 7.3 Test smoke tests: execute smoke-test.sh against staging environment
+- [ ] 7.4 Test rollback procedure: roll back staging deployment and verify
+- [ ] 7.5 Validate documentation completeness and clarity (peer review)
+- [ ] 7.6 Verify all links and references in DEPLOYMENT.md are correct
+</tasks>
+  </story>
+
+  <acceptanceCriteria>
+**AC-6.4.1: Production Readiness Checklist**
+
+- **Given** all Epic 1-6 stories are complete
+- **When** I review the production readiness checklist
+- **Then** checklist covers: all tests passing, security audit complete, cost monitoring active, documentation complete
+- **And** environment configuration verified: production service bindings, secrets, domain setup
+- **And** deployment prerequisites validated: Cloudflare account, domain DNS, wrangler CLI
+
+**AC-6.4.2: Deployment Guide**
+
+- **Given** I follow the deployment guide
+- **When** I execute deployment steps
+- **Then** guide includes: pre-deployment validation, wrangler deploy command, post-deployment verification
+- **And** rollback procedure is documented for deployment failures
+- **And** smoke tests are defined to validate deployment success
+
+**AC-6.4.3: Documentation Completeness**
+
+- **And** Production readiness checklist is documented in DEPLOYMENT.md or README
+- **And** Deployment guide includes environment-specific configurations (staging vs production)
+- **And** Post-deployment verification includes: health check, test query, monitoring dashboard check
+- **And** Contact information for escalation is documented
+</acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <!-- Deployment and Operational Documentation -->
+      <doc>
+        <path>DEPLOYMENT.md</path>
+        <title>Deployment Guide</title>
+        <section>AI Search Configuration, Environment Setup, Deployment, Monitoring, Troubleshooting</section>
+        <snippet>Comprehensive deployment guide with AI Search configuration, environment setup, wrangler commands, health checks, troubleshooting, and cost monitoring. Already contains infrastructure provisioning steps and validation guidance.</snippet>
+      </doc>
+      <doc>
+        <path>SECURITY.md</path>
+        <title>Security Policy</title>
+        <section>NCSC Compliance, Security Checklist, Secrets Management, Audit Logging</section>
+        <snippet>NCSC Secure Coding Standards compliance documentation with security checklist covering input validation, output encoding, secrets management, HTTPS enforcement, and audit logging. Validated by scripts/security-audit.sh.</snippet>
+      </doc>
+      <doc>
+        <path>README.md</path>
+        <title>Project README</title>
+        <section>Quick Start, API Reference, Integration Examples, Testing Tools</section>
+        <snippet>Main project documentation with MCP integration guides, OpenAPI specification, and integration examples (curl, Node.js, Python). Includes testing tools and environment variable support.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture</title>
+        <section>Project Structure, Decision Summary, Technology Stack</section>
+        <snippet>Cloudflare Workers-based architecture with TypeScript, esbuild, Vitest testing. Technology decisions: wrangler deployment, Docker containers, managed services (R2, KV, AI Search).</snippet>
+      </doc>
+      <doc>
+        <path>docs/integration-testing-standards.md</path>
+        <title>Integration Testing Standards</title>
+        <section>Integration Test Requirements, Test Data Requirements, Test Infrastructure</section>
+        <snippet>Comprehensive testing standards established in Quality Sprint. Defines integration testing requirements: real service bindings, 100-item minimum data volumes, end-to-end workflow validation.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epics</title>
+        <section>Epic 6: Operational Excellence</section>
+        <snippet>Epic 6 focuses on production readiness: cost monitoring (6.1), security audit (6.2), observability dashboard (6.3), and production deployment guide (6.4). Dependencies: all previous epics complete.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <!-- Operational Scripts -->
+      <artifact>
+        <path>scripts/test-mcp.sh</path>
+        <kind>bash-script</kind>
+        <symbol>test-mcp</symbol>
+        <lines>1-300</lines>
+        <reason>Smoke test script pattern - validates health check, search endpoint, response structure, error handling</reason>
+      </artifact>
+      <artifact>
+        <path>scripts/security-audit.sh</path>
+        <kind>bash-script</kind>
+        <symbol>security-audit</symbol>
+        <lines>1-200</lines>
+        <reason>Security validation script pattern - NCSC compliance checks, dependency scanning, dangerous code pattern detection</reason>
+      </artifact>
+      <artifact>
+        <path>scripts/cost-monitoring.ts</path>
+        <kind>typescript-script</kind>
+        <symbol>cost-monitoring</symbol>
+        <lines>N/A</lines>
+        <reason>Cost monitoring implementation from Story 6.1 - provides pattern for operational monitoring scripts</reason>
+      </artifact>
+      <artifact>
+        <path>scripts/export-metrics.ts</path>
+        <kind>typescript-script</kind>
+        <symbol>export-metrics</symbol>
+        <lines>N/A</lines>
+        <reason>Metrics export implementation from Story 6.3 - provides pattern for observability scripts</reason>
+      </artifact>
+      <artifact>
+        <path>DEPLOYMENT.md</path>
+        <kind>documentation</kind>
+        <symbol>deployment-guide</symbol>
+        <lines>1-580</lines>
+        <reason>Existing deployment documentation - contains AI Search configuration, environment setup, monitoring, troubleshooting. Story 6.4 will extend this with production readiness checklist and deployment procedures.</reason>
+      </artifact>
+      <artifact>
+        <path>package.json</path>
+        <kind>configuration</kind>
+        <symbol>npm-scripts</symbol>
+        <lines>6-31</lines>
+        <reason>npm scripts pattern - deploy:staging, deploy:production, security-audit, cost-monitor, metrics-export. Story 6.4 will add smoke-test scripts.</reason>
+      </artifact>
+      <artifact>
+        <path>container/Dockerfile</path>
+        <kind>docker</kind>
+        <symbol>container-build</symbol>
+        <lines>N/A</lines>
+        <reason>Docker containerized ingestion pipeline - deployment requires Docker knowledge for container operations</reason>
+      </artifact>
+      <artifact>
+        <path>container/orchestrator.py</path>
+        <kind>python</kind>
+        <symbol>ingestion-pipeline</symbol>
+        <lines>N/A</lines>
+        <reason>Main ingestion orchestrator - deployment verification requires running orchestrator to test end-to-end pipeline</reason>
+      </artifact>
+      <artifact>
+        <path>container/google_filesearch_client.py</path>
+        <kind>python</kind>
+        <symbol>google-file-search-client</symbol>
+        <lines>N/A</lines>
+        <reason>Google File Search integration - production deployment validation requires testing file upload and search functionality</reason>
+      </artifact>
+      <artifact>
+        <path>.env.example</path>
+        <kind>configuration</kind>
+        <symbol>environment-variables</symbol>
+        <lines>1-28</lines>
+        <reason>Environment configuration template - defines required secrets (GOOGLE_GEMINI_API_KEY), project IDs, Cloud Run configuration. Deployment guide must reference this.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <!-- Node.js Dependencies -->
+      <node>
+        <devDependencies>
+          <package name="wrangler" version="^4.47.0">CLI tool for Cloudflare Workers deployment</package>
+          <package name="vitest" version="~3.2.0">Test framework for unit and integration tests</package>
+          <package name="typescript" version="^5.5.2">TypeScript compiler for type checking</package>
+          <package name="eslint" version="^9.39.1">Linting for code quality</package>
+          <package name="prettier" version="^3.6.2">Code formatting</package>
+          <package name="husky" version="^9.1.7">Git hooks for pre-commit validation</package>
+          <package name="tsx" version="^4.20.6">TypeScript execution for scripts (cost-monitoring, export-metrics)</package>
+        </devDependencies>
+      </node>
+      <!-- Python Dependencies (Container) -->
+      <python>
+        <dependencies>
+          <package name="gitingest">Code summarization library</package>
+          <package name="google-generativeai">Google Gemini API for File Search</package>
+          <package name="requests">HTTP library for repos.json fetching</package>
+        </dependencies>
+        <devDependencies>
+          <package name="pytest">Testing framework</package>
+          <package name="pytest-asyncio">Async test support</package>
+        </devDependencies>
+      </python>
+      <!-- Cloud Infrastructure -->
+      <cloud-infrastructure>
+        <service name="Google Cloud Platform">Docker container runtime, File Search, Gemini API</service>
+        <service name="Docker">Container platform for ingestion pipeline</service>
+      </cloud-infrastructure>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <!-- Development Constraints from Dev Notes -->
+    <constraint category="documentation">
+      <rule>DEPLOYMENT.md already exists (580 lines) - extend it rather than replace it</rule>
+      <rule>Follow documentation pattern from Stories 6.1, 6.2, 6.3 (standalone docs with README links)</rule>
+      <rule>Production readiness checklist should be comprehensive but concise (50-100 lines)</rule>
+    </constraint>
+    <constraint category="testing">
+      <rule>Smoke tests must be simple bash scripts (not TypeScript) for ease of execution without compilation</rule>
+      <rule>Follow test-mcp.sh pattern: curl-based, JSON validation, clear pass/fail indicators</rule>
+      <rule>Integration testing standards apply: real service bindings, realistic data (not 5 items)</rule>
+    </constraint>
+    <constraint category="npm-scripts">
+      <rule>Add smoke-test scripts following existing pattern: smoke-test, smoke-test:production, smoke-test:staging</rule>
+      <rule>npm script naming: kebab-case (smoke-test not smokeTest)</rule>
+      <rule>Script pattern: executable .sh files in scripts/ directory</rule>
+    </constraint>
+    <constraint category="deployment">
+      <rule>wrangler deploy is the deployment command (not npm run deploy for production - that's the generic deploy)</rule>
+      <rule>Environment separation: staging and production with separate service bindings</rule>
+      <rule>No authentication required for API endpoints (open access pattern)</rule>
+    </constraint>
+    <constraint category="security">
+      <rule>NCSC Secure Coding Standards compliance mandatory</rule>
+      <rule>Security audit must pass before production deployment (scripts/security-audit.sh)</rule>
+      <rule>No secrets in code/config - use environment variables or wrangler secrets</rule>
+    </constraint>
+    <constraint category="cost">
+      <rule>Total infrastructure cost target: &lt;£50/month (NFR-7.1)</rule>
+      <rule>Cost monitoring must be active before production deployment (Story 6.1)</rule>
+    </constraint>
+    <constraint category="platform-migration">
+      <rule>Story 6.4 is during Google Cloud Platform migration (Epic 7)</rule>
+      <rule>Deployment guide must reference both Cloudflare (historical) and Google Cloud (current) patterns</rule>
+      <rule>Docker container deployment is critical for Google File Search integration</rule>
+    </constraint>
+  </constraints>
+
+  <interfaces>
+    <!-- Deployment Commands -->
+    <interface>
+      <name>npm scripts</name>
+      <kind>cli-commands</kind>
+      <signature>
+npm run deploy:staging          # Deploy to staging environment
+npm run deploy:production       # Deploy to production environment
+npm test                        # Run all tests (unit + integration)
+npm run security-audit          # Run NCSC compliance checks
+npm run cost-monitor            # Check infrastructure costs
+npm run smoke-test              # Run smoke tests (to be added)
+npm run smoke-test:production   # Smoke test production (to be added)
+npm run smoke-test:staging      # Smoke test staging (to be added)
+      </signature>
+      <path>package.json</path>
+    </interface>
+    <!-- Wrangler CLI -->
+    <interface>
+      <name>wrangler deployment</name>
+      <kind>cli-tool</kind>
+      <signature>
+wrangler deploy --env production   # Deploy to production
+wrangler deploy --env staging      # Deploy to staging
+wrangler tail --env production     # Stream production logs
+wrangler rollback                  # Rollback to previous deployment
+      </signature>
+      <path>wrangler CLI (v4.47.0+)</path>
+    </interface>
+    <!-- Docker Container -->
+    <interface>
+      <name>container deployment</name>
+      <kind>docker-cli</kind>
+      <signature>
+docker build -t govreposcrape-container .
+docker run --rm -e GOOGLE_GEMINI_API_KEY=xxx govreposcrape-container python orchestrator.py --limit=100
+      </signature>
+      <path>container/Dockerfile</path>
+    </interface>
+    <!-- Health Check Endpoint -->
+    <interface>
+      <name>/mcp/health</name>
+      <kind>rest-endpoint</kind>
+      <signature>GET /mcp/health → { status: "healthy", services: {...}, timestamp }</signature>
+      <path>Referenced in DEPLOYMENT.md, test-mcp.sh</path>
+    </interface>
+    <!-- Search Endpoint -->
+    <interface>
+      <name>/mcp/search</name>
+      <kind>rest-endpoint</kind>
+      <signature>POST /mcp/search { query, limit } → { results: [...], took_ms }</signature>
+      <path>Referenced in test-mcp.sh, README.md examples</path>
+    </interface>
+  </interfaces>
+  <tests>
+    <standards>
+This story focuses on operational validation rather than code testing. Testing approach:
+
+1. **Smoke Tests (bash scripts)**:
+   - Pattern: Follow scripts/test-mcp.sh (curl-based, JSON validation, exit codes)
+   - Framework: Bash + curl + jq (optional)
+   - Execution: No compilation required, immediate execution
+   - Coverage: Health endpoint, search endpoint, response structure validation, error handling
+
+2. **Integration Tests (optional for smoke test script)**:
+   - If smoke test script is complex (&gt;100 lines), consider unit testing with shunit2 or bats
+   - Test: script argument parsing, URL validation, response parsing logic
+   - Coverage: script logic correctness, not API functionality
+
+3. **Documentation Review**:
+   - Peer review of DEPLOYMENT.md additions (production readiness checklist, deployment procedures)
+   - Validate: completeness, clarity, accuracy, broken links
+   - Tool: Manual review or markdownlint for formatting
+
+4. **Deployment Validation (staging)**:
+   - Test: Execute deployment guide steps on staging environment
+   - Validate: Pre-deployment checklist completeness, wrangler deploy success, post-deployment smoke tests pass
+   - Tool: staging environment with separate service bindings
+
+Testing standards established in docs/integration-testing-standards.md apply where relevant (real service bindings, realistic data volumes).
+    </standards>
+    <locations>
+      <!-- Test Files -->
+      <location>scripts/smoke-test.sh</location>
+      <location>test/scripts/smoke-test.test.ts (optional - if script complexity warrants unit testing)</location>
+      <location>DEPLOYMENT.md (peer review validation)</location>
+      <location>Staging environment (deployment procedure validation)</location>
+    </locations>
+    <ideas>
+      <!-- Test Ideas Mapped to Acceptance Criteria -->
+      <test id="AC-6.4.1" criterion="Production Readiness Checklist">
+        <idea>Validate checklist completeness: all tests passing, security audit complete, cost monitoring active, documentation complete</idea>
+        <idea>Test pre-deployment checklist item verification: Can each checklist item be objectively verified?</idea>
+        <idea>Validate environment configuration checklist: service bindings, secrets, domain DNS</idea>
+        <idea>Test deployment prerequisites validation: Cloudflare account, wrangler CLI v3.x, permissions</idea>
+      </test>
+      <test id="AC-6.4.2" criterion="Deployment Guide">
+        <idea>Test pre-deployment validation steps: checklist review, git status check, test execution</idea>
+        <idea>Validate wrangler deploy command execution: `wrangler deploy --env production` works</idea>
+        <idea>Test post-deployment verification: health check pass, smoke tests pass, monitoring dashboard accessible</idea>
+        <idea>Validate rollback procedure: wrangler rollback command, version identification, rollback verification</idea>
+        <idea>Test smoke tests: health endpoint responds 200, search endpoint returns results, JSON structure valid</idea>
+      </test>
+      <test id="AC-6.4.3" criterion="Documentation Completeness">
+        <idea>Validate production readiness checklist location: documented in DEPLOYMENT.md</idea>
+        <idea>Test environment-specific configurations: staging vs production differences documented</idea>
+        <idea>Validate post-deployment verification: health check, test query, monitoring dashboard check all documented</idea>
+        <idea>Test escalation information completeness: contact info, severity levels, escalation timeline documented</idea>
+        <idea>Link validation: verify all links in DEPLOYMENT.md are correct and accessible</idea>
+      </test>
+      <test id="smoke-test-script" criterion="Smoke Test Automation">
+        <idea>Test health check endpoint: `curl /mcp/health` returns 200 with expected JSON structure</idea>
+        <idea>Test search endpoint: `curl -X POST /mcp/search -d '{"query":"test","limit":5}'` returns results</idea>
+        <idea>Validate response structure: results array present, took_ms field present</idea>
+        <idea>Test error handling: invalid query (&lt;3 chars) returns 400, limit out of range returns 400</idea>
+        <idea>Test monitoring integration: smoke test verifies metrics are updating</idea>
+      </test>
+      <test id="deployment-procedure" criterion="Staging Deployment Test">
+        <idea>Execute deployment guide on staging: Follow all steps exactly as documented</idea>
+        <idea>Validate deployment timing: measure actual deployment time vs. expected (document in guide)</idea>
+        <idea>Test rollback procedure: Perform rollback on staging, verify previous version active</idea>
+        <idea>Validate smoke tests execution: Run smoke-test.sh against staging, confirm pass</idea>
+      </test>
+    </ideas>
+  </tests>
+</story-context>

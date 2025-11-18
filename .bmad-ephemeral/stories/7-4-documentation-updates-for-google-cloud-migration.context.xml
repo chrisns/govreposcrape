@@ -1,0 +1,170 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>7</epicId>
+    <storyId>7.4</storyId>
+    <title>Documentation Updates for Google Cloud Migration</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-18</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>.bmad-ephemeral/stories/7-4-documentation-updates-for-google-cloud-migration.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>technical writer</asA>
+    <iWant>to update all documentation to reflect Google Cloud Platform</iWant>
+    <soThat>documentation accurately describes the current architecture and setup</soThat>
+    <tasks>
+### Task 1: Update PRD for Google Cloud Platform (AC: #1)
+- [ ] 1.1 Replace Cloudflare AI Search references (lines 216-247) with Vertex AI Search technical details
+- [ ] 1.2 Update cost model section (lines 1798-1824) to reflect Google Cloud pricing (~$50-80/month)
+- [ ] 1.3 Remove smart caching innovation section (lines 614-628) - Cloud Storage handles deduplication
+- [ ] 1.4 Update FR-3 (semantic search) to reference Vertex AI Search instead of Cloudflare AI Search
+- [ ] 1.5 Update NFR-5 (cost constraints) to reflect Google Cloud cost targets
+- [ ] 1.6 Document migration path: Cloudflare → Google File Search (interim) → Vertex AI Search (production)
+- [ ] 1.7 Reference Story 7.2 findings (Google File Search 503 errors) and Story 7.5 resolution (Vertex AI Search migration)
+
+### Task 2: Update Architecture Document (AC: #2)
+- [ ] 2.1 Update Decision Summary Table: Remove R2, KV, Cloudflare AI Search, Vectorize
+- [ ] 2.2 Update Decision Summary Table: Add Cloud Storage (GCS), Vertex AI Search, Cloud Run
+- [ ] 2.3 Rewrite ADR-001: "Platform Choice: Google Cloud Platform" with migration rationale
+- [ ] 2.4 Update project structure diagram: Add api/ directory, container/ directory, remove src/ Workers directory
+- [ ] 2.5 Update deployment model: Replace Cloudflare Workers with Google Cloud Run
+- [ ] 2.6 Update data flow diagrams: Container → Cloud Storage → Vertex AI Search → Cloud Run API → Client
+- [ ] 2.7 Add ADR for Vertex AI Search migration decision (Story 7.2 findings + Story 7.5 resolution)
+- [ ] 2.8 Document Google File Search as deprecated interim solution (Story 7.1)
+
+### Task 3: Update Epics Document (AC: #3)
+- [ ] 3.1 Mark Story 2.2 (KV caching) as "migrated" with note: "Cloud Storage handles deduplication"
+- [ ] 3.2 Update Story 2.4 title and description: "R2 Storage" → "Cloud Storage (GCS) Upload"
+- [ ] 3.3 Rewrite Epic 3 stories to reference Vertex AI Search instead of Cloudflare AI Search
+- [ ] 3.4 Update Epic 4 stories to reference Cloud Run deployment instead of Cloudflare Workers
+- [ ] 3.5 Add Epic 7 completion summary with migration timeline and key decisions
+- [ ] 3.6 Update Epic sequencing rationale to reflect Google Cloud migration
+- [ ] 3.7 Document Story 7.5 (Vertex AI Search migration) completion and rationale
+
+### Task 4: Update README and Supporting Docs (AC: #4)
+- [ ] 4.1 Update README.md "Getting Started" section with Google Cloud setup instructions
+- [ ] 4.2 Replace Cloudflare Workers setup with Google Cloud Run deployment steps
+- [ ] 4.3 Update environment variables section: GCS_BUCKET_NAME, VERTEX_AI_SEARCH_ENGINE_ID, GOOGLE_PROJECT_ID, GOOGLE_APPLICATION_CREDENTIALS
+- [ ] 4.4 Update all code examples to use Cloud Run API endpoint URL
+- [ ] 4.5 Archive docs/sprint-change-proposal-2025-11-17.md with historical context note
+- [ ] 4.6 Preserve MIGRATION-HANDOFF.md with clear labeling as "historical reference"
+- [ ] 4.7 Update DEPLOYMENT.md if needed to align with Google Cloud procedures (Vertex AI Search deployment)
+- [ ] 4.8 Reference docs/vertex-ai-migration-results.md (Story 7.5 completion)
+
+### Task 5: Update Technical Specifications (AC: #2, #4)
+- [ ] 5.1 Update package.json dependencies documentation (remove wrangler, add gcloud CLI references)
+- [ ] 5.2 Update .env.example with Google Cloud environment variables
+- [ ] 5.3 Update OpenAPI specification (if exists) with Cloud Run API endpoint
+- [ ] 5.4 Update MCP configuration guides (Story 5.1) with new API endpoint
+- [ ] 5.5 Update integration examples (Story 5.3) to use Cloud Run instead of Workers
+
+### Task 6: Validation and Consistency Check (AC: #1, #2, #3, #4)
+- [ ] 6.1 Search all .md files for "Cloudflare" references and update/remove as appropriate
+- [ ] 6.2 Search all .md files for "Workers" references and update to "Cloud Run"
+- [ ] 6.3 Search all .md files for "R2" and "KV" references and update to Google equivalents
+- [ ] 6.4 Verify all code examples compile and run with new architecture
+- [ ] 6.5 Verify all external links (documentation, API references) are current
+- [ ] 6.6 Run spell check and grammar check on all updated documentation
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+**AC-7.4.1: PRD Updates**
+- Given the Google Cloud migration is complete (Stories 7.1-7.5)
+- When I update the PRD
+- Then Cloudflare AI Search references (lines 216-247) are replaced with Vertex AI Search
+- And cost model section (lines 1798-1824) reflects Google Cloud costs (~$50-80/month)
+- And smart caching innovation section (lines 614-628) is removed (Cloud Storage handles deduplication)
+- And Google File Search interim solution is noted as replaced by Vertex AI Search (Story 7.5)
+
+**AC-7.4.2: Architecture Document Updates**
+- Given I update the architecture document
+- When I revise the technical decisions
+- Then Decision Summary Table removes: R2, KV, Cloudflare AI Search, Vectorize
+- And Decision Summary Table adds: Cloud Storage (GCS), Vertex AI Search, Cloud Run, Gemini API (deprecated)
+- And ADR-001 is rewritten: "Platform Choice: Google Cloud Platform"
+- And ADR for Vertex AI Search migration decision added (based on Story 7.2/7.5 findings)
+- And project structure reflects new api/ directory and removed src/ directory
+
+**AC-7.4.3: Epics Document Updates**
+- Given I update the epics document
+- When I revise affected stories
+- Then Story 2.2 (KV caching) is marked as obsolete/migrated
+- And Story 2.4 is updated: "R2 Storage" → "Cloud Storage (GCS) Upload"
+- And Epic 3 stories are rewritten for Vertex AI Search (not Google File Search)
+- And Epic 4 stories are updated for Cloud Run deployment
+- And Story 7.5 (Vertex AI Search migration) completion is documented
+
+**AC-7.4.4: README and Supporting Documentation**
+- And README.md reflects Google Cloud setup instructions
+- And Sprint Change Proposal is archived for historical reference
+- And MIGRATION-HANDOFF.md is preserved for future reference
+- And All code examples use new API endpoint URL
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <artifact path="docs/PRD.md" title="Product Requirements Document" section="Complete">Primary product specification requiring updates for Cloudflare AI Search → Vertex AI Search, cost model changes, and smart caching removal.</artifact>
+      <artifact path="docs/architecture.md" title="Architecture Document" section="Complete">Technical architecture requiring Decision Summary Table updates, ADR rewrites, and project structure diagrams for Google Cloud Platform migration.</artifact>
+      <artifact path="docs/epics.md" title="Epic Breakdown" section="Complete">Epic and story definitions requiring updates for migrated/obsolete stories and Epic 7 completion summary.</artifact>
+      <artifact path="README.md" title="Project README" section="Complete">Getting started guide requiring Google Cloud setup instructions and Cloud Run deployment steps.</artifact>
+      <artifact path="DEPLOYMENT.md" title="Deployment Guide" section="Complete">Production deployment procedures for Google Cloud Run and Vertex AI Search.</artifact>
+      <artifact path="docs/vertex-ai-migration-results.md" title="Vertex AI Search Migration Results" section="Complete">Story 7.5 completion results showing production-grade 99.9% SLA search implementation to be referenced in documentation updates.</artifact>
+      <artifact path="docs/google-file-search-testing-results.md" title="Google File Search Testing Results" section="Complete">Story 7.2 findings showing Google File Search limitations (503 errors on files >10KB) that led to Vertex AI Search migration.</artifact>
+      <artifact path="MIGRATION-HANDOFF.md" title="Migration Handoff Document" section="Complete">Historical migration context to be preserved with clear labeling as archived reference.</artifact>
+      <artifact path="CLOUD_RUN_DEPLOYMENT.md" title="Cloud Run Job Deployment" section="Complete">Cloud Run Job deployment documentation showing container ingestion infrastructure.</artifact>
+    </docs>
+    <code>
+      <artifact path="api/" kind="directory" symbol="Cloud Run API" lines="" reason="New api/ directory structure to be documented in architecture and project structure diagrams, replacing src/ Workers directory."/>
+      <artifact path="container/" kind="directory" symbol="Ingestion Container" lines="" reason="Container layer migrated to Google Cloud Storage (Story 7.1) - document in architecture data flow diagrams."/>
+      <artifact path=".env.example" kind="config" symbol="Environment Variables" lines="" reason="Requires updates for GCS_BUCKET_NAME, VERTEX_AI_SEARCH_ENGINE_ID, GOOGLE_PROJECT_ID, GOOGLE_APPLICATION_CREDENTIALS (replacing Cloudflare vars)."/>
+      <artifact path="package.json" kind="config" symbol="Dependencies" lines="" reason="Documentation should note removal of @cloudflare/workers and wrangler dependencies."/>
+    </code>
+    <dependencies>
+      <nodejs>
+        <package name="@google-cloud/discoveryengine" version="^2.5.2" reason="Vertex AI Search client library for Cloud Run API (Story 7.3)"/>
+        <package name="@google-cloud/storage" version="latest" reason="Cloud Storage client for container ingestion (Story 7.1)"/>
+        <package name="express" version="^4.18.2" reason="Cloud Run API framework (Story 7.3)"/>
+      </nodejs>
+      <python>
+        <package name="google-cloud-storage" version="latest" reason="Python client for Cloud Storage uploads in container layer"/>
+      </python>
+      <infrastructure>
+        <tool name="gcloud CLI" reason="Google Cloud deployment tooling to be documented in README and DEPLOYMENT.md"/>
+        <tool name="Vertex AI Search" reason="Production search service (99.9% SLA) replacing Cloudflare AI Search"/>
+        <tool name="Cloud Storage" reason="GCS bucket for gitingest summaries, replacing Cloudflare R2"/>
+        <tool name="Cloud Run" reason="Serverless container platform for API and ingestion jobs, replacing Cloudflare Workers"/>
+      </infrastructure>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+- **Documentation Accuracy**: All documentation must accurately reflect the final production architecture (Cloud Storage + Vertex AI Search + Cloud Run), not interim solutions
+- **Historical Preservation**: Preserve migration context documents (MIGRATION-HANDOFF.md, sprint change proposal) with clear "ARCHIVED" labeling
+- **Consistency Validation**: All Cloudflare/Workers/R2/KV references must be systematically updated to Google Cloud equivalents across all documentation
+- **Migration Timeline**: Document the complete migration path: Cloudflare → Google File Search (interim, deprecated) → Vertex AI Search (production)
+- **Cross-Reference Integrity**: Maintain accurate cross-references between PRD, architecture, epics, and README documentation
+- **Version Control**: Document migration rationale in ADRs for future reference and architectural decision tracking
+- **Story Dependencies**: Reference Story 7.2 findings (Google File Search limitations) and Story 7.5 resolution (Vertex AI Search migration) in all relevant documentation
+  </constraints>
+
+  <interfaces>
+    <!-- Documentation story has no code interfaces, but these are the key architectural components to document -->
+    <component name="Vertex AI Search API" kind="REST API" signature="POST /v1/projects/{project}/locations/{location}/collections/{collection}/engines/{engine}:search" path="docs/architecture.md">Production search service to be documented in architecture and PRD, replacing Cloudflare AI Search references.</component>
+    <component name="Cloud Run API" kind="HTTP Service" signature="https://{service}-{hash}.{region}.run.app" path="api/">Cloud Run API endpoint to be documented in README code examples and MCP configuration guides.</component>
+    <component name="Cloud Storage" kind="GCS Bucket" signature="gs://govreposcrape-summaries/" path="container/">GCS bucket for gitingest summaries to be documented in architecture data flow diagrams, replacing R2 references.</component>
+  </interfaces>
+
+  <tests>
+    <standards>Manual documentation review and validation. Documentation testing includes: (1) Accuracy verification - confirm all technical details match actual implementation, (2) Link validation - verify all external links are valid and current, (3) Code example validation - ensure all code snippets compile and run with new architecture, (4) Cross-reference check - verify all internal document references are accurate, (5) Peer review recommended for completeness and clarity.</standards>
+    <locations>No automated test locations - documentation story uses manual review process</locations>
+    <ideas>
+      <test id="AC-7.4.1">Verify PRD updates: (1) Search for "Cloudflare AI Search" - should be replaced with "Vertex AI Search", (2) Check lines 1798-1824 cost model reflects Google Cloud pricing (~$50-80/month), (3) Verify lines 614-628 smart caching section removed, (4) Confirm Google File Search noted as deprecated interim solution</test>
+      <test id="AC-7.4.2">Verify architecture updates: (1) Check Decision Summary Table removes R2/KV/Cloudflare AI Search/Vectorize, (2) Confirm table adds Cloud Storage/Vertex AI Search/Cloud Run, (3) Verify ADR-001 rewritten for Google Cloud Platform, (4) Check new ADR added for Vertex AI Search migration decision, (5) Verify project structure shows api/ directory (not src/)</test>
+      <test id="AC-7.4.3">Verify epics updates: (1) Confirm Story 2.2 marked "migrated" with Cloud Storage note, (2) Check Story 2.4 updated to "Cloud Storage (GCS) Upload", (3) Verify Epic 3 stories reference Vertex AI Search, (4) Check Epic 4 stories updated for Cloud Run, (5) Confirm Story 7.5 completion documented</test>
+      <test id="AC-7.4.4">Verify README and supporting docs: (1) Check README has Google Cloud setup instructions, (2) Verify environment variables updated (GCS_BUCKET_NAME, VERTEX_AI_SEARCH_ENGINE_ID, etc.), (3) Confirm code examples use Cloud Run API endpoint, (4) Verify sprint change proposal archived with historical note, (5) Check MIGRATION-HANDOFF.md preserved as historical reference</test>
+      <test id="Task-6">Consistency validation: (1) Search all .md files for "Cloudflare" and verify appropriate updates, (2) Search for "Workers" and confirm updates to "Cloud Run", (3) Search for "R2" and "KV" and verify Google equivalents, (4) Run spell check and grammar check on all updated documentation, (5) Verify all external links valid</test>
+    </ideas>
+  </tests>
+</story-context>

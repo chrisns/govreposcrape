@@ -4,8 +4,11 @@
 # Core library for generating LLM-ready code summaries
 gitingest
 
-# Google Generative AI SDK for File Search API
-google-generativeai>=0.3.0
+# Google Cloud Storage for gitingest summary upload (Vertex AI Search backend)
+google-cloud-storage>=2.10.0
+
+# Google GenAI SDK for File Search API (legacy - will be replaced by Vertex AI Search)
+google-genai>=0.3.0
 
 # HTTP library for fetching repos.json feed
 requests>=2.31.0
