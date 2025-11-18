@@ -48,7 +48,7 @@ steps:
       - '--service-account'
       - 'govreposcrape-api@$PROJECT_ID.iam.gserviceaccount.com'
       - '--set-env-vars'
-      - 'VERTEX_AI_SEARCH_ENGINE_ID=projects/1060386346356/locations/global/collections/default_collection/engines/govreposcrape-search,GOOGLE_PROJECT_ID=$PROJECT_ID,NODE_ENV=production,ALLOWED_ORIGINS=*'
+      - 'VERTEX_AI_SEARCH_ENGINE_ID=projects/1060386346356/locations/global/collections/default_collection/engines/govreposcrape-search,GOOGLE_PROJECT_ID=$PROJECT_ID,NODE_ENV=production,ALLOWED_ORIGINS=*,ENABLE_GEMINI_FEATURES=false'
       - '--port'
       - '8080'
       - '--memory'
