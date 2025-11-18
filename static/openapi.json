@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "govscraperepo MCP API",
-    "description": "Semantic search API for discovering code patterns and implementations across UK government repositories. This API provides MCP v2 protocol-compliant endpoints for searching through indexed government code repositories using natural language queries. Powered by Cloudflare AI Search for intelligent, context-aware code discovery.",
+    "description": "Semantic search API for discovering code patterns and implementations across UK government repositories. This API provides MCP v2 protocol-compliant endpoints for searching through indexed government code repositories using natural language queries. Powered by Google Cloud Vertex AI Search for intelligent, context-aware code discovery.",
     "version": "1.0.0",
     "contact": {
       "name": "GitHub Issues",
@@ -298,7 +298,7 @@
     "/mcp/health": {
       "get": {
         "summary": "Health check",
-        "description": "Check the health status of all service dependencies (KV, R2, Vectorize, D1, AI Search). Returns 200 OK when all services are accessible, 503 Service Unavailable when any service fails.",
+        "description": "Check the health status of all service dependencies (Cloud Storage, Vertex AI Search). Returns 200 OK when all services are accessible, 503 Service Unavailable when any service fails.",
         "operationId": "checkHealth",
         "tags": ["MCP API"],
         "responses": {
@@ -315,24 +315,12 @@
                     "value": {
                       "status": "healthy",
                       "services": {
-                        "kv": {
-                          "name": "KV Namespace",
+                        "gcs": {
+                          "name": "Cloud Storage",
                           "status": "ok"
                         },
-                        "r2": {
-                          "name": "R2 Bucket",
-                          "status": "ok"
-                        },
-                        "vectorize": {
-                          "name": "Vectorize Index",
-                          "status": "ok"
-                        },
-                        "d1": {
-                          "name": "D1 Database",
-                          "status": "ok"
-                        },
-                        "ai_search": {
-                          "name": "AI Search",
+                        "vertex_ai_search": {
+                          "name": "Vertex AI Search",
                           "status": "ok"
                         }
                       },
@@ -381,24 +369,12 @@
                       "details": {
                         "status": "unhealthy",
                         "services": {
-                          "kv": {
-                            "name": "KV Namespace",
+                          "gcs": {
+                            "name": "Cloud Storage",
                             "status": "ok"
                           },
-                          "r2": {
-                            "name": "R2 Bucket",
-                            "status": "ok"
-                          },
-                          "vectorize": {
-                            "name": "Vectorize Index",
-                            "status": "ok"
-                          },
-                          "d1": {
-                            "name": "D1 Database",
-                            "status": "ok"
-                          },
-                          "ai_search": {
-                            "name": "AI Search",
+                          "vertex_ai_search": {
+                            "name": "Vertex AI Search",
                             "status": "failed",
                             "error": "Connection timeout"
                           }
@@ -540,24 +516,12 @@
               "$ref": "#/components/schemas/ServiceStatus"
             },
             "example": {
-              "kv": {
-                "name": "KV Namespace",
+              "gcs": {
+                "name": "Cloud Storage",
                 "status": "ok"
               },
-              "r2": {
-                "name": "R2 Bucket",
-                "status": "ok"
-              },
-              "vectorize": {
-                "name": "Vectorize Index",
-                "status": "ok"
-              },
-              "d1": {
-                "name": "D1 Database",
-                "status": "ok"
-              },
-              "ai_search": {
-                "name": "AI Search",
+              "vertex_ai_search": {
+                "name": "Vertex AI Search",
                 "status": "ok"
               }
             }
@@ -578,7 +542,7 @@
           "name": {
             "type": "string",
             "description": "Human-readable service name",
-            "example": "AI Search"
+            "example": "Vertex AI Search"
           },
           "status": {
             "type": "string",

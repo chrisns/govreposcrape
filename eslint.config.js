@@ -36,7 +36,6 @@ export default [
 		ignores: [
 			"node_modules/",
 			"dist/",
-			".wrangler/",
 			"worker-configuration.d.ts",
 		],
 	},

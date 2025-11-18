@@ -241,7 +241,7 @@ def test_something(mock_ingest):
 
 ### Mock R2 client
 ```python
-@patch('r2_client.create_r2_client')
+@patch('gcs_client.create_gcs_client')
 @patch.dict(os.environ, {"R2_BUCKET": "test-bucket"})
 def test_r2(mock_create_client):
     mock_client = Mock()
@@ -260,7 +260,7 @@ def test_env():
 | Module | Target | Status |
 |--------|--------|--------|
 | ingest.py | 85% | ✅ |
-| r2_client.py | 82% | ✅ |
+| gcs_client.py | 82% | ✅ |
 | Truncation logic | 100% | ✅ |
 | Env handling | 95% | ✅ |
 

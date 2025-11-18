@@ -14,7 +14,7 @@ container/
 │       ├── gitingest-api-contract.test.py  # gitingest library API
 │       └── r2-upload.test.py           # R2 upload with truncation
 ├── test_ingest.py                      # Existing ingest tests
-├── test_r2_client.py                   # Existing R2 client tests
+├── test_gcs_client.py                   # Existing R2 client tests
 ├── test_orchestrator.py                # Existing orchestrator tests
 ├── pytest.ini                          # Pytest configuration
 └── TEST_README.md                      # This file
@@ -27,7 +27,7 @@ Fast tests with no external dependencies (all mocked):
 - `test/unit/summary-truncation.test.py` - Summary truncation at 512KB
 - `test/unit/env-config.test.py` - Environment variable parsing
 - `test_ingest.py` - Ingest pipeline logic
-- `test_r2_client.py` - R2 client operations
+- `test_gcs_client.py` - R2 client operations
 
 ### Integration Tests
 Tests that verify integration between components:
@@ -227,7 +227,7 @@ pytest -m network --run-network-tests
 | Module | Coverage | Status |
 |--------|----------|--------|
 | ingest.py | 85% | ✅ Good |
-| r2_client.py | 82% | ✅ Good |
+| gcs_client.py | 82% | ✅ Good |
 | orchestrator.py | TBD | 🔄 Pending |
 
 ## Common Test Patterns
@@ -252,7 +252,7 @@ def test_something(mock_ingest):
 ```python
 from unittest.mock import patch, Mock
 
-@patch('r2_client.create_r2_client')
+@patch('gcs_client.create_gcs_client')
 @patch.dict(os.environ, {"R2_BUCKET": "test-bucket", ...})
 def test_r2_upload(mock_create_client):
     mock_client = Mock()

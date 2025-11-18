@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { VertexSearchService, SearchResult } from "../services/vertexSearchService";
+import { geminiService } from "../services/geminiService";
 
 // Singleton instance of the search service
 let searchService: VertexSearchService | null = null;
@@ -126,11 +127,31 @@ export async function handleMCP(req: Request, res: Response): Promise<void> {
 				// Perform the search
 				const startTime = Date.now();
 				const service = getSearchService();
+
+				// Optional: Expand query with Gemini 3 if enabled
+				let actualQuery = query.trim();
+				if (geminiService.isEnabled()) {
+					const expandedQuery = await geminiService.expandQuery(actualQuery);
+					if (expandedQuery.expanded !== actualQuery) {
+						actualQuery = expandedQuery.expanded;
+						console.log(`Gemini 3 query expansion: "${query}" -> "${actualQuery}"`);
+					}
+				}
+
 				const searchResults = await service.search({
-					query: query.trim(),
+					query: actualQuery,
 					limit,
 				});
 				const searchTime = Date.now() - startTime;
+
+				// Generate Gemini 3 summary if enabled
+				let summary = "";
+				if (geminiService.isEnabled() && searchResults.length > 0) {
+					const geminiStart = Date.now();
+					summary = await geminiService.summarizeResults(searchResults as any);
+					const geminiTime = Date.now() - geminiStart;
+					console.log(`Gemini 3 summarization completed in ${geminiTime}ms`);
+				}
 
 				const formattedResults = searchResults
 					.map((result: SearchResult, index: number) => {
@@ -141,6 +162,14 @@ export async function handleMCP(req: Request, res: Response): Promise<void> {
 					})
 					.join("\n\n");
 
+				let responseText = `Found ${searchResults.length} UK government repositories matching "${query}" (searched in ${searchTime}ms):\n\n`;
+
+				if (summary) {
+					responseText += `🤖 **AI Summary (Gemini 3):**\n${summary}\n\n---\n\n`;
+				}
+
+				responseText += formattedResults;
+
 				response = {
 					jsonrpc: "2.0",
 					id: mcpRequest.id,
@@ -148,7 +177,7 @@ export async function handleMCP(req: Request, res: Response): Promise<void> {
 						content: [
 							{
 								type: "text",
-								text: `Found ${searchResults.length} UK government repositories matching "${query}" (searched in ${searchTime}ms):\n\n${formattedResults}`,
+								text: responseText,
 							},
 						],
 					},

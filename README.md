@@ -256,7 +256,7 @@ All examples handle these MCP API error codes:
 
 ### How Semantic Search Works
 
-Unlike keyword search, semantic search understands the *meaning* behind your query. Powered by Cloudflare AI Search (768-dimension embeddings), it finds relevant code even when exact keywords don't match.
+Unlike keyword search, semantic search understands the *meaning* behind your query. Powered by Google Cloud Vertex AI Search, it finds relevant code even when exact keywords don't match.
 
 **Good query** → `"UK government authentication middleware JWT token validation"`
 **Bad query** → `"auth"` (too vague, lacks context)
@@ -312,10 +312,10 @@ Each result includes:
 
 ## Overview
 
-govreposcrape is a Cloudflare Workers-based MCP API server that provides semantic code search capabilities across UK government public repositories. The project follows a write path/read path separation architecture:
+govreposcrape is a Google Cloud-based MCP API server that provides semantic code search capabilities across UK government public repositories. The project follows a write path/read path separation architecture:
 
-- **Write Path**: Python containerized ingestion pipeline processes repositories with smart caching (90%+ hit rate), stores summaries in R2
-- **Read Path**: TypeScript MCP v2 API exposes semantic search powered by Cloudflare AI Search
+- **Write Path**: Python containerized ingestion pipeline processes repositories, stores summaries in Cloud Storage
+- **Read Path**: TypeScript MCP v2 API exposes semantic search powered by Vertex AI Search
 
 ## Architecture
 
@@ -402,26 +402,31 @@ npm run dev
 npm start
 ```
 
-Workers will be available at `http://localhost:8787/`
+API will be available at `http://localhost:8080/`
 
 ## Project Structure
 
 ```
 govreposcrape/
-├── src/
-│   ├── index.ts              # Workers entry point
-│   ├── service-test.ts       # Service connectivity test (deployed separately)
-│   ├── ingestion/            # Epic 2: Data pipeline (future)
-│   ├── search/               # Epic 3: AI Search integration (future)
-│   ├── api/                  # Epic 4: MCP API (future)
-│   └── utils/                # Shared utilities (future)
-├── test/                     # Vitest tests
-├── docs/                     # Architecture and PRD documentation
-├── wrangler.jsonc           # Main Workers configuration
-├── wrangler-test.jsonc      # Service test configuration
-├── package.json
-├── tsconfig.json
-├── vitest.config.mts
+├── api/                      # Cloud Run API service
+│   ├── src/
+│   │   ├── index.ts         # Express app entry point
+│   │   ├── controllers/     # API route handlers
+│   │   ├── services/        # Business logic (Vertex AI Search client)
+│   │   └── middleware/      # Error handling, logging, timeout
+│   ├── test/                # Vitest integration tests
+│   ├── Dockerfile           # Cloud Run container
+│   ├── package.json
+│   └── tsconfig.json
+├── container/               # Cloud Run Jobs ingestion pipeline
+│   ├── ingest.py           # gitingest client
+│   ├── orchestrator.py     # Batch processing logic
+│   ├── gcs_client.py       # Cloud Storage client
+│   ├── Dockerfile          # Container image
+│   └── requirements.txt
+├── docs/                    # Architecture and PRD documentation
+├── scripts/                 # Deployment and utility scripts
+├── static/                  # OpenAPI specification
 └── README.md
 ```
 
@@ -444,14 +449,6 @@ See [Definition of Done](.bmad/definition-of-done.md) for complete criteria.
 2. Edit code (auto-reload enabled)
 3. Run tests: `npm test` (watch mode: `npm test -- --watch`)
 4. Test API: `curl http://localhost:8787/`
-
-### Type Generation
-
-After modifying `wrangler.jsonc` service bindings:
-
-```bash
-npm run cf-typegen
-```
 
 ### Testing
 
@@ -485,7 +482,7 @@ See [TESTING.md](TESTING.md) for complete testing guide and [Integration Testing
 
 ### Deployment
 
-The project supports separate staging and production environments with isolated service bindings.
+The project is deployed on Google Cloud Platform using Cloud Run for the API and Cloud Run Jobs for ingestion.
 
 #### Deployment Workflow
 
@@ -495,49 +492,49 @@ npm run lint
 npm run format:check
 
 # 2. Run all tests
-npm test
+cd api && npm test
 
-# 3. Deploy to staging
-npm run deploy:staging
+# 3. Deploy API to Cloud Run
+cd api
+./deploy-setup.sh
 
-# 4. Validate staging deployment
-curl https://govreposcrape-staging.chrisns.workers.dev/health
-
-# 5. Deploy to production (after staging validation)
-npm run deploy:production
-
-# 6. Verify production deployment
-curl https://govreposcrape-production.chrisns.workers.dev/health
+# 4. Verify production deployment
+curl https://govreposcrape-api-1060386346356.us-central1.run.app/mcp/health
 ```
 
-#### Environment Configuration
+#### Infrastructure Components
 
-Each environment has separate service binding IDs configured in `wrangler.jsonc`:
+**Cloud Run API Service:**
+- Service: `govreposcrape-api`
+- Region: `us-central1`
+- Runtime: Node.js 20
+- Auto-scaling: 0-10 instances
+- Authentication: Allow unauthenticated (public API)
 
-**Staging** (`npm run deploy:staging`)
-- Worker: `govreposcrape-staging`
-- KV Namespace: `staging-kv-namespace-id-placeholder` (to be provisioned)
-- D1 Database: `staging-d1-database-id-placeholder` (to be provisioned)
-- R2 Bucket: `govreposcrape-gitingest-staging`
-- Vectorize Index: `govscraperepo-code-index-staging`
+**Cloud Storage:**
+- Bucket: `govreposcrape-summaries`
+- Location: `US` (multi-region)
+- Contains: gitingest summaries as markdown files
 
-**Production** (`npm run deploy:production`)
-- Worker: `govreposcrape-production`
-- KV Namespace: `REDACTED_CLOUDFLARE_KV_ID`
-- D1 Database: `REDACTED_CLOUDFLARE_D1_ID`
-- R2 Bucket: `govreposcrape-gitingest`
-- Vectorize Index: `govscraperepo-code-index`
+**Vertex AI Search:**
+- Engine ID: `govreposcrape-search`
+- Location: `global`
+- Data source: Auto-indexed from Cloud Storage bucket
 
-**Default** (`npm run deploy`)
-- Uses default bindings (same as production)
+**Cloud Run Jobs (Ingestion):**
+- Job: `govreposcrape-ingestion`
+- Schedule: Daily
+- Runtime: Python 3.11
+
+For detailed deployment instructions, see [DEPLOYMENT.md](DEPLOYMENT.md) and [CLOUD_RUN_DEPLOYMENT.md](CLOUD_RUN_DEPLOYMENT.md).
 
 #### Health Check Endpoint
 
-All deployments include a `/health` endpoint that validates connectivity to all service bindings:
+The API includes a `/mcp/health` endpoint:
 
 ```bash
 # Check service health
-curl https://govreposcrape-production.chrisns.workers.dev/health
+curl https://govreposcrape-api-1060386346356.us-central1.run.app/mcp/health
 ```
 
 **Healthy Response (200 OK):**
@@ -545,12 +542,10 @@ curl https://govreposcrape-production.chrisns.workers.dev/health
 {
   "status": "healthy",
   "services": {
-    "kv": { "name": "KV Namespace", "status": "ok" },
-    "r2": { "name": "R2 Bucket", "status": "ok" },
-    "vectorize": { "name": "Vectorize Index", "status": "ok" },
-    "d1": { "name": "D1 Database", "status": "ok" }
+    "gcs": { "name": "Cloud Storage", "status": "ok" },
+    "vertex_ai_search": { "name": "Vertex AI Search", "status": "ok" }
   },
-  "timestamp": "2025-11-12T10:00:00.000Z"
+  "timestamp": "2025-11-18T10:00:00.000Z"
 }
 ```
 
@@ -564,63 +559,64 @@ curl https://govreposcrape-production.chrisns.workers.dev/health
   "details": {
     "status": "unhealthy",
     "services": {
-      "kv": { "name": "KV Namespace", "status": "failed", "error": "Connection timeout" },
-      "r2": { "name": "R2 Bucket", "status": "ok" },
-      "vectorize": { "name": "Vectorize Index", "status": "ok" },
-      "d1": { "name": "D1 Database", "status": "ok" }
+      "gcs": { "name": "Cloud Storage", "status": "ok" },
+      "vertex_ai_search": { "name": "Vertex AI Search", "status": "failed", "error": "Connection timeout" }
     },
-    "timestamp": "2025-11-12T10:00:00.000Z"
+    "timestamp": "2025-11-18T10:00:00.000Z"
   }
 }
 ```
 
 #### Environment Variables
 
-Create environment-specific files for sensitive configuration:
+Environment variables are managed through Google Cloud Secret Manager and Cloud Run environment configuration:
 
 ```bash
-# Development (local)
-.env
-
-# Staging secrets (deployed with wrangler)
-.env.staging
-
-# Production secrets (deployed with wrangler)
-.env.production
+# API environment variables (see api/.env.example)
+GOOGLE_PROJECT_ID=govreposcrape
+VERTEX_AI_SEARCH_ENGINE_ID=projects/1060386346356/locations/global/...
+PORT=8080
+NODE_ENV=production
 ```
 
-**Never commit these files** - they're excluded in `.gitignore`.
+**Never commit `.env` files** - they're excluded in `.gitignore`.
 
-Use wrangler secrets for sensitive values in production:
+For deployment, set environment variables via Cloud Run:
 
 ```bash
-# Set secrets for production
-echo "your-secret-value" | npx wrangler secret put SECRET_NAME --env production
+# Set environment variables for Cloud Run
+gcloud run services update govreposcrape-api \
+  --set-env-vars="GOOGLE_PROJECT_ID=govreposcrape" \
+  --region=us-central1
 
-# Set secrets for staging
-echo "your-secret-value" | npx wrangler secret put SECRET_NAME --env staging
+# Or use Secret Manager for sensitive values
+echo -n "secret-value" | gcloud secrets create SECRET_NAME --data-file=-
+gcloud run services update govreposcrape-api \
+  --set-secrets=SECRET_NAME=SECRET_NAME:latest \
+  --region=us-central1
 ```
 
 #### Troubleshooting Deployments
 
 **Issue: Health check returns 503**
-- Solution: Verify service bindings in `wrangler.jsonc` match provisioned resource IDs
-- Check: Run `npx wrangler d1 list`, `npx wrangler kv:namespace list`, etc.
+- Solution: Verify Vertex AI Search engine is accessible
+- Check: `gcloud alpha discovery-engine list-engines`
 
-**Issue: Deployment fails with "binding not found"**
-- Solution: Ensure service resources are created before deployment
-- Create resources: `npx wrangler d1 create`, `npx wrangler kv:namespace create`, etc.
+**Issue: Deployment fails with "permission denied"**
+- Solution: Ensure service account has required IAM roles
+- Grant roles: `roles/discoveryengine.viewer`, `roles/storage.objectViewer`
 
-**Issue: TypeScript errors after wrangler.jsonc changes**
-- Solution: Regenerate types with `npm run cf-typegen`
+**Issue: TypeScript errors**
+- Solution: Run `npm run type-check` in the `api/` directory
+- Verify: Dependencies are up to date with `npm install`
 
 **Issue: Tests pass locally but deployment fails**
-- Solution: Check compatibility_date in `wrangler.jsonc` matches runtime
-- Verify: Service bindings exist in the target environment (staging/production)
+- Solution: Check that environment variables are set in Cloud Run
+- Verify: Service account authentication is configured correctly
 
 ## Logging
 
-govreposcrape uses structured JSON logging for all operations, optimized for Cloudflare Workers log streaming and distributed tracing.
+govreposcrape uses structured JSON logging for all operations, integrated with Google Cloud Logging for centralized log management and distributed tracing.
 
 ### Log Format
 
@@ -965,7 +961,9 @@ Track key metrics and KPIs to ensure the govscraperepo platform meets MVP succes
 
 ### Key Performance Indicators (KPIs)
 
-**MVP Success Metrics** (tracked via Workers Analytics + custom metrics):
+> **Note:** This section is being updated for Google Cloud Monitoring. Legacy Cloudflare Workers Analytics references below will be replaced with Cloud Monitoring equivalents.
+
+**MVP Success Metrics** (tracked via Google Cloud Monitoring + custom metrics):
 
 | Metric | Target | Measurement | Dashboard Location |
 |--------|--------|-------------|-------------------|

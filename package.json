@@ -4,13 +4,7 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"deploy": "wrangler deploy",
-		"deploy:staging": "wrangler deploy --env staging",
-		"deploy:production": "wrangler deploy --env production",
-		"dev": "wrangler dev",
-		"start": "wrangler dev",
 		"test": "vitest",
-		"cf-typegen": "wrangler types",
 		"type-check": "tsc --noEmit",
 		"lint": "eslint src/**/*.ts",
 		"lint:fix": "eslint --fix src/**/*.ts",
@@ -33,7 +27,6 @@
 		"prepare": "husky"
 	},
 	"devDependencies": {
-		"@cloudflare/vitest-pool-workers": "^0.8.19",
 		"@openapitools/openapi-generator-cli": "^2.25.0",
 		"@typescript-eslint/eslint-plugin": "^8.46.4",
 		"@typescript-eslint/parser": "^8.46.4",
@@ -43,8 +36,7 @@
 		"prettier": "^3.6.2",
 		"tsx": "^4.20.6",
 		"typescript": "^5.5.2",
-		"vitest": "~3.2.0",
-		"wrangler": "^4.47.0"
+		"vitest": "~3.2.0"
 	},
 	"dependencies": {
 		"@modelcontextprotocol/sdk": "^1.22.0"

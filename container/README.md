@@ -121,8 +121,8 @@ docker run govreposcrape-ingest \
 
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `R2_BUCKET` | Cloudflare R2 bucket name | Yes |
-| `R2_ENDPOINT` | R2 endpoint URL | Yes |
+| `R2_BUCKET` | Cloudflare Cloud Storage bucket name | Yes |
+| `R2_ENDPOINT` | GCS endpoint URL | Yes |
 | `R2_ACCESS_KEY` | R2 access key ID | Yes |
 | `R2_SECRET_KEY` | R2 secret access key | Yes |
 
@@ -253,14 +253,14 @@ pytest container/
 pytest container/test_ingest.py
 
 # Run R2 client tests only
-pytest container/test_r2_client.py
+pytest container/test_gcs_client.py
 
 # Run with coverage
-pytest --cov=ingest --cov=r2_client --cov-report=html container/
+pytest --cov=ingest --cov=gcs_client --cov-report=html container/
 
 # Run specific test
 pytest container/test_ingest.py::TestGitingestProcessing::test_successful_processing
-pytest container/test_r2_client.py::TestR2Upload::test_successful_upload
+pytest container/test_gcs_client.py::TestR2Upload::test_successful_upload
 ```
 
 ### Test Coverage
@@ -278,7 +278,7 @@ pytest container/test_r2_client.py::TestR2Upload::test_successful_upload
 - ✅ Statistics tracking (successful, failed, average time)
 - ✅ CLI interface (argument parsing, exit codes)
 
-**R2 Storage (test_r2_client.py - Story 2.4):**
+**R2 Storage (test_gcs_client.py - Story 2.4):**
 - ✅ R2 upload with correct object path (gitingest/{org}/{repo}/summary.txt)
 - ✅ Custom metadata attachment (pushedAt, url, processedAt)
 - ✅ Content-type validation (text/plain)
@@ -384,7 +384,7 @@ const result = await invokeContainer({
 Summaries are stored in R2 with this path structure:
 
 ```
-R2 Bucket: govreposcrape-gitingest
+Cloud Storage: govreposcrape-gitingest
 ├── gitingest/
 │   ├── alphagov/
 │   │   └── govuk-frontend/
@@ -595,7 +595,7 @@ Main CLI entrypoint for single-repository gitingest processing. Handles reposito
 **Classes:**
 - `ProcessingStats` - Track processing statistics with batch context (extended in Story 2.5)
 
-### r2_client.py (Story 2.4)
+### gcs_client.py (Story 2.4)
 
 R2 storage client for uploading/retrieving gitingest summaries with custom metadata.
 
@@ -604,7 +604,7 @@ R2 storage client for uploading/retrieving gitingest summaries with custom metad
 - `get_summary(org, repo)` - Retrieve summary from R2
 - `upload_with_retry(org, repo, content, metadata)` - Upload with retry logic
 - `validate_environment()` - Validate required R2 environment variables
-- `create_r2_client()` - Create boto3 S3 client configured for R2
+- `create_gcs_client()` - Create boto3 S3 client configured for R2
 
 **Classes:**
 - `UploadStats` - Track upload statistics (uploaded, failed, storage size)

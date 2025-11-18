@@ -188,7 +188,7 @@ mock_ingest.return_value = IngestionResult(
 
 ### 2. Mocking R2 Client
 ```python
-@patch('r2_client.create_r2_client')
+@patch('gcs_client.create_gcs_client')
 @patch.dict(os.environ, {"R2_BUCKET": "test-bucket", ...})
 def test_r2_upload(mock_create_client):
     mock_client = Mock()
@@ -292,7 +292,7 @@ pytest test/unit/summary-truncation.test.py::TestSummaryTruncation::test_truncat
 
 The new test suite integrates with existing tests:
 - `test_ingest.py` - Existing ingest tests (37 test methods)
-- `test_r2_client.py` - Existing R2 client tests (25 test methods)
+- `test_gcs_client.py` - Existing R2 client tests (25 test methods)
 - `test_orchestrator.py` - Existing orchestrator tests
 
 **Total Test Suite**:
