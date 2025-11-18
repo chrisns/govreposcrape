@@ -108,7 +108,7 @@ so that **I get relevant results and understand how to use the platform effectiv
 - **Cross-reference Pattern**: Examples reference each other and link to docs
 
 **Technical Highlights:**
-- All examples use production endpoint: `https://govreposcrape.cloud.cns.me`
+- All examples use production endpoint: `https://govreposcrape-api-1060386346356.us-central1.run.app`
 - MCP API constraints documented: query 3-500 chars, limit 1-20
 - Realistic queries based on PRD use cases already established
 - Environment variable support pattern: `MCP_API_URL` for flexibility

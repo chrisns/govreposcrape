@@ -1379,7 +1379,7 @@ The govscraperepo planning demonstrates exceptional quality across multiple dime
 - Rate limiting deferred: "leave it up to cloudflare" → No custom rate limiting story
 - Health checks removed: "managed service from cloudflare" → Simpler Epic 4
 - Metadata typed: User corrected `any` to `RepoMetadata` interface
-- URL updated: "url will be govreposcrape.cloud.cns.me" → All docs updated
+- URL updated: "url will be govreposcrape-api-1060386346356.us-central1.run.app" → All docs updated
 
 **Impact:**
 - Reduced Epic 4 from 6 stories to 3 stories (50% complexity reduction)

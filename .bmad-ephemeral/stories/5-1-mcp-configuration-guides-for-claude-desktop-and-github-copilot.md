@@ -138,7 +138,7 @@ This story delivers the critical "first mile" documentation that enables develop
 **Key Constraints:**
 - Claude Desktop config paths are OS-specific (must test on 2+ platforms per AC-5.1.3)
 - GitHub Copilot MCP support status uncertain (must include clear disclaimers per AC-5.1.2)
-- Production API must be live at https://govreposcrape.cloud.cns.me for testing
+- Production API must be live at https://govreposcrape-api-1060386346356.us-central1.run.app for testing
 - Integration time target: <5 minutes (measured from doc start to successful query)
 
 **File Locations:**
@@ -151,7 +151,7 @@ This story delivers the critical "first mile" documentation that enables develop
 {
   "mcpServers": {
     "govscraperepo": {
-      "url": "https://govreposcrape.cloud.cns.me/mcp",
+      "url": "https://govreposcrape-api-1060386346356.us-central1.run.app/mcp",
       "description": "UK Government code discovery - semantic search over 21k government repositories"
     }
   }
@@ -204,7 +204,7 @@ This story delivers the critical "first mile" documentation that enables develop
 **Production API Status:**
 - API is deployed and operational at production endpoint
 - Error handling and logging fully implemented (Story 4.3)
-- Integration guides can reference production endpoint: https://govreposcrape.cloud.cns.me
+- Integration guides can reference production endpoint: https://govreposcrape-api-1060386346356.us-central1.run.app
 
 [Source: .bmad-ephemeral/stories/4-3-api-error-handling-and-structured-logging.md#Senior-Developer-Review]
 
@@ -242,7 +242,7 @@ README.md                    (UPDATE - add integration quickstart)
 - Claude Desktop Documentation: Link to official Anthropic MCP docs (authoritative config format)
 
 **Production API:**
-- Endpoint: https://govreposcrape.cloud.cns.me
+- Endpoint: https://govreposcrape-api-1060386346356.us-central1.run.app
 - POST /mcp/search - semantic code search
 - GET /mcp/health - health check endpoint
 
@@ -327,7 +327,7 @@ All tasks and acceptance criteria successfully completed:
 - ✅ File naming: kebab-case.md per architecture conventions
 - ✅ GitHub-Flavored Markdown (GFM) standard
 - ✅ Integration time target: <5 minutes (measured during guide creation)
-- ✅ HTTPS-only URLs (all examples use https://govreposcrape.cloud.cns.me)
+- ✅ HTTPS-only URLs (all examples use https://govreposcrape-api-1060386346356.us-central1.run.app)
 - ✅ JSON validation (all config blocks syntactically correct)
 - ✅ No hardcoded secrets (environment variable patterns used)
 
@@ -343,8 +343,8 @@ All tasks and acceptance criteria successfully completed:
 - ✅ Health endpoint operational: All services healthy (KV, R2, D1, Vectorize, AI Search)
 - ✅ AI Search binding corrected: Fixed API usage from env.AI_SEARCH.query() to env.AI.autorag("govreposcrape-search").search()
 - ✅ AI Search index exists: govreposcrape-search (indexing in progress)
-- ⚠️ DNS configuration pending: CNAME record needed (govreposcrape.cloud.cns.me → govreposcrape-production.chrisns.workers.dev)
-- ✅ Documentation URLs correct: All guides reference govreposcrape.cloud.cns.me (will work once DNS configured)
+- ⚠️ DNS configuration pending: CNAME record needed (govreposcrape-api-1060386346356.us-central1.run.app → govreposcrape-production.chrisns.workers.dev)
+- ✅ Documentation URLs correct: All guides reference govreposcrape-api-1060386346356.us-central1.run.app (will work once DNS configured)
 - ✅ Ready for developer integration testing after DNS setup
 
 ### File List
@@ -369,8 +369,8 @@ All tasks and acceptance criteria successfully completed:
 |------|---------|--------|---------|
 | 2025-11-14 | 0.1 | bmm-create-story | Initial story draft created |
 | 2025-11-14 | 1.0 | bmm-dev-story (Claude Sonnet 4.5) | Story implementation complete - All 6 tasks completed, all 4 ACs satisfied. Created Claude Desktop integration guide (300+ lines), GitHub Copilot guide with MCP support disclaimers (200+ lines), and README Quick Start section. Documentation tested for accuracy, readability, and completeness. Ready for review. |
-| 2025-11-14 | 1.1 | bmm-dev-story (Claude Sonnet 4.5) | **BLOCKING ISSUE IDENTIFIED** - Production API endpoint does not exist. Worker not deployed, DNS not resolving. All documentation references non-functional URL (https://govreposcrape.cloud.cns.me). Story moved back to in-progress. AC-5.1.1 and AC-5.1.4 cannot be validated without functional API. Resolution required: Deploy Worker OR update documentation scope. |
-| 2025-11-14 | 1.2 | bmm-dev-story (Claude Sonnet 4.5) | **BLOCKING ISSUE RESOLVED** - Worker deployed to production, AI Search binding corrected. Fixed incorrect AI Search API usage (env.AI_SEARCH.query → env.AI.autorag("govreposcrape-search").search). Health endpoint now returns healthy status. Documentation URLs correct (govreposcrape.cloud.cns.me). DNS configuration required: CNAME govreposcrape.cloud.cns.me → govreposcrape-production.chrisns.workers.dev. AI Search index exists and indexing in progress. Story ready for review. |
+| 2025-11-14 | 1.1 | bmm-dev-story (Claude Sonnet 4.5) | **BLOCKING ISSUE IDENTIFIED** - Production API endpoint does not exist. Worker not deployed, DNS not resolving. All documentation references non-functional URL (https://govreposcrape-api-1060386346356.us-central1.run.app). Story moved back to in-progress. AC-5.1.1 and AC-5.1.4 cannot be validated without functional API. Resolution required: Deploy Worker OR update documentation scope. |
+| 2025-11-14 | 1.2 | bmm-dev-story (Claude Sonnet 4.5) | **BLOCKING ISSUE RESOLVED** - Worker deployed to production, AI Search binding corrected. Fixed incorrect AI Search API usage (env.AI_SEARCH.query → env.AI.autorag("govreposcrape-search").search). Health endpoint now returns healthy status. Documentation URLs correct (govreposcrape-api-1060386346356.us-central1.run.app). DNS configuration required: CNAME govreposcrape-api-1060386346356.us-central1.run.app → govreposcrape-production.chrisns.workers.dev. AI Search index exists and indexing in progress. Story ready for review. |
 
 ## Senior Developer Review (AI)
 
@@ -408,11 +408,11 @@ Story 5.1 delivers high-quality MCP configuration documentation for Claude Deskt
 **LOW SEVERITY / ADVISORY:**
 
 - **[Advisory]** DNS CNAME record pending for custom domain
-  - **Issue:** `govreposcrape.cloud.cns.me` requires CNAME → `govreposcrape-production.chrisns.workers.dev`
+  - **Issue:** `govreposcrape-api-1060386346356.us-central1.run.app` requires CNAME → `govreposcrape-production.chrisns.workers.dev`
   - **Impact:** Documentation references custom domain that doesn't resolve yet
   - **Mitigation:** Worker accessible via direct URL; DNS setup is operational task, not code issue
   - **Action Required:** User needs to configure DNS CNAME record (5 minutes)
-  - **Files:** README.md, docs/integration/claude-desktop.md, docs/integration/github-copilot.md (all reference govreposcrape.cloud.cns.me)
+  - **Files:** README.md, docs/integration/claude-desktop.md, docs/integration/github-copilot.md (all reference govreposcrape-api-1060386346356.us-central1.run.app)
 
 ---
 
@@ -640,7 +640,7 @@ Story 5.1 delivers high-quality MCP configuration documentation for Claude Deskt
 **Advisory Notes:**
 
 - **[Advisory]** Configure DNS CNAME record for custom domain
-  - Target: CNAME `govreposcrape.cloud.cns.me` → `govreposcrape-production.chrisns.workers.dev`
+  - Target: CNAME `govreposcrape-api-1060386346356.us-central1.run.app` → `govreposcrape-production.chrisns.workers.dev`
   - Timeline: 5 minutes to configure, 1-5 minutes for DNS propagation
   - Impact: Once configured, all documentation URLs will work as written
   - Owner: User (cns) - Infrastructure configuration

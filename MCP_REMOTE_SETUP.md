@@ -113,7 +113,7 @@ This will:
 
 1. Start a new Claude Code session in this directory:
    ```bash
-   cd /Users/cns/httpdocs/cddo/govreposcrape
+   cd ~/govreposcrape
    claude-code
    ```
 

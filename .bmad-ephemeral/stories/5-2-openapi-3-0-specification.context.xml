@@ -46,7 +46,7 @@
       - Generates working TypeScript/Python clients via openapi-generator
       AND generated clients compile without errors
       AND generated clients successfully call production API
-      PASS CRITERIA: Generated TypeScript client executes successful query against https://govreposcrape.cloud.cns.me
+      PASS CRITERIA: Generated TypeScript client executes successful query against https://govreposcrape-api-1060386346356.us-central1.run.app
     </ac>
 
     <ac id="AC-5.2.3" title="OpenAPI Metadata and Documentation">
@@ -57,7 +57,7 @@
       - Description: Clear explanation of UK government code search purpose
       - Version: "1.0.0"
       - Contact info: Link to GitHub repository issues
-      - Server URL: https://govreposcrape.cloud.cns.me
+      - Server URL: https://govreposcrape-api-1060386346356.us-central1.run.app
       - Security section: Explicit note that no authentication required
       AND all schemas have descriptions and examples
       PASS CRITERIA: Spec provides sufficient context for developers to understand API without external documentation
@@ -114,7 +114,7 @@
         <path>README.md</path>
         <title>govscraperepo - UK Government Code Discovery via MCP API</title>
         <section>API Endpoints and Documentation</section>
-        <snippet>Production endpoint: https://govreposcrape.cloud.cns.me. MCP v2 protocol compliant. POST /mcp/search for semantic code search, GET /mcp/health for health checks. No authentication required (open access). Integration guides available in docs/integration/.</snippet>
+        <snippet>Production endpoint: https://govreposcrape-api-1060386346356.us-central1.run.app. MCP v2 protocol compliant. POST /mcp/search for semantic code search, GET /mcp/health for health checks. No authentication required (open access). Integration guides available in docs/integration/.</snippet>
       </doc>
     </docs>
 
@@ -156,7 +156,7 @@
         <kind>Cloudflare Workers configuration</kind>
         <symbol>Production environment, service bindings</symbol>
         <lines>Complete file</lines>
-        <reason>Production configuration showing deployed endpoint URL and service bindings. Use this to confirm server URL in OpenAPI spec: https://govreposcrape.cloud.cns.me. Shows all service bindings (KV, R2, D1, Vectorize, AI) that appear in health check responses.</reason>
+        <reason>Production configuration showing deployed endpoint URL and service bindings. Use this to confirm server URL in OpenAPI spec: https://govreposcrape-api-1060386346356.us-central1.run.app. Shows all service bindings (KV, R2, D1, Vectorize, AI) that appear in health check responses.</reason>
       </file>
     </code>
 
@@ -177,7 +177,7 @@
     - **Schema Alignment**: OpenAPI schemas MUST match TypeScript types in src/types.ts exactly - every field, every type, required vs optional
     - **Validation Required**: Spec must pass `openapi-generator-cli validate` without errors before completion
     - **Code Generation Test**: Must generate TypeScript client with openapi-generator-cli and verify it compiles
-    - **Production API Test**: Generated client must successfully call production API (https://govreposcrape.cloud.cns.me)
+    - **Production API Test**: Generated client must successfully call production API (https://govreposcrape-api-1060386346356.us-central1.run.app)
     - **HTTPS-Only**: Server URL must use HTTPS protocol (per NFR-5.6)
     - **No Authentication**: Security section must explicitly state "No authentication required" (public API)
     - **File Locations**: OpenAPI spec → static/openapi.json, Route handler → src/index.ts
@@ -190,7 +190,7 @@
     <interface>
       <name>POST /mcp/search</name>
       <kind>REST endpoint</kind>
-      <signature>POST https://govreposcrape.cloud.cns.me/mcp/search
+      <signature>POST https://govreposcrape-api-1060386346356.us-central1.run.app/mcp/search
 Request: { query: string (3-500 chars), limit?: number (1-20, default 5) }
 Response 200 OK: { results: SearchResult[], took_ms: number }
 Response 400 Bad Request: { error: { code: "INVALID_QUERY", message: string } }
@@ -202,7 +202,7 @@ SearchResult: { repo_url, repo_org, repo_name, snippet, last_updated, language?,
     <interface>
       <name>GET /mcp/health</name>
       <kind>REST endpoint</kind>
-      <signature>GET https://govreposcrape.cloud.cns.me/mcp/health
+      <signature>GET https://govreposcrape-api-1060386346356.us-central1.run.app/mcp/health
 Response 200 OK: { status: "healthy", services: { kv, r2, vectorize, d1, ai_search }, timestamp: string }
 Response 503 Service Unavailable: { error: { code: "SERVICE_UNAVAILABLE", message: string }, details: { status: "unhealthy", services: {...}, timestamp: string } }</signature>
       <path>src/api/health.ts</path>
@@ -211,7 +211,7 @@ Response 503 Service Unavailable: { error: { code: "SERVICE_UNAVAILABLE", messag
     <interface>
       <name>GET /openapi.json (to be created)</name>
       <kind>Static file endpoint</kind>
-      <signature>GET https://govreposcrape.cloud.cns.me/openapi.json
+      <signature>GET https://govreposcrape-api-1060386346356.us-central1.run.app/openapi.json
 Response 200 OK: OpenAPI 3.0 specification JSON
 Content-Type: application/json
 CORS: Access-Control-Allow-Origin: *</signature>
@@ -283,7 +283,7 @@ ErrorResponse: { error: { code: string; message: string; retry_after?: number } 
         - Verify info.title === "govscraperepo MCP API"
         - Verify info.version === "1.0.0"
         - Verify info.contact present with link to GitHub issues
-        - Verify servers[0].url === "https://govreposcrape.cloud.cns.me"
+        - Verify servers[0].url === "https://govreposcrape-api-1060386346356.us-central1.run.app"
         - Verify security section notes "No authentication required"
         - Check all schemas have description fields
       </idea>

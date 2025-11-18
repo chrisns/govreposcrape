@@ -15,7 +15,7 @@
   },
   "servers": [
     {
-      "url": "https://govreposcrape.cloud.cns.me",
+      "url": "https://govreposcrape-api-1060386346356.us-central1.run.app",
       "description": "Production API server"
     }
   ],

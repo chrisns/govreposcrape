@@ -131,7 +131,7 @@ This story provides copy-paste code examples and testing tools that enable devel
 **Integration Examples Strategy** - This story creates developer-friendly code examples and testing tools, not production code. Focus on clarity, copy-paste readiness, and realistic use cases.
 
 **Key Constraints:**
-- Examples must use production endpoint: https://govreposcrape.cloud.cns.me
+- Examples must use production endpoint: https://govreposcrape-api-1060386346356.us-central1.run.app
 - Each example must be self-contained and runnable without setup
 - Testing tools must work across macOS, Linux, Windows (where applicable)
 - All examples must handle errors gracefully with clear messages
@@ -174,7 +174,7 @@ This story provides copy-paste code examples and testing tools that enable devel
 **From Story 5-2-openapi-3-0-specification (Status: done)**
 
 **Production Endpoint Verified Working:**
-- Production endpoint: https://govreposcrape.cloud.cns.me
+- Production endpoint: https://govreposcrape-api-1060386346356.us-central1.run.app
 - Local testing confirmed: http://localhost:8788 works for development
 - POST /mcp/search operational with validation (3-500 char queries, 1-20 limit)
 - GET /mcp/health confirmed working - all services healthy
@@ -204,7 +204,7 @@ This story provides copy-paste code examples and testing tools that enable devel
 
 **Advisory from Story 5.2:**
 - SSL certificate for custom domain pending (use .workers.dev domain if needed for testing)
-- For examples, use official custom domain URL: https://govreposcrape.cloud.cns.me
+- For examples, use official custom domain URL: https://govreposcrape-api-1060386346356.us-central1.run.app
 
 [Source: stories/5-2-openapi-3-0-specification.md#Senior-Developer-Review]
 
@@ -239,9 +239,9 @@ govreposcrape/
 - MCP Configuration Guides: `docs/integration/claude-desktop.md` (Story 5.1 patterns)
 
 **API Endpoints:**
-- POST /mcp/search: https://govreposcrape.cloud.cns.me/mcp/search
-- GET /mcp/health: https://govreposcrape.cloud.cns.me/mcp/health
-- GET /openapi.json: https://govreposcrape.cloud.cns.me/openapi.json
+- POST /mcp/search: https://govreposcrape-api-1060386346356.us-central1.run.app/mcp/search
+- GET /mcp/health: https://govreposcrape-api-1060386346356.us-central1.run.app/mcp/health
+- GET /openapi.json: https://govreposcrape-api-1060386346356.us-central1.run.app/openapi.json
 
 **Example Libraries:**
 - cURL: Standard Unix tool
@@ -310,7 +310,7 @@ Created comprehensive integration examples and testing tools for govscraperepo M
 - Examples directory well-organized (AC-5.3.3)
 - Testing tools provide actionable debugging output (AC-5.3.4)
 
-**Note:** Production API SSL configuration pending (custom domain SSL handshake error). Examples use correct production URL (https://govreposcrape.cloud.cns.me) and include environment variable support for local testing. This is a known infrastructure issue tracked separately.
+**Note:** Production API SSL configuration pending (custom domain SSL handshake error). Examples use correct production URL (https://govreposcrape-api-1060386346356.us-central1.run.app) and include environment variable support for local testing. This is a known infrastructure issue tracked separately.
 
 ### File List
 
@@ -361,7 +361,7 @@ The code is production-ready, follows project conventions, demonstrates best pra
 
 | AC# | Description | Status | Evidence |
 |-----|-------------|--------|----------|
-| **AC-5.3.1** | Code examples for cURL, TypeScript/JavaScript, Python with basic query, result handling, error handling, copy-paste ready | ✅ IMPLEMENTED | **cURL:** examples/curl.sh:36-95 (successful search), :101-137 (query too short), :143-173 (limit validation), :179-204 (health check)<br>**Node.js:** examples/node.js:38-82 (searchCode function), :154-164 (successful query), :168-177 (error handling)<br>**Python:** examples/python.py:100-167 (search_code function), :231-242 (successful query), :246-256 (error handling)<br>All use production endpoint (govreposcrape.cloud.cns.me), all executable with proper shebang and permissions |
+| **AC-5.3.1** | Code examples for cURL, TypeScript/JavaScript, Python with basic query, result handling, error handling, copy-paste ready | ✅ IMPLEMENTED | **cURL:** examples/curl.sh:36-95 (successful search), :101-137 (query too short), :143-173 (limit validation), :179-204 (health check)<br>**Node.js:** examples/node.js:38-82 (searchCode function), :154-164 (successful query), :168-177 (error handling)<br>**Python:** examples/python.py:100-167 (search_code function), :231-242 (successful query), :246-256 (error handling)<br>All use production endpoint (govreposcrape-api-1060386346356.us-central1.run.app), all executable with proper shebang and permissions |
 | **AC-5.3.2** | Testing tools validate connectivity, response format with clear ✅/❌ output | ✅ IMPLEMENTED | scripts/test-mcp.sh:142-167 (health check test), :193-222 (search endpoint test), :224-246 (response format validation), :248-280 (error handling tests)<br>Test output includes ✅ PASSED / ❌ FAILED indicators (lines 130, 138)<br>Summary report with test counts (lines 341-374) |
 | **AC-5.3.3** | Examples directory contains 3+ languages, well-organized, realistic queries | ✅ IMPLEMENTED | **Directory structure verified:** examples/curl.sh, examples/node.js, examples/python.py (all exist with execute permissions)<br>**Realistic queries:**<br>- cURL: "UK government authentication middleware JWT token validation" (line 48)<br>- Node.js: "Express.js API endpoint handler middleware route" (line 159)<br>- Python: "NHS API integration authentication FHIR patient data" (line 236)<br>**Comments:** All files include extensive explanatory comments |
 | **AC-5.3.4** | Testing tools output structured results: endpoint URL, response time, result count, error details | ✅ IMPLEMENTED | scripts/test-mcp.sh:154-156 (endpoint URL, duration, HTTP status in verbose mode), :207-211 (query details and timing), :233-235 (result count and response time), :341-374 (comprehensive summary with endpoints validated, test counts, troubleshooting guidance) |
@@ -409,7 +409,7 @@ All tasks marked as complete ([x]) were systematically verified against the impl
 
 - ✅ examples/ and scripts/ directories match architecture.md specifications
 - ✅ File naming follows kebab-case convention
-- ✅ Examples use production endpoint (https://govreposcrape.cloud.cns.me)
+- ✅ Examples use production endpoint (https://govreposcrape-api-1060386346356.us-central1.run.app)
 - ✅ Epic 5 goals satisfied: "<5 minute integration", "copy-paste ready examples"
 
 ---

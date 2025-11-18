@@ -167,7 +167,7 @@ interface ErrorResponse {
 *Request:*
 ```http
 POST /mcp/search HTTP/1.1
-Host: govreposcrape.cloud.cns.me
+Host: govreposcrape-api-1060386346356.us-central1.run.app
 Content-Type: application/json
 X-MCP-Version: 2
 X-Request-ID: <uuid>
@@ -243,7 +243,7 @@ Content-Type: application/json
 *Request:*
 ```http
 GET /mcp/health HTTP/1.1
-Host: govreposcrape.cloud.cns.me
+Host: govreposcrape-api-1060386346356.us-central1.run.app
 ```
 
 *Success Response (200 OK):*
@@ -612,8 +612,8 @@ mcp-handler → Client: HTTP 200 JSON response
 
 **AC-8: Integration Testing (Cross-Story)**
 - [ ] Successfully integrates with Claude Desktop (manual MCP configuration test)
-- [ ] curl test query returns valid results: `curl -X POST https://govreposcrape.cloud.cns.me/mcp/search -H "Content-Type: application/json" -d '{"query":"authentication","limit":5}'`
-- [ ] Health check accessible: `curl https://govreposcrape.cloud.cns.me/mcp/health`
+- [ ] curl test query returns valid results: `curl -X POST https://govreposcrape-api-1060386346356.us-central1.run.app/mcp/search -H "Content-Type: application/json" -d '{"query":"authentication","limit":5}'`
+- [ ] Health check accessible: `curl https://govreposcrape-api-1060386346356.us-central1.run.app/mcp/health`
 - [ ] All TypeScript types compile without errors: `npm run type-check`
 - [ ] All unit tests pass: `npm test` with >80% coverage
 

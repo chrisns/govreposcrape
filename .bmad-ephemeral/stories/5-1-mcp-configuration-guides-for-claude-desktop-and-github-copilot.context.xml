@@ -171,7 +171,7 @@
         <path>README.md</path>
         <title>govscraperepo - UK Government Code Discovery via MCP API</title>
         <section>Production API Endpoint</section>
-        <snippet>Production endpoint: https://govreposcrape.cloud.cns.me. MCP v2 protocol compliant. POST /mcp/search for semantic code search, GET /mcp/health for health checks. No authentication required (open access).</snippet>
+        <snippet>Production endpoint: https://govreposcrape-api-1060386346356.us-central1.run.app. MCP v2 protocol compliant. POST /mcp/search for semantic code search, GET /mcp/health for health checks. No authentication required (open access).</snippet>
       </doc>
     </docs>
 
@@ -197,7 +197,7 @@
         <kind>Cloudflare Workers configuration</kind>
         <symbol>Production environment configuration</symbol>
         <lines>Complete file</lines>
-        <reason>Production deployment configuration confirming the actual deployed endpoint URL. Verifies https://govreposcrape.cloud.cns.me as the correct endpoint to document in integration guides.</reason>
+        <reason>Production deployment configuration confirming the actual deployed endpoint URL. Verifies https://govreposcrape-api-1060386346356.us-central1.run.app as the correct endpoint to document in integration guides.</reason>
       </file>
 
       <file>
@@ -229,7 +229,7 @@
     - **Platform Coverage**: Document all 3 platforms (macOS, Windows, Linux) with verified config file paths (AC-5.1.3)
     - **Config Path Verification Required**: Test on at least 2 platforms (macOS + Linux OR Windows) per AC-5.1.3
     - **GitHub Copilot Uncertainty**: Include clear disclaimers about MCP support status (AC-5.1.2) - "preview/not yet publicly available"
-    - **Production API Dependency**: Production endpoint https://govreposcrape.cloud.cns.me must be live and operational for integration testing
+    - **Production API Dependency**: Production endpoint https://govreposcrape-api-1060386346356.us-central1.run.app must be live and operational for integration testing
     - **JSON Configuration Validity**: All JSON config blocks must be syntactically correct and tested
     - **Example Query Validation**: All 3 example queries must return relevant UK government code results when tested against production API
     - **Documentation Quality Standards**: Follow Story 4.3 standards - comprehensive, user-friendly, clear configuration tables, inline justifications
@@ -243,7 +243,7 @@
     <interface>
       <name>POST /mcp/search</name>
       <kind>REST endpoint</kind>
-      <signature>POST https://govreposcrape.cloud.cns.me/mcp/search
+      <signature>POST https://govreposcrape-api-1060386346356.us-central1.run.app/mcp/search
 Request: { query: string (3-500 chars), limit?: number (1-20, default 5) }
 Response: { results: SearchResult[], took_ms: number }
 SearchResult: { repo_url, repo_org, repo_name, snippet, last_updated, language?, similarity_score, github_link, codespaces_link, metadata }</signature>
@@ -253,7 +253,7 @@ SearchResult: { repo_url, repo_org, repo_name, snippet, last_updated, language?,
     <interface>
       <name>GET /mcp/health</name>
       <kind>REST endpoint</kind>
-      <signature>GET https://govreposcrape.cloud.cns.me/mcp/health
+      <signature>GET https://govreposcrape-api-1060386346356.us-central1.run.app/mcp/health
 Response: { status: "healthy", services: { workers, ai_search, r2 }, timestamp }</signature>
       <path>src/index.ts</path>
     </interface>
@@ -264,7 +264,7 @@ Response: { status: "healthy", services: { workers, ai_search, r2 }, timestamp }
       <signature>{
   "mcpServers": {
     "govscraperepo": {
-      "url": "https://govreposcrape.cloud.cns.me/mcp",
+      "url": "https://govreposcrape-api-1060386346356.us-central1.run.app/mcp",
       "description": "UK Government code discovery - semantic search over 21k government repositories"
     }
   }

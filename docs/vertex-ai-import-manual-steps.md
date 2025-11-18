@@ -37,8 +37,8 @@ Expected result: JSON with proper org/repo metadata instead of "unknown/unknown"
 ## Alternative: API Import (once permissions propagate)
 
 ```bash
-cd /Users/cns/httpdocs/cddo/govreposcrape/api
-GOOGLE_APPLICATION_CREDENTIALS=/Users/cns/httpdocs/cddo/govreposcrape/google-credentials.json \
+cd ~/govreposcrape/api
+GOOGLE_APPLICATION_CREDENTIALS=~/govreposcrape/google-credentials.json \
 npx ts-node scripts/trigger-import.ts
 ```
 

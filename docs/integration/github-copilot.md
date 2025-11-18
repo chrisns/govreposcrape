@@ -31,7 +31,7 @@ Before configuring MCP for GitHub Copilot, you'll need:
   - Visual Studio Code with GitHub Copilot extension
   - JetBrains IDEs (IntelliJ IDEA, PyCharm, WebStorm, etc.) with GitHub Copilot plugin
 - **MCP support enabled** in your Copilot extension (check extension settings when released)
-- **Production API operational** at `https://govreposcrape.cloud.cns.me`
+- **Production API operational** at `https://govreposcrape-api-1060386346356.us-central1.run.app`
 
 ---
 
@@ -51,7 +51,7 @@ MCP servers for GitHub Copilot will likely be configured in VS Code settings (`s
 {
   "github.copilot.mcpServers": {
     "govscraperepo": {
-      "url": "https://govreposcrape.cloud.cns.me/mcp",
+      "url": "https://govreposcrape-api-1060386346356.us-central1.run.app/mcp",
       "description": "UK Government code discovery - semantic search over 21k government repositories",
       "enabled": true
     }
@@ -114,7 +114,7 @@ Once MCP support is enabled, you'll be able to query govscraperepo directly from
 **Solutions:**
 - Verify API health:
   ```bash
-  curl https://govreposcrape.cloud.cns.me/mcp/health
+  curl https://govreposcrape-api-1060386346356.us-central1.run.app/mcp/health
   ```
 - Check IDE proxy/firewall settings if behind corporate network
 - Ensure `govscraperepo.cloud.cns.me` is accessible from your development environment
@@ -179,7 +179,7 @@ Claude Desktop provides the same semantic search capabilities over UK government
 - **GitHub Copilot Documentation**: [https://docs.github.com/en/copilot](https://docs.github.com/en/copilot)
 - **GitHub Copilot Changelog**: [https://github.blog/changelog/](https://github.blog/changelog/)
 - **Claude Desktop Guide**: [../integration/claude-desktop.md](./claude-desktop.md) (available now)
-- **Production API Endpoint**: `https://govreposcrape.cloud.cns.me`
+- **Production API Endpoint**: `https://govreposcrape-api-1060386346356.us-central1.run.app`
 
 ---
 

@@ -49,7 +49,7 @@
 
 ### Task 5: Define Smoke Tests (AC: #2, #3)
 - [ ] 5.1 Create scripts/smoke-test.sh for automated smoke testing
-- [ ] 5.2 Add health check endpoint test: `curl https://govreposcrape.cloud.cns.me/health`
+- [ ] 5.2 Add health check endpoint test: `curl https://govreposcrape-api-1060386346356.us-central1.run.app/health`
 - [ ] 5.3 Add test query: `curl -X POST /mcp/search -d '{"query":"authentication","limit":5}'`
 - [ ] 5.4 Add response validation: check status 200, validate JSON structure
 - [ ] 5.5 Add monitoring dashboard check: verify metrics appearing

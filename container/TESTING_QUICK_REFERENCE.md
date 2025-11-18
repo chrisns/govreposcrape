@@ -3,7 +3,7 @@
 ## 🚀 Quick Start
 
 ```bash
-cd /Users/cns/httpdocs/cddo/govreposcrape/container
+cd ~/govreposcrape/container
 
 # Install dependencies
 pip install -r requirements-test.txt

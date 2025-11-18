@@ -121,7 +121,7 @@
         <path>static/openapi.json</path>
         <title>OpenAPI 3.0 Specification</title>
         <section>Request/Response Schemas and Examples</section>
-        <snippet>Complete OpenAPI spec with MCPRequest schema (query 3-500 chars, limit 1-20), MCPResponse schema (results array, took_ms), and example queries for authentication, API endpoints, and data validation. Production server: https://govreposcrape.cloud.cns.me</snippet>
+        <snippet>Complete OpenAPI spec with MCPRequest schema (query 3-500 chars, limit 1-20), MCPResponse schema (results array, took_ms), and example queries for authentication, API endpoints, and data validation. Production server: https://govreposcrape-api-1060386346356.us-central1.run.app</snippet>
       </doc>
       <doc>
         <path>docs/integration/claude-desktop.md</path>
@@ -133,7 +133,7 @@
         <path>docs/architecture.md</path>
         <title>Architecture Document</title>
         <section>Performance and Deployment</section>
-        <snippet>Response time target &lt;2s end-to-end (p95). Production domain: govreposcrape.cloud.cns.me. Edge deployment on Cloudflare Workers for low latency. Three environments: development (localhost:8787), staging, production.</snippet>
+        <snippet>Response time target &lt;2s end-to-end (p95). Production domain: govreposcrape-api-1060386346356.us-central1.run.app. Edge deployment on Cloudflare Workers for low latency. Three environments: development (localhost:8787), staging, production.</snippet>
       </doc>
       <doc>
         <path>docs/integration-testing-standards.md</path>
@@ -157,7 +157,7 @@
         <path>.bmad-ephemeral/stories/5-2-openapi-3-0-specification.md</path>
         <title>Story 5.2: OpenAPI Specification (Completed)</title>
         <section>Learnings and API Details</section>
-        <snippet>Production endpoint verified working at https://govreposcrape.cloud.cns.me. MCP protocol details: POST /mcp/search with query validation (3-500 chars), GET /mcp/health, GET /openapi.json. Error codes: INVALID_QUERY, INVALID_LIMIT, SEARCH_ERROR, INTERNAL_ERROR. HTTPS-only, no authentication, CORS enabled.</snippet>
+        <snippet>Production endpoint verified working at https://govreposcrape-api-1060386346356.us-central1.run.app. MCP protocol details: POST /mcp/search with query validation (3-500 chars), GET /mcp/health, GET /openapi.json. Error codes: INVALID_QUERY, INVALID_LIMIT, SEARCH_ERROR, INTERNAL_ERROR. HTTPS-only, no authentication, CORS enabled.</snippet>
       </doc>
     </docs>
     <code>
@@ -240,7 +240,7 @@
   </artifacts>
 
   <constraints>
-    <constraint>Examples must use production endpoint URL: https://govreposcrape.cloud.cns.me (never localhost or .workers.dev)</constraint>
+    <constraint>Examples must use production endpoint URL: https://govreposcrape-api-1060386346356.us-central1.run.app (never localhost or .workers.dev)</constraint>
     <constraint>Each example must be self-contained and runnable without project setup or dependencies installation (except language runtime)</constraint>
     <constraint>All examples must include comprehensive error handling with clear error messages for common failure scenarios</constraint>
     <constraint>Testing tools must work cross-platform (macOS and Linux minimum, Windows where applicable)</constraint>
@@ -257,7 +257,7 @@
     <interface>
       <name>POST /mcp/search</name>
       <kind>REST endpoint</kind>
-      <signature>POST https://govreposcrape.cloud.cns.me/mcp/search
+      <signature>POST https://govreposcrape-api-1060386346356.us-central1.run.app/mcp/search
 Headers: Content-Type: application/json, X-MCP-Version: 2 (optional)
 Body: { "query": string (3-500 chars), "limit": number (1-20, default 5) }
 Response 200: { "results": SearchResult[], "took_ms": number }
@@ -267,7 +267,7 @@ Response 400: { "error": { "code": string, "message": string } }</signature>
     <interface>
       <name>GET /mcp/health</name>
       <kind>REST endpoint</kind>
-      <signature>GET https://govreposcrape.cloud.cns.me/mcp/health
+      <signature>GET https://govreposcrape-api-1060386346356.us-central1.run.app/mcp/health
 Response 200: { "status": "healthy", "services": {...}, "timestamp": string }
 Response 503: { "error": {...}, "details": {...} }</signature>
       <path>src/api/health.ts</path>
@@ -275,7 +275,7 @@ Response 503: { "error": {...}, "details": {...} }</signature>
     <interface>
       <name>GET /openapi.json</name>
       <kind>REST endpoint</kind>
-      <signature>GET https://govreposcrape.cloud.cns.me/openapi.json
+      <signature>GET https://govreposcrape-api-1060386346356.us-central1.run.app/openapi.json
 Response 200: OpenAPI 3.0 specification JSON</signature>
       <path>static/openapi.json</path>
     </interface>

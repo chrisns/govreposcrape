@@ -12,8 +12,8 @@ Before you begin, ensure you have:
 
 - **Claude Desktop installed** (latest version recommended)
   - Download from: [Anthropic Claude Desktop](https://claude.ai/desktop)
-- **Production API operational** at `https://govreposcrape.cloud.cns.me`
-  - Verify health: `curl https://govreposcrape.cloud.cns.me/mcp/health`
+- **Production API operational** at `https://govreposcrape-api-1060386346356.us-central1.run.app`
+  - Verify health: `curl https://govreposcrape-api-1060386346356.us-central1.run.app/mcp/health`
 - **Text editor** for editing JSON configuration files
 
 **Estimated completion time:** Under 5 minutes
@@ -64,7 +64,7 @@ Add the following JSON configuration to your `claude_desktop_config.json` file. 
 {
   "mcpServers": {
     "govscraperepo": {
-      "url": "https://govreposcrape.cloud.cns.me/mcp",
+      "url": "https://govreposcrape-api-1060386346356.us-central1.run.app/mcp",
       "description": "UK Government code discovery - semantic search over 21k government repositories"
     }
   }
@@ -83,7 +83,7 @@ If you already have other MCP servers configured, your file might look like this
       "description": "Example server"
     },
     "govscraperepo": {
-      "url": "https://govreposcrape.cloud.cns.me/mcp",
+      "url": "https://govreposcrape-api-1060386346356.us-central1.run.app/mcp",
       "description": "UK Government code discovery - semantic search over 21k government repositories"
     }
   }
@@ -212,7 +212,7 @@ Each search result includes the following fields:
 **Solutions:**
 - **Verify API health**:
   ```bash
-  curl https://govreposcrape.cloud.cns.me/mcp/health
+  curl https://govreposcrape-api-1060386346356.us-central1.run.app/mcp/health
   # Should return: {"status":"healthy", ...}
   ```
 - **Refine your query**:
@@ -231,15 +231,15 @@ Each search result includes the following fields:
 - **Check internet connectivity**: Ensure you can reach external sites
 - **Verify endpoint**: Test API directly:
   ```bash
-  curl -X POST https://govreposcrape.cloud.cns.me/mcp/search \
+  curl -X POST https://govreposcrape-api-1060386346356.us-central1.run.app/mcp/search \
     -H "Content-Type: application/json" \
     -d '{"query": "authentication", "limit": 5}'
   ```
   Should return JSON with `results` array
-- **Firewall/proxy**: If behind corporate firewall, ensure `govreposcrape.cloud.cns.me` is allowed
+- **Firewall/proxy**: If behind corporate firewall, ensure `govreposcrape-api-1060386346356.us-central1.run.app` is allowed
 - **DNS resolution**: Verify domain resolves:
   ```bash
-  nslookup govreposcrape.cloud.cns.me
+  nslookup govreposcrape-api-1060386346356.us-central1.run.app
   # Should return IP address
   ```
 
@@ -263,7 +263,7 @@ Before using govscraperepo in production workflows, verify:
 - [ ] Configuration file exists at correct OS-specific path
 - [ ] JSON syntax is valid (validated with JSONLint or similar tool)
 - [ ] `govscraperepo` entry present in `mcpServers` object
-- [ ] URL is exactly `https://govreposcrape.cloud.cns.me/mcp` (HTTPS, no trailing slash on `/mcp`)
+- [ ] URL is exactly `https://govreposcrape-api-1060386346356.us-central1.run.app/mcp` (HTTPS, no trailing slash on `/mcp`)
 - [ ] Claude Desktop restarted after configuration change
 - [ ] Example queries return 5 results each
 - [ ] Results include UK government repositories (check `repo_org` field)
@@ -275,8 +275,8 @@ Before using govscraperepo in production workflows, verify:
 
 - **MCP v2 Protocol**: [https://modelcontextprotocol.io/v2](https://modelcontextprotocol.io/v2)
 - **Claude Desktop Documentation**: Official Anthropic documentation for Claude Desktop and MCP configuration
-- **Production API Endpoint**: `https://govreposcrape.cloud.cns.me`
-- **API Health Check**: `GET https://govreposcrape.cloud.cns.me/mcp/health`
+- **Production API Endpoint**: `https://govreposcrape-api-1060386346356.us-central1.run.app`
+- **API Health Check**: `GET https://govreposcrape-api-1060386346356.us-central1.run.app/mcp/health`
 - **GitHub Repository**: Report issues or contribute to govscraperepo documentation
 
 ---

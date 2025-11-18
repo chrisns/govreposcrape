@@ -181,7 +181,7 @@ From epic-quality.md (lines 406-444), these debt items are already identified:
 
 **Files to Create:**
 - **`docs/technical-debt.md`** - Primary technical debt catalog and remediation plan
-  - Location: `/Users/cns/httpdocs/cddo/govreposcrape/docs/technical-debt.md`
+  - Location: `~/govreposcrape/docs/technical-debt.md`
   - Format: Markdown with structured sections per debt item
   - Linking: Use `file:line` format for code locations
   - Sections: Critical, High, Medium, Low priorities + Summary statistics

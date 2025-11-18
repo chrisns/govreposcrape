@@ -70,7 +70,7 @@ Epic 5 is a **pure documentation and example layer** with minimal code changes t
 - No changes to core Workers logic (src/api/, src/search/, src/ingestion/)
 - No new external dependencies in package.json (documentation is static content)
 - OpenAPI spec must match actual API behavior (POST /mcp/search returns MCPResponse exactly as implemented)
-- Examples must work against production endpoint: https://govreposcrape.cloud.cns.me
+- Examples must work against production endpoint: https://govreposcrape-api-1060386346356.us-central1.run.app
 - Documentation paths must not conflict with API routes (/docs vs /mcp/* separation)
 
 ## Detailed Design
@@ -105,7 +105,7 @@ Epic 5 is primarily **documentation artifacts** with minimal code changes. The o
 - **Claude Desktop Guide:** Platform-specific config paths (macOS/Windows/Linux), JSON configuration format, example queries, troubleshooting (network errors, invalid config, no results)
 - **GitHub Copilot Guide:** Extension settings, MCP server configuration, Copilot-specific patterns, clear note if MCP support not yet released
 - **OpenAPI Spec:** Document POST /mcp/search and GET /mcp/health with full request/response schemas, error formats (400, 500, 503), examples, authentication (none), rate limiting
-- **Integration Examples:** Working code demonstrating query execution, result parsing, error handling, timeout handling, all using production endpoint (https://govreposcrape.cloud.cns.me)
+- **Integration Examples:** Working code demonstrating query execution, result parsing, error handling, timeout handling, all using production endpoint (https://govreposcrape-api-1060386346356.us-central1.run.app)
 - **Test Script:** Health check validation, test query execution, response format verification, clear pass/fail output
 - **Usage Guide:** Semantic search explanation, good vs bad query examples, result interpretation (similarity scores, metadata), UK government-specific use cases
 
@@ -278,7 +278,7 @@ Epic 5 documents the existing MCP API from Epic 4. No new endpoints are created,
 - **Rate Limiting:** Cloudflare platform-level (not exposed in headers)
 - **Example:**
   ```bash
-  curl -X POST https://govreposcrape.cloud.cns.me/mcp/search \
+  curl -X POST https://govreposcrape-api-1060386346356.us-central1.run.app/mcp/search \
     -H "Content-Type: application/json" \
     -H "X-MCP-Version: 2" \
     -d '{"query": "authentication methods", "limit": 5}'
@@ -303,7 +303,7 @@ Epic 5 documents the existing MCP API from Epic 4. No new endpoints are created,
 - **Headers:** Standard (no special headers required)
 - **Example:**
   ```bash
-  curl https://govreposcrape.cloud.cns.me/mcp/health
+  curl https://govreposcrape-api-1060386346356.us-central1.run.app/mcp/health
   ```
 
 **Optional New Endpoints (Story 5.2):**
@@ -316,7 +316,7 @@ Epic 5 documents the existing MCP API from Epic 4. No new endpoints are created,
 - **Implementation:** Simple Workers route handler or static file from R2/Pages
 - **Example:**
   ```bash
-  curl https://govreposcrape.cloud.cns.me/openapi.json
+  curl https://govreposcrape-api-1060386346356.us-central1.run.app/openapi.json
   ```
 
 **GET /docs** (optional, nice-to-have)
@@ -337,7 +337,7 @@ Epic 5 documents the existing MCP API from Epic 4. No new endpoints are created,
 {
   "mcpServers": {
     "govscraperepo": {
-      "url": "https://govreposcrape.cloud.cns.me/mcp",
+      "url": "https://govreposcrape-api-1060386346356.us-central1.run.app/mcp",
       "description": "UK Government code discovery - semantic search over 21k government repositories"
     }
   }
@@ -375,12 +375,12 @@ Epic 5 workflows are **developer journeys**, not code execution flows:
 
 **Workflow 2: Developer Uses OpenAPI Spec for Code Generation (Story 5.2)**
 
-1. **Find OpenAPI spec** → Navigate to https://govreposcrape.cloud.cns.me/openapi.json or GitHub repo
+1. **Find OpenAPI spec** → Navigate to https://govreposcrape-api-1060386346356.us-central1.run.app/openapi.json or GitHub repo
 2. **Download spec** → Save locally or use URL directly
 3. **Choose code generator** → Select tool (openapi-generator, Swagger Codegen, Postman)
 4. **Generate client** → Run generator with TypeScript/Python/etc. target
 5. **Install generated client** → Add to project dependencies
-6. **Import and configure** → Set base URL to https://govreposcrape.cloud.cns.me
+6. **Import and configure** → Set base URL to https://govreposcrape-api-1060386346356.us-central1.run.app
 7. **Make first API call** → Execute search query via generated client
 8. **Success** → Type-safe API client integrated into application
 
@@ -487,17 +487,17 @@ Epic 5 security focuses on **preventing insecure integration patterns** and prot
 - **Pattern:**
   ```bash
   # Good (examples/curl.sh)
-  API_URL="${API_URL:-https://govreposcrape.cloud.cns.me}"
+  API_URL="${API_URL:-https://govreposcrape-api-1060386346356.us-central1.run.app}"
 
   # Bad
-  API_URL="https://govreposcrape.cloud.cns.me" # hardcoded
+  API_URL="https://govreposcrape-api-1060386346356.us-central1.run.app" # hardcoded
   ```
 - **Rationale:** Future-proofing for Phase 2 when API keys may be added
 - **Validation:** Code review of all examples
 
 **NFR-5.6: HTTPS-Only in Documentation**
 - **Requirement:** All documentation examples use HTTPS URLs, never HTTP
-- **Enforcement:** `https://govreposcrape.cloud.cns.me` (not `http://`)
+- **Enforcement:** `https://govreposcrape-api-1060386346356.us-central1.run.app` (not `http://`)
 - **Rationale:** Train developers on secure API access patterns from day one
 - **Validation:** Grep documentation for `http://` (should find zero matches except educational explanations)
 
@@ -553,7 +553,7 @@ Epic 5 reliability focuses on **documentation correctness and availability**:
 
 **NFR-5.13: Link Integrity**
 - **Requirement:** All links in documentation resolve successfully (no 404s)
-- **Scope:** Internal links (docs/integration/*.md), external links (https://govreposcrape.cloud.cns.me), GitHub links
+- **Scope:** Internal links (docs/integration/*.md), external links (https://govreposcrape-api-1060386346356.us-central1.run.app), GitHub links
 - **Validation:** Link checker tool (markdown-link-check or similar)
 - **Frequency:** Weekly automated check (Phase 2: CI/CD integration)
 - **Failure Handling:** Fix broken links within 48 hours
@@ -626,7 +626,7 @@ Epic 5 observability focuses on **tracking documentation usage and effectiveness
 - **Required State:** POST /mcp/search and GET /mcp/health fully implemented, tested, and deployed to production
 - **Integration Points:**
   - OpenAPI spec must match actual API behavior (request/response schemas from src/types.ts)
-  - Integration examples call production endpoint: https://govreposcrape.cloud.cns.me
+  - Integration examples call production endpoint: https://govreposcrape-api-1060386346356.us-central1.run.app
   - Documentation references actual error codes and formats from src/utils/error-handler.ts
 - **Risk:** If Epic 4 API changes during Epic 5 development, documentation becomes stale
 - **Mitigation:** Lock Epic 4 API contract before starting Epic 5, any changes require documentation updates
@@ -704,7 +704,7 @@ Epic 5 observability focuses on **tracking documentation usage and effectiveness
 ### External APIs and Services (Documented, Not Called)
 
 **Production MCP API Endpoint**
-- **URL:** https://govreposcrape.cloud.cns.me
+- **URL:** https://govreposcrape-api-1060386346356.us-central1.run.app
 - **Purpose:** Examples and test scripts call this endpoint
 - **Availability Requirement:** Must be live and stable during Epic 5 development
 - **Testing:** All integration examples tested against production endpoint
@@ -729,9 +729,9 @@ Epic 5 observability focuses on **tracking documentation usage and effectiveness
 
 | MCP Client | Configuration Entry | API Endpoint |
 |------------|---------------------|--------------|
-| Claude Desktop | `mcpServers.govscraperepo.url` | https://govreposcrape.cloud.cns.me/mcp |
-| GitHub Copilot | TBD (depends on implementation) | https://govreposcrape.cloud.cns.me/mcp |
-| Custom Client | Base URL configuration | https://govreposcrape.cloud.cns.me |
+| Claude Desktop | `mcpServers.govscraperepo.url` | https://govreposcrape-api-1060386346356.us-central1.run.app/mcp |
+| GitHub Copilot | TBD (depends on implementation) | https://govreposcrape-api-1060386346356.us-central1.run.app/mcp |
+| Custom Client | Base URL configuration | https://govreposcrape-api-1060386346356.us-central1.run.app |
 
 ### Dependency Management
 
@@ -888,7 +888,7 @@ These acceptance criteria are extracted from Epic 5 stories and represent the au
   - Generates working TypeScript/Python clients via openapi-generator
 - **AND** generated clients compile without errors
 - **AND** generated clients successfully call production API
-- **PASS CRITERIA:** Generated TypeScript client executes successful query against https://govreposcrape.cloud.cns.me
+- **PASS CRITERIA:** Generated TypeScript client executes successful query against https://govreposcrape-api-1060386346356.us-central1.run.app
 
 **AC-5.2.3: OpenAPI Metadata and Documentation**
 - **GIVEN** the OpenAPI specification is complete
@@ -898,7 +898,7 @@ These acceptance criteria are extracted from Epic 5 stories and represent the au
   - Description: Clear explanation of UK government code search purpose
   - Version: "1.0.0"
   - Contact info: Link to GitHub repository issues
-  - Server URL: https://govreposcrape.cloud.cns.me
+  - Server URL: https://govreposcrape-api-1060386346356.us-central1.run.app
   - Security section: Explicit note that no authentication required
 - **AND** all schemas have descriptions and examples
 - **PASS CRITERIA:** Spec provides sufficient context for developers to understand API without external documentation
@@ -925,7 +925,7 @@ These acceptance criteria are extracted from Epic 5 stories and represent the au
   - Result parsing and display
   - Error handling (network errors, API errors)
   - Timeout handling
-- **AND** all examples use production endpoint: https://govreposcrape.cloud.cns.me
+- **AND** all examples use production endpoint: https://govreposcrape-api-1060386346356.us-central1.run.app
 - **PASS CRITERIA:** All 3 examples execute successfully and return 5 SearchResults
 
 **AC-5.3.2: Examples Are Copy-Paste Ready**
@@ -1126,7 +1126,7 @@ This table maps acceptance criteria to technical specification sections, impleme
 | **Manual Testing** | MCP configuration (Claude Desktop on 2+ OS), example execution (all 3 languages), OpenAPI rendering (Swagger UI) | Human execution following guides, verify <5 min completion |
 | **Automated Validation** | OpenAPI spec format (openapi-generator), link integrity (markdown-link-check), code generation (TypeScript client compile) | CI/CD scripts (Phase 2), manual for MVP |
 | **Code Review** | Example code quality (error handling, input validation, comments), documentation readability (F-E level), security patterns (HTTPS-only) | Peer review checklist |
-| **Production Testing** | All examples against live API (https://govreposcrape.cloud.cns.me), test queries return relevant results | Execute before documentation release |
+| **Production Testing** | All examples against live API (https://govreposcrape-api-1060386346356.us-central1.run.app), test queries return relevant results | Execute before documentation release |
 | **User Acceptance** | 20+ early adopters self-service integration, <5 support requests per 100 users | Post-release survey, support ticket tracking |
 
 ## Risks, Assumptions, Open Questions
@@ -1172,7 +1172,7 @@ This table maps acceptance criteria to technical specification sections, impleme
 - **Owner:** Story 5.2 implementer, Epic 4 tech lead
 
 **Risk 4: Production API Downtime During Documentation Testing**
-- **Description:** Production API (https://govreposcrape.cloud.cns.me) unavailable during Epic 5 example testing
+- **Description:** Production API (https://govreposcrape-api-1060386346356.us-central1.run.app) unavailable during Epic 5 example testing
 - **Impact:** MEDIUM - Blocked examples testing, delayed documentation release
 - **Probability:** LOW - Epic 4 API should be stable and deployed
 - **Mitigation:**
@@ -1260,7 +1260,7 @@ This table maps acceptance criteria to technical specification sections, impleme
 - **Impact if False:** Examples and configuration guides become incorrect, need to document auth
 - **Mitigation:** Architecture frozen per ADR-002, low risk for MVP
 
-**Assumption 7: Production Endpoint is https://govreposcrape.cloud.cns.me**
+**Assumption 7: Production Endpoint is https://govreposcrape-api-1060386346356.us-central1.run.app**
 - **Description:** Final production domain is confirmed and DNS configured
 - **Validation:** Confirm with infrastructure team, test endpoint reachability
 - **Impact if False:** All examples, OpenAPI spec server URL incorrect
@@ -1461,8 +1461,8 @@ Epic 5 testing focuses on **documentation accuracy and usability** rather than c
 - markdown-link-check installed (optional)
 
 **Integration Environment:**
-- Production API endpoint: https://govreposcrape.cloud.cns.me
-- Staging endpoint (if available): https://staging.govreposcrape.cloud.cns.me
+- Production API endpoint: https://govreposcrape-api-1060386346356.us-central1.run.app
+- Staging endpoint (if available): https://staging.govreposcrape-api-1060386346356.us-central1.run.app
 - Fallback: Local `wrangler dev` (localhost:8787)
 
 **User Acceptance Environment:**

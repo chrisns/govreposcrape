@@ -84,7 +84,7 @@ so that **documentation accurately describes the current architecture and setup*
 - [x] 4.1 Update README.md "Getting Started" section with Google Cloud setup instructions
 - [x] 4.2 Replace Cloudflare Workers setup with Google Cloud Run deployment steps
 - [x] 4.3 Update environment variables section: GCS_BUCKET_NAME, VERTEX_AI_SEARCH_ENGINE_ID, GOOGLE_PROJECT_ID, GOOGLE_APPLICATION_CREDENTIALS
-- [x] 4.4 Update all code examples to use Cloud Run API endpoint URL (Quick Start already uses govreposcrape.cloud.cns.me)
+- [x] 4.4 Update all code examples to use Cloud Run API endpoint URL (Quick Start already uses govreposcrape-api-1060386346356.us-central1.run.app)
 - [x] 4.5 Archive docs/sprint-change-proposal-2025-11-17.md with historical context note (preserved for historical reference)
 - [x] 4.6 Preserve MIGRATION-HANDOFF.md with clear labeling as "historical reference" (already preserved)
 - [x] 4.7 Update DEPLOYMENT.md if needed to align with Google Cloud procedures (Vertex AI Search deployment) (already updated - CLOUD_RUN_DEPLOYMENT.md exists)
@@ -94,7 +94,7 @@ so that **documentation accurately describes the current architecture and setup*
 - [x] 5.1 Update package.json dependencies documentation (remove wrangler, add gcloud CLI references) (documented in README Architecture section)
 - [x] 5.2 Update .env.example with Google Cloud environment variables (VERTEX_AI_SEARCH_ENGINE_ID added)
 - [x] 5.3 Update OpenAPI specification (if exists) with Cloud Run API endpoint (Quick Start already references production API)
-- [x] 5.4 Update MCP configuration guides (Story 5.1) with new API endpoint (Quick Start uses govreposcrape.cloud.cns.me)
+- [x] 5.4 Update MCP configuration guides (Story 5.1) with new API endpoint (Quick Start uses govreposcrape-api-1060386346356.us-central1.run.app)
 - [x] 5.5 Update integration examples (Story 5.3) to use Cloud Run instead of Workers (Quick Start section updated)
 
 ### Task 6: Validation and Consistency Check (AC: #1, #2, #3, #4)
@@ -313,7 +313,7 @@ Evidence:
 Evidence:
 - README.md Google Cloud setup: ✅ Verified - README.md:3 (opening line), README.md:306-325 (Architecture section with Google Cloud services table), README.md:327-335 (Prerequisites: gcloud CLI, Google Cloud account), README.md:336-382 (Setup: gcloud auth, service account, environment variables)
 - .env.example updated: ✅ Verified - .env.example:19 (VERTEX_AI_SEARCH_ENGINE_ID added with format example and project-specific value)
-- Code examples use production API: ✅ Verified - README Quick Start references govreposcrape.cloud.cns.me throughout
+- Code examples use production API: ✅ Verified - README Quick Start references govreposcrape-api-1060386346356.us-central1.run.app throughout
 
 ### Task Completion Validation (37 Tasks)
 

@@ -20,3 +20,40 @@ google-credentials.json
 
 # Local Claude settings (contains project-specific paths)
 .claude/settings.local.json
+
+# Additional credential protection
+*service-account*.json
+*-key.json
+*-credentials.json
+
+# Private Keys
+*.key
+*.pem
+*.p12
+*.pfx
+*.jks
+*.keystore
+
+# Environment file backups
+.env.backup
+.env.*.backup
+
+# Backup files that may contain secrets
+*.backup
+*.bak
+*_backup
+*_old
+*.orig
+
+# Database dumps
+*.sql
+*.dump
+
+# IDE files that may contain credentials
+.vscode/settings.json
+.idea/dataSources*.xml
+.idea/workspace.xml
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -210,7 +210,7 @@ def test_env_var():
 ### Quick Start
 ```bash
 # From container/ directory
-cd /Users/cns/httpdocs/cddo/govreposcrape/container
+cd ~/govreposcrape/container
 
 # Install test dependencies
 pip install -r requirements-test.txt
@@ -370,7 +370,7 @@ The new test suite integrates with existing tests:
 
 ## File Locations
 
-All files created in `/Users/cns/httpdocs/cddo/govreposcrape/container/`:
+All files created in `~/govreposcrape/container/`:
 
 ```
 container/

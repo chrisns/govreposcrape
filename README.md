@@ -21,7 +21,7 @@ govscraperepo provides an MCP API for discovering UK government code through AI 
    {
      "mcpServers": {
        "govscraperepo": {
-         "url": "https://govreposcrape.cloud.cns.me/mcp",
+         "url": "https://govreposcrape-api-1060386346356.us-central1.run.app/mcp",
          "description": "UK Government code discovery - semantic search over 21k government repositories"
        }
      }
@@ -37,7 +37,21 @@ govscraperepo provides an MCP API for discovering UK government code through AI 
 - [Claude Desktop Integration Guide](./docs/integration/claude-desktop.md) - Step-by-step with troubleshooting
 - [GitHub Copilot Integration Guide](./docs/integration/github-copilot.md) - Coming soon (awaiting MCP support)
 
-**Production API:** `https://govreposcrape.cloud.cns.me`
+**Production API:** `https://govreposcrape-api-1060386346356.us-central1.run.app`
+
+---
+
+## Security Note
+
+This repository intentionally includes certain public metadata:
+
+- **Google Cloud Project Number** (`1060386346356`) - Visible in Cloud Run URLs by design
+- **Service Account Emails** - Non-sensitive identifiers (cannot authenticate without private keys)
+- **Public API Endpoints** - Designed for public access with application-level authentication
+
+These are public identifiers similar to GitHub usernames. They do not grant access to resources without proper IAM authentication. All sensitive credentials (API keys, service account keys, secrets) are managed via environment variables and are never committed to the repository.
+
+For more details, see [SECURITY.md](./SECURITY.md).
 
 ---
 
@@ -45,10 +59,10 @@ govscraperepo provides an MCP API for discovering UK government code through AI 
 
 ### OpenAPI 3.0 Specification
 
-Complete OpenAPI 3.0 specification available at: **[/openapi.json](https://govreposcrape.cloud.cns.me/openapi.json)**
+Complete OpenAPI 3.0 specification available at: **[/openapi.json](https://govreposcrape-api-1060386346356.us-central1.run.app/openapi.json)**
 
 **Interactive Documentation:**
-- View and test API in [Swagger Editor](https://editor.swagger.io/?url=https://govreposcrape.cloud.cns.me/openapi.json)
+- View and test API in [Swagger Editor](https://editor.swagger.io/?url=https://govreposcrape-api-1060386346356.us-central1.run.app/openapi.json)
 - Explore endpoints, request/response schemas, and examples
 
 ### Generating Client Libraries
@@ -62,7 +76,7 @@ npm install -g @openapitools/openapi-generator-cli
 
 # Generate TypeScript client
 openapi-generator-cli generate \
-  -i https://govreposcrape.cloud.cns.me/openapi.json \
+  -i https://govreposcrape-api-1060386346356.us-central1.run.app/openapi.json \
   -g typescript-fetch \
   -o ./generated-client
 
@@ -70,7 +84,7 @@ openapi-generator-cli generate \
 import { MCPAPIApi, Configuration } from './generated-client';
 
 const api = new MCPAPIApi(new Configuration({
-  basePath: 'https://govreposcrape.cloud.cns.me'
+  basePath: 'https://govreposcrape-api-1060386346356.us-central1.run.app'
 }));
 
 const results = await api.searchCode({
@@ -82,14 +96,14 @@ const results = await api.searchCode({
 ```bash
 # Generate Python client
 openapi-generator-cli generate \
-  -i https://govreposcrape.cloud.cns.me/openapi.json \
+  -i https://govreposcrape-api-1060386346356.us-central1.run.app/openapi.json \
   -g python \
   -o ./python-client
 
 # Use the client
 from python_client import MCPAPIApi, Configuration
 
-config = Configuration(host='https://govreposcrape.cloud.cns.me')
+config = Configuration(host='https://govreposcrape-api-1060386346356.us-central1.run.app')
 api = MCPAPIApi(config)
 
 results = api.search_code(mcp_request={'query': 'authentication', 'limit': 10})
@@ -125,7 +139,7 @@ We provide working integration examples in multiple languages to help you quickl
 ./examples/curl.sh
 
 # Or test specific endpoint
-curl -X POST https://govreposcrape.cloud.cns.me/mcp/search \
+curl -X POST https://govreposcrape-api-1060386346356.us-central1.run.app/mcp/search \
   -H "Content-Type: application/json" \
   -d '{"query":"UK government authentication middleware","limit":5}'
 ```
@@ -200,7 +214,7 @@ export MCP_API_URL="http://localhost:8788"
 ./examples/curl.sh
 
 # For staging environment
-export MCP_API_URL="https://staging.govreposcrape.cloud.cns.me"
+export MCP_API_URL="https://staging.govreposcrape-api-1060386346356.us-central1.run.app"
 node examples/node.js
 ```
 
@@ -228,9 +242,9 @@ All examples handle these MCP API error codes:
 ### Need Help?
 
 - **Integration guides**: See [`docs/integration/`](./docs/integration/) for detailed setup instructions
-- **OpenAPI spec**: Use [`/openapi.json`](https://govreposcrape.cloud.cns.me/openapi.json) to generate clients
+- **OpenAPI spec**: Use [`/openapi.json`](https://govreposcrape-api-1060386346356.us-central1.run.app/openapi.json) to generate clients
 - **Examples not working?**:
-  - Check API URL is correct (production: `https://govreposcrape.cloud.cns.me`)
+  - Check API URL is correct (production: `https://govreposcrape-api-1060386346356.us-central1.run.app`)
   - Verify network connectivity with `./scripts/test-mcp.sh`
   - For local testing, start dev server: `npm run dev`
 
@@ -292,7 +306,7 @@ Each result includes:
 - **Report issues**: [GitHub Issues](https://github.com/cns/govreposcrape/issues)
 - **Product context**: See [PRD](./docs/PRD.md) for project goals and use cases
 - **Integration help**: Detailed guides in [`docs/integration/`](./docs/integration/)
-- **API reference**: Full specification at [`/openapi.json`](https://govreposcrape.cloud.cns.me/openapi.json)
+- **API reference**: Full specification at [`/openapi.json`](https://govreposcrape-api-1060386346356.us-central1.run.app/openapi.json)
 
 ---
 

@@ -417,7 +417,7 @@ Use these procedures when deployment issues cannot be resolved quickly.
 
 | Role | Contact | Response Time |
 |------|---------|---------------|
-| **On-Call Engineer** | cns@example.com | P1: Immediate<br>P2: 2 hours<br>P3: Next business day |
+| **On-Call Engineer** | oncall@example.com | P1: Immediate<br>P2: 2 hours<br>P3: Next business day |
 | **Project Lead** | (To be assigned) | Business hours only |
 | **Google Cloud Support** | https://cloud.google.com/support | Per support plan SLA |
 

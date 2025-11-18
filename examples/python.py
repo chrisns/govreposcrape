@@ -29,7 +29,7 @@ except ImportError:
     sys.exit(1)
 
 # API Configuration
-API_BASE = os.getenv('MCP_API_URL', 'https://govreposcrape.cloud.cns.me')
+API_BASE = os.getenv('MCP_API_URL', 'https://govreposcrape-api-1060386346356.us-central1.run.app')
 API_URL = f'{API_BASE}/mcp/search'
 HEALTH_URL = f'{API_BASE}/mcp/health'
 

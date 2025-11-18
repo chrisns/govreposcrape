@@ -219,7 +219,7 @@ Story 6.4 completes Epic 6 (Operational Excellence) by providing comprehensive p
    - Expected duration: ~30 seconds (validated with --test flag)
 
 6. **Escalation Procedures** - Comprehensive incident response runbook:
-   - Escalation contacts: On-call engineer (cns@example.com), Google Cloud Support
+   - Escalation contacts: On-call engineer (oncall@example.com), Google Cloud Support
    - Severity levels: P1 (immediate), P2 (2 hours), P3 (next business day)
    - Common issues runbook: Container build failures, Gemini API auth, File Search store errors, ingestion delays
    - Response protocols for each severity level

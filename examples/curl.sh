@@ -14,7 +14,7 @@ set -e  # Exit on error
 
 # API Configuration
 # Use environment variable or default to production
-API_BASE="${MCP_API_URL:-https://govreposcrape.cloud.cns.me}"
+API_BASE="${MCP_API_URL:-https://govreposcrape-api-1060386346356.us-central1.run.app}"
 API_URL="${API_BASE}/mcp/search"
 HEALTH_URL="${API_BASE}/mcp/health"
 

@@ -109,7 +109,7 @@ so that **semantic search capabilities are enabled without manual indexing workf
 - [ ] Task 8: Integration testing - full validation (AC: #1, #2, #3, #4)
   - [ ] Subtask 8.1: Deploy to staging environment with `wrangler deploy --env staging`
   - [ ] Subtask 8.2: Verify AI Search configuration in Dashboard
-  - [ ] Subtask 8.3: Test health check: `curl https://staging.govreposcrape.cloud.cns.me/mcp/health`
+  - [ ] Subtask 8.3: Test health check: `curl https://staging.govreposcrape-api-1060386346356.us-central1.run.app/mcp/health`
   - [ ] Subtask 8.4: Upload new test file to R2 staging bucket
   - [ ] Subtask 8.5: Wait 5 minutes and verify file is indexed
   - [ ] Subtask 8.6: Query for test content via health check or temporary endpoint

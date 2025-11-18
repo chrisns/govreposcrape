@@ -9,7 +9,7 @@
 # Examples:
 #   ./scripts/test-mcp.sh                                          # Test production API
 #   ./scripts/test-mcp.sh http://localhost:8788                   # Test local development
-#   ./scripts/test-mcp.sh https://govreposcrape.cloud.cns.me      # Test specific URL
+#   ./scripts/test-mcp.sh https://govreposcrape-api-1060386346356.us-central1.run.app      # Test specific URL
 #   ./scripts/test-mcp.sh --verbose                                # Detailed output
 #   ./scripts/test-mcp.sh --test                                   # Syntax validation only
 
@@ -42,7 +42,7 @@ done
 
 # Default to production if no URL provided
 if [ -z "$API_URL" ]; then
-  API_URL="${MCP_API_URL:-https://govreposcrape.cloud.cns.me}"
+  API_URL="${MCP_API_URL:-https://govreposcrape-api-1060386346356.us-central1.run.app}"
 fi
 
 SEARCH_ENDPOINT="${API_URL}/mcp/search"

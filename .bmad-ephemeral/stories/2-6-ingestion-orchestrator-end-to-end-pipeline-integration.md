@@ -269,7 +269,7 @@ def check_cache_bulk(repos, workers_url):
 
     Args:
         repos: List of repo dicts with org, name, pushedAt
-        workers_url: Workers API endpoint (e.g., https://govreposcrape.cloud.cns.me/api/cache/check)
+        workers_url: Workers API endpoint (e.g., https://govreposcrape-api-1060386346356.us-central1.run.app/api/cache/check)
 
     Returns:
         Dict mapping repo_key to needsProcessing boolean

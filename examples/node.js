@@ -14,7 +14,7 @@
  */
 
 // API Configuration
-const API_BASE = process.env.MCP_API_URL || 'https://govreposcrape.cloud.cns.me';
+const API_BASE = process.env.MCP_API_URL || 'https://govreposcrape-api-1060386346356.us-central1.run.app';
 const API_URL = `${API_BASE}/mcp/search`;
 const HEALTH_URL = `${API_BASE}/mcp/health`;
 

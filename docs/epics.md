@@ -811,13 +811,13 @@ So that **I can start searching UK government code in <5 minutes with my preferr
 
 **Technical Notes:**
 - **Claude Desktop:** Config location `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
-- **Claude Desktop:** MCP format: `{ "mcpServers": { "govscraperepo": { "url": "https://govreposcrape.cloud.cns.me/mcp" } } }`
+- **Claude Desktop:** MCP format: `{ "mcpServers": { "govscraperepo": { "url": "https://govreposcrape-api-1060386346356.us-central1.run.app/mcp" } } }`
 - **GitHub Copilot:** Config depends on VS Code/JetBrains extension settings (document when available)
 - **GitHub Copilot:** May require preview/beta access for MCP support (note this clearly)
 - Example queries should reflect actual use cases from PRD: authentication, postcode validation, NHS APIs
 - Module location: README.md or docs/integration/ (claude-desktop.md, github-copilot.md)
 - If Copilot MCP not available at MVP: document "Coming soon" with notification signup
-- API endpoint: https://govreposcrape.cloud.cns.me
+- API endpoint: https://govreposcrape-api-1060386346356.us-central1.run.app
 - This implements FR-4.1 MCP Configuration Documentation from PRD
 
 ---
@@ -887,12 +887,12 @@ So that **I can validate my integration and understand best practices**.
 **Prerequisites:** Story 4.2 (Semantic search endpoint), Story 5.2 (OpenAPI spec for reference)
 
 **Technical Notes:**
-- cURL example: `curl -X POST https://govreposcrape.cloud.cns.me/mcp/search -H "Content-Type: application/json" -d '{"query":"authentication","limit":5}'`
+- cURL example: `curl -X POST https://govreposcrape-api-1060386346356.us-central1.run.app/mcp/search -H "Content-Type: application/json" -d '{"query":"authentication","limit":5}'`
 - TypeScript example using fetch API
 - Python example using requests library
 - Test scripts should be self-contained (no external dependencies where possible)
 - Module location: examples/ directory at repo root
-- API endpoint: https://govreposcrape.cloud.cns.me
+- API endpoint: https://govreposcrape-api-1060386346356.us-central1.run.app
 - This supports FR-4.1 developer integration from PRD
 
 ---

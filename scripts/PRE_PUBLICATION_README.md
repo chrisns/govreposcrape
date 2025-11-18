@@ -110,7 +110,7 @@ cp -r .git .git.manual-backup
 ### 2. Run the Cleanup Script
 
 ```bash
-cd /Users/cns/httpdocs/cddo/govreposcrape
+cd ~/govreposcrape
 ./scripts/pre-publication-cleanup.sh
 ```
 

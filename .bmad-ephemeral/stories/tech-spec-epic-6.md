@@ -220,7 +220,7 @@ npm run cost-monitor --export json # Export cost data as JSON
 4. Deployment execution:
    - `wrangler deploy --env production`
 5. Post-deployment verification:
-   - Health check: `curl https://govreposcrape.cloud.cns.me/health`
+   - Health check: `curl https://govreposcrape-api-1060386346356.us-central1.run.app/health`
    - Smoke test: Test query via MCP API
    - Monitoring dashboard check: Verify metrics flowing
 6. If deployment fails:

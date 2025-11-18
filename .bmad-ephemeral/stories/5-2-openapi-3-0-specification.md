@@ -45,7 +45,7 @@ This story creates the machine-readable API contract that enables automated clie
 **AND** generated clients compile without errors
 **AND** generated clients successfully call production API
 
-**PASS CRITERIA:** Generated TypeScript client executes successful query against https://govreposcrape.cloud.cns.me
+**PASS CRITERIA:** Generated TypeScript client executes successful query against https://govreposcrape-api-1060386346356.us-central1.run.app
 
 [Source: .bmad-ephemeral/stories/tech-spec-epic-5.md#AC-5.2.2]
 
@@ -57,7 +57,7 @@ This story creates the machine-readable API contract that enables automated clie
 - Description: Clear explanation of UK government code search purpose
 - Version: "1.0.0"
 - Contact info: Link to GitHub repository issues
-- Server URL: https://govreposcrape.cloud.cns.me
+- Server URL: https://govreposcrape-api-1060386346356.us-central1.run.app
 - Security section: Explicit note that no authentication required
 
 **AND** all schemas have descriptions and examples
@@ -82,7 +82,7 @@ This story creates the machine-readable API contract that enables automated clie
 ### Task 1: Create OpenAPI 3.0 Base Structure (AC: #1, #3)
 - [x] 1.1 Create `static/openapi.json` file with OpenAPI 3.0 structure
 - [x] 1.2 Add metadata: title "govscraperepo MCP API", description, version "1.0.0"
-- [x] 1.3 Add server URL: https://govreposcrape.cloud.cns.me
+- [x] 1.3 Add server URL: https://govreposcrape-api-1060386346356.us-central1.run.app
 - [x] 1.4 Add contact info with GitHub repository link
 - [x] 1.5 Add security section noting "No authentication required"
 - [x] 1.6 Validate JSON syntax with JSON linter
@@ -125,7 +125,7 @@ This story creates the machine-readable API contract that enables automated clie
 - [x] 6.1 Add route handler for GET /openapi.json in src/index.ts
 - [x] 6.2 Serve static/openapi.json file content with correct Content-Type: application/json
 - [x] 6.3 Add CORS headers to /openapi.json response
-- [x] 6.4 Test endpoint: `curl https://govreposcrape.cloud.cns.me/openapi.json`
+- [x] 6.4 Test endpoint: `curl https://govreposcrape-api-1060386346356.us-central1.run.app/openapi.json`
 - [x] 6.5 (Optional) Implement GET /docs endpoint serving Swagger UI HTML
 - [x] 6.6 (Optional) Configure Swagger UI to load /openapi.json automatically
 
@@ -148,7 +148,7 @@ This story creates the machine-readable API contract that enables automated clie
 - Schemas must match existing TypeScript types in src/types.ts exactly
 - Spec must pass openapi-generator validation
 - Generated clients must compile and execute successfully
-- Production API endpoint: https://govreposcrape.cloud.cns.me
+- Production API endpoint: https://govreposcrape-api-1060386346356.us-central1.run.app
 
 **File Locations:**
 - OpenAPI spec: `static/openapi.json`
@@ -193,7 +193,7 @@ This story creates the machine-readable API contract that enables automated clie
 - Apply same thoroughness to OpenAPI spec: complete schemas, examples, descriptions
 
 **API Endpoint Verified Operational:**
-- Production endpoint: https://govreposcrape.cloud.cns.me
+- Production endpoint: https://govreposcrape-api-1060386346356.us-central1.run.app
 - Health endpoint confirmed working: GET /mcp/health returns 200 OK
 - Search endpoint operational: POST /mcp/search returns results
 - All services healthy (KV, R2, D1, Vectorize, AI Search)
@@ -220,8 +220,8 @@ This story creates the machine-readable API contract that enables automated clie
 - Clear documentation links - README must link to /openapi.json for discoverability
 
 **Advisory Note from Story 5.1:**
-- DNS CNAME configuration pending (govreposcrape.cloud.cns.me → govreposcrape-production.chrisns.workers.dev)
-- OpenAPI spec server URL should use govreposcrape.cloud.cns.me (correct custom domain)
+- DNS CNAME configuration pending (govreposcrape-api-1060386346356.us-central1.run.app → govreposcrape-production.chrisns.workers.dev)
+- OpenAPI spec server URL should use govreposcrape-api-1060386346356.us-central1.run.app (correct custom domain)
 - No impact on this story - spec uses correct domain, DNS setup is operational task
 
 [Source: stories/5-1-mcp-configuration-guides-for-claude-desktop-and-github-copilot.md#Senior-Developer-Review]
@@ -266,7 +266,7 @@ govreposcrape/
 - Must align OpenAPI schemas with these types exactly
 
 **Production API:**
-- Endpoint: https://govreposcrape.cloud.cns.me
+- Endpoint: https://govreposcrape-api-1060386346356.us-central1.run.app
 - POST /mcp/search - semantic code search
 - GET /mcp/health - health check
 - GET /openapi.json - OpenAPI spec (to be added in this story)
@@ -388,7 +388,7 @@ Story 5.2 delivers a complete, production-ready OpenAPI 3.0 specification for th
 ✅ **Documentation Quality**: README.md updated with clear examples for TypeScript and Python client generation
 ✅ **Production Deployment**: Endpoint deployed and tested locally
 
-**One Advisory Item:** SSL certificate configuration for custom domain (govreposcrape.cloud.cns.me) requires attention - this is an infrastructure/DNS task separate from the API implementation itself.
+**One Advisory Item:** SSL certificate configuration for custom domain (govreposcrape-api-1060386346356.us-central1.run.app) requires attention - this is an infrastructure/DNS task separate from the API implementation itself.
 
 ---
 
@@ -399,7 +399,7 @@ Story 5.2 delivers a complete, production-ready OpenAPI 3.0 specification for th
 #### Advisory Notes
 
 **[Advisory] SSL Certificate Configuration**
-- **Context:** Custom domain `govreposcrape.cloud.cns.me` shows SSL handshake failure when tested
+- **Context:** Custom domain `govreposcrape-api-1060386346356.us-central1.run.app` shows SSL handshake failure when tested
 - **Evidence:** curl test failed with LibreSSL error in completion notes
 - **Impact:** Low - Workers.dev domain works fine, only custom domain affected
 - **Recommendation:** Configure SSL certificate for custom domain via Cloudflare dashboard (infrastructure task, not code change)
@@ -415,7 +415,7 @@ Story 5.2 delivers a complete, production-ready OpenAPI 3.0 specification for th
 |----|-------------|--------|----------|
 | **AC-5.2.1** | Complete OpenAPI Spec for All Endpoints | ✅ IMPLEMENTED | `static/openapi.json:1-686` - Full spec with POST /mcp/search (lines 25-304) and GET /mcp/health (lines 305-397). All error responses documented (400: lines 179-228, 500: lines 229-252, 503: lines 253-290 for search; 503: lines 377-397 for health). Route handler: `src/index.ts:60-70`. Validation: openapi-generator passed with "No validation issues detected" |
 | **AC-5.2.2** | Schema Accuracy and Code Generation | ✅ IMPLEMENTED | Valid OpenAPI 3.0.3 format confirmed. TypeScript client generated successfully (15+ files in /tmp/openapi-test-client). Client compiled without errors (tsconfig created, tsc ran successfully). Swagger UI rendering confirmed via local test returning valid JSON spec |
-| **AC-5.2.3** | OpenAPI Metadata and Documentation | ✅ IMPLEMENTED | `static/openapi.json:3-15` - Title: "govscraperepo MCP API", description includes UK government context, version "1.0.0", contact links to GitHub issues, server URL: https://govreposcrape.cloud.cns.me, security: empty array (no auth required), all schemas have descriptions |
+| **AC-5.2.3** | OpenAPI Metadata and Documentation | ✅ IMPLEMENTED | `static/openapi.json:3-15` - Title: "govscraperepo MCP API", description includes UK government context, version "1.0.0", contact links to GitHub issues, server URL: https://govreposcrape-api-1060386346356.us-central1.run.app, security: empty array (no auth required), all schemas have descriptions |
 | **AC-5.2.4** | Interactive Documentation (Optional) | ✅ IMPLEMENTED | `README.md:51` - Swagger Editor link provided with URL parameter pre-loading the OpenAPI spec. Optional /docs endpoint not implemented per "OR" clause in AC (Swagger Editor link satisfies requirement) |
 
 **Summary:** **4 of 4** acceptance criteria fully implemented with verifiable evidence
@@ -552,7 +552,7 @@ This story focuses on specification validation rather than traditional unit test
 
 **Advisory Notes (No Code Changes Required):**
 
-- **Note:** Configure SSL certificate for custom domain `govreposcrape.cloud.cns.me` via Cloudflare dashboard (infrastructure task). Workers.dev domain works fine, so this is non-blocking for API functionality.
+- **Note:** Configure SSL certificate for custom domain `govreposcrape-api-1060386346356.us-central1.run.app` via Cloudflare dashboard (infrastructure task). Workers.dev domain works fine, so this is non-blocking for API functionality.
 
 - **Note:** Consider adding version parameter to OpenAPI server URL in future iterations to support API versioning (e.g., `/v1/mcp/search`). Current single-version approach is appropriate for v1.0.0.
 
