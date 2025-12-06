@@ -33,7 +33,7 @@ steps:
     waitFor: ['build-image']
 
   # Step 4: Deploy to Cloud Run
-  - name: 'gcr.io/cloud-builders/gcloud@sha256:86e66145a74c6a06eccb2b719471a37fa37410f197fe98feac1b4e2d7f7e3fb6'
+  - name: 'gcr.io/cloud-builders/gcloud@sha256:79e32f66418b6b829e59a309d17688e93eacfa03f70f379b3b92f2394e5898b8'
     args:
       - 'run'
       - 'deploy'
