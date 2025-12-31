@@ -4,7 +4,7 @@
 # Base image: Python 3.11 slim for gitingest compatibility
 # Dependencies: gitingest (code summarization), google-cloud-storage (Vertex AI backend), pytest (testing)
 
-FROM python:3.14-slim@sha256:2751cbe93751f0147bc1584be957c6dd4c5f977c3d4e0396b56456a9fd4ed137
+FROM python:3.14-slim@sha256:f7864aa85847985ba72d2dcbcbafd7475354c848e1abbdf84f523a100800ae0b
 
 # Set working directory
 WORKDIR /app
