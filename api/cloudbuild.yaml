@@ -67,7 +67,7 @@ steps:
     waitFor: ['push-image']
 
   # Step 5: Verify health endpoint
-  - name: 'gcr.io/cloud-builders/curl@sha256:4630f8e800da97aeb2b88af0d88e94684e21946f5e800332633151c5d30d6a47'
+  - name: 'gcr.io/cloud-builders/curl@sha256:b5e1eb0d034d02e379b5834e1e724459da0be5e9bb0fde0006d04c4a23e806c0'
     args:
       - '--fail'
       - '--silent'
