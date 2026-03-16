@@ -358,7 +358,7 @@ These guidelines are specific to the Epic 2 data ingestion pipeline and serve as
 
 **Primary Source:** UK government repos.json feed
 - URL: `https://government.github.com/community/repositories.json`
-- Total repos: ~21,000
+- Total repos: 24,500+
 - Test fixture: First 100 repos
 
 **Fixture Creation:**

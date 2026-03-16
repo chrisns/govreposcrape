@@ -80,8 +80,8 @@ docker run govreposcrape-ingest python orchestrator.py --batch-size=10 --offset=
 **Features:**
 - ✅ Automatic repos.json fetching with retry logic
 - ✅ Cache checking (MVP: marks all as needing processing for initial seeding)
-- ✅ Progress reporting every 100 repos: "Processed 500/21,000 (2.4%), cache hit: 91.2%, elapsed: 15m, ETA: 5h 30m"
-- ✅ Final statistics: "Pipeline complete: 21,000 total, 19,000 cached (90.5%), 1,800 processed, 200 failed, completed in 5h 47m"
+- ✅ Progress reporting every 100 repos: "Processed 500/24,500 (2.4%), cache hit: 91.2%, elapsed: 15m, ETA: 5h 30m"
+- ✅ Final statistics: "Pipeline complete: 24,500 total, 19,000 cached (90.5%), 1,800 processed, 200 failed, completed in 5h 47m"
 - ✅ Graceful shutdown on SIGTERM (saves progress to `/tmp/orchestrator-state.json`)
 - ✅ Fail-safe: errors logged, processing continues
 
@@ -115,7 +115,7 @@ docker run govreposcrape-ingest \
 # ... up to offset 9 for 10 parallel containers
 ```
 
-**Performance:** 10 parallel containers = ~6 hours for 21k repos (vs. 58 hours sequential)
+**Performance:** 10 parallel containers = ~6 hours for 24,500+ repos (vs. 58 hours sequential)
 
 ### Environment Variables
 
@@ -374,7 +374,7 @@ const result = await invokeContainer({
 - **Average Processing Time:** ~10 seconds per repo
 - **Large Repos (100MB+):** Up to 5 minutes (timeout limit)
 - **Retry Overhead:** +7 seconds max (1s + 2s + 4s delays)
-- **Sequential (21k repos):** ~58 hours
+- **Sequential (24,500+ repos):** ~58 hours
 - **Parallel (10 containers):** ~6 hours
 
 ## R2 Storage Integration (Story 2.4)
@@ -427,7 +427,7 @@ All summaries use `content-type: text/plain` for AI Search automatic indexing co
 
 ### Overview
 
-Parallel execution uses **modulo arithmetic filtering** to distribute ~21k repositories across multiple containers:
+Parallel execution uses **modulo arithmetic filtering** to distribute ~24,500+ repositories across multiple containers:
 - Each container processes every Nth repository starting at offset M
 - No cross-container coordination required (independent execution)
 - Statistics aggregated via log parsing
@@ -458,7 +458,7 @@ docker build -t govscraperepo-ingest ./container
 **Example: batch_size=10, offset=5**
 - Processes repos at indices: 5, 15, 25, 35, 45, ...
 
-**Result:** All 21,000 repos processed exactly once across 10 containers, no duplicates, no gaps.
+**Result:** All 24,500 repos processed exactly once across 10 containers, no duplicates, no gaps.
 
 ### Performance Characteristics
 
@@ -573,8 +573,8 @@ Examples:
 ```
 
 **Output Examples:**
-- Progress: "Processed 500/21,000 (2.4%), cache hit: 91.2%, elapsed: 15m, ETA: 5h 30m"
-- Final: "Pipeline complete: 21,000 total, 19,000 cached (90.5%), 1,800 processed, 200 failed, completed in 5h 47m"
+- Progress: "Processed 500/24,500 (2.4%), cache hit: 91.2%, elapsed: 15m, ETA: 5h 30m"
+- Final: "Pipeline complete: 24,500 total, 19,000 cached (90.5%), 1,800 processed, 200 failed, completed in 5h 47m"
 
 **Graceful Shutdown:**
 - Handles SIGTERM signal
@@ -617,7 +617,7 @@ R2 storage client for uploading/retrieving gitingest summaries with custom metad
 - [Story 2.5 Definition](../docs/epics.md#Story-2.5) - Parallel Execution Support
 - [PRD FR-1.2: gitingest Summary Generation](../docs/PRD.md#FR-1.2)
 - [PRD FR-1.3: Smart Caching via R2 Metadata](../docs/PRD.md#FR-1.3)
-- [PRD NFR-1.3: Initial Data Seeding Performance](../docs/PRD.md#NFR-1.3) - 21k repos in ~6 hours requirement
+- [PRD NFR-1.3: Initial Data Seeding Performance](../docs/PRD.md#NFR-1.3) - 24,500+ repos in ~6 hours requirement
 - [Architecture: Data Ingestion Pipeline](../docs/architecture.md#Epic-2)
 - [gitingest Python Library](https://pypi.org/project/gitingest/)
 - [Cloudflare R2 (boto3 S3 API)](https://developers.cloudflare.com/r2/api/s3/api/)

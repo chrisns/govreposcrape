@@ -161,7 +161,7 @@ docker run --rm \
 ### Step 4: Full Production Deployment
 
 ```bash
-# 1. Run full ingestion pipeline (all ~20k repos)
+# 1. Run full ingestion pipeline (all 24,500+ repos)
 # WARNING: This will take 6-10 hours to complete
 docker run --rm \
   -v "$(pwd)/google-credentials.json:/app/google-credentials.json" \
@@ -192,7 +192,7 @@ docker logs -f <container-id>
 |-------|------------------|---------------------|
 | Container build | 2-5 minutes | ±50% |
 | Small test (10 repos) | 2-5 minutes | ±50% |
-| Full ingestion (20k repos) | 6-10 hours | ±20% |
+| Full ingestion (24,500+ repos) | 6-10 hours | ±20% |
 | File Search indexing lag | < 5 minutes | Per NFR-1.4 |
 
 ---
@@ -660,7 +660,7 @@ Cloudflare AI Search is a managed RAG (Retrieval-Augmented Generation) service t
 7. **Activate Index**
    - Review configuration summary
    - Click "Activate" to start indexing
-   - **Note:** Initial indexing may take time if R2 bucket is already populated (~21k repos)
+   - **Note:** Initial indexing may take time if R2 bucket is already populated (24,500+ repos)
 
 ### wrangler.toml Service Binding
 
@@ -1000,7 +1000,7 @@ Access metrics at: Cloudflare Dashboard → Workers → Your Worker → Metrics
 - Uploaded files not searchable after 5 minutes
 
 **Expected Behavior:**
-- Initial indexing of 21k repos may take 1-2 hours
+- Initial indexing of 24,500+ repos may take 1-2 hours
 - Individual file indexing should be < 5 minutes after initial index complete
 
 **Solutions:**
@@ -1062,7 +1062,7 @@ Access metrics at: Cloudflare Dashboard → Workers → Your Worker → Metrics
 **Current Status:** AI Search is in Preview (pricing not finalized)
 
 **Expected Costs (to be validated):**
-- **Storage:** ~21k documents, estimated < £30/month
+- **Storage:** ~24,500 documents, estimated < £30/month
 - **Queries:** Pay-per-query model (pricing TBD)
 - **Target:** Total infrastructure < £50/month (NFR-7.1)
 

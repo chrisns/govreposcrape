@@ -314,7 +314,7 @@ docker run --rm \
 
 ### Full Migration (Task 6.4) - ⏸️ PENDING
 
-**Target:** 21,000 UK government repositories
+**Target:** 24,500+ UK government repositories
 **Estimated Duration:** 6-10 hours (based on ~2 repos/second)
 **Command:** Same as pilot, without `--limit` flag
 
@@ -373,7 +373,7 @@ All file sizes (1KB to 512KB):
 **Vertex AI Search:**
 - **Cloud Storage:** $0.020/GB/month (Standard storage)
 - **Vertex AI Search:** $0.30 per 1,000 queries (SEARCH_TIER_STANDARD)
-- **Estimated Monthly Cost:** <£50/month for 21k repositories
+- **Estimated Monthly Cost:** <£50/month for 24,500+ repositories
 - Predictable pricing with reserved capacity options
 
 ---
@@ -395,7 +395,7 @@ All file sizes (1KB to 512KB):
 **Requirement:** Production-grade semantic search over code summaries
 **Options Evaluated:**
 - SEARCH_TIER_ENTERPRISE → Overkill for MVP, higher cost
-- SEARCH_TIER_STANDARD → ✅ Sufficient for 21k repositories
+- SEARCH_TIER_STANDARD → ✅ Sufficient for 24,500+ repositories
 - No LLM add-on → Less accurate semantic search
 
 **Decision:** SEARCH_TIER_STANDARD + SEARCH_ADD_ON_LLM
@@ -487,7 +487,7 @@ All file sizes (1KB to 512KB):
 - [x] Test files uploaded (6 files, 100% success)
 - [⏳] Pilot migration running (100 repositories)
 - [ ] Pilot migration validated
-- [ ] Full migration executed (21k repositories)
+- [ ] Full migration executed (24,500+ repositories)
 - [ ] Vertex AI Search indexing complete
 - [ ] Search functionality validated
 
@@ -512,7 +512,7 @@ All file sizes (1KB to 512KB):
    - Monitor Vertex AI Search indexing progress
 
 2. **Execute Full Migration** (Task 6.4-6.6)
-   - Run full ingestion of 21k repositories
+   - Run full ingestion of 24,500+ repositories
    - Monitor Cloud Storage metrics
    - Monitor Vertex AI Search metrics
    - Document final migration results

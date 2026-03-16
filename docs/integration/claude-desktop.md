@@ -65,7 +65,7 @@ Add the following JSON configuration to your `claude_desktop_config.json` file. 
   "mcpServers": {
     "govscraperepo": {
       "url": "https://govreposcrape-api-1060386346356.us-central1.run.app/mcp",
-      "description": "UK Government code discovery - semantic search over 21k government repositories"
+      "description": "UK Government code discovery - semantic search over 24,500+ government repositories"
     }
   }
 }
@@ -84,7 +84,7 @@ If you already have other MCP servers configured, your file might look like this
     },
     "govscraperepo": {
       "url": "https://govreposcrape-api-1060386346356.us-central1.run.app/mcp",
-      "description": "UK Government code discovery - semantic search over 21k government repositories"
+      "description": "UK Government code discovery - semantic search over 24,500+ government repositories"
     }
   }
 }

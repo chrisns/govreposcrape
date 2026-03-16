@@ -86,7 +86,7 @@ class TestProgressReporting:
         # Act
         log_progress(
             processed=500,
-            total=21000,
+            total=24500,
             cached=450,
             successful=45,
             failed=5,
@@ -97,8 +97,8 @@ class TestProgressReporting:
 
         # Assert
         log_messages = [record.message for record in caplog.records]
-        assert any("500/21000" in msg for msg in log_messages)
-        assert any("2.4%" in msg for msg in log_messages)
+        assert any("500/24500" in msg for msg in log_messages)
+        assert any("2.0%" in msg for msg in log_messages)
         assert any("cache hit: 90.0%" in msg for msg in log_messages)
 
     def test_log_progress_zero_processed(self, caplog):
@@ -126,9 +126,9 @@ class TestFinalStatistics:
         """Test final summary matches AC format"""
         # Act
         log_final_summary(
-            total_repos=21000,
-            cached=19000,
-            processed=1800,
+            total_repos=24500,
+            cached=22000,
+            processed=2300,
             failed=200,
             elapsed=20820,  # 5h 47m
             batch_size=10,
@@ -139,10 +139,10 @@ class TestFinalStatistics:
         log_messages = [record.message for record in caplog.records]
         summary_msg = log_messages[0]
 
-        assert "21000 total" in summary_msg or "21,000 total" in summary_msg
-        assert "19000 cached" in summary_msg or "19,000 cached" in summary_msg
-        assert "90.5%" in summary_msg
-        assert "1800 processed" in summary_msg or "1,800 processed" in summary_msg
+        assert "24500 total" in summary_msg or "24,500 total" in summary_msg
+        assert "22000 cached" in summary_msg or "22,000 cached" in summary_msg
+        assert "89.8%" in summary_msg
+        assert "2300 processed" in summary_msg or "2,300 processed" in summary_msg
         assert "200 failed" in summary_msg
         assert "5h 47m" in summary_msg
 

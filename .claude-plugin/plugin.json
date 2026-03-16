@@ -1,0 +1,13 @@
+{
+  "name": "govreposcrape",
+  "description": "Search 24,500+ UK government code repositories for patterns, examples, and libraries from NHS, HMRC, DWP, GDS and more.",
+  "version": "1.0.0",
+  "author": {
+    "name": "chrisns",
+    "url": "https://github.com/chrisns"
+  },
+  "homepage": "https://github.com/chrisns/govreposcrape",
+  "repository": "https://github.com/chrisns/govreposcrape",
+  "license": "MIT",
+  "keywords": ["uk-government", "code-search", "mcp", "semantic-search", "gov-uk"]
+}

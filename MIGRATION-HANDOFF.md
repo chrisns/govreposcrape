@@ -280,7 +280,7 @@ python orchestrator.py --limit=10
 python orchestrator.py --limit=100
 
 # Full run (use Cloud Run Jobs for production)
-python orchestrator.py  # Processes all 21k repos
+python orchestrator.py  # Processes all 24,500+ repos
 ```
 
 ### API Testing (Phase 3)
@@ -308,7 +308,7 @@ curl -X POST https://govreposcrape-api-xxx.run.app/mcp/search \
 ## 💰 Cost Monitoring
 
 **Google Cloud Costs (Projected):**
-- **File Search indexing:** $37.50 one-time (21k repos × 250M tokens × $0.15/1M)
+- **File Search indexing:** $37.50 one-time (24,500+ repos × 250M tokens × $0.15/1M)
 - **Gemini API queries:** $10-20/month (1000 queries/day)
 - **Cloud Run:** $5-10/month (generous free tier)
 - **Total:** ~$50-80/month
@@ -352,7 +352,7 @@ gcloud billing budgets create \
 3. **Parallel Execution:**
    - Recommended: 40 workers (`--batch-size=40`)
    - Each worker processes ~515 repos
-   - Total time: ~5-7 hours for 21k repos
+   - Total time: ~5-7 hours for 24,500+ repos
 
 4. **API Response Format:**
    - Need to parse Gemini grounding metadata

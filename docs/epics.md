@@ -192,7 +192,7 @@ So that **we can safely deploy changes without impacting production**.
 
 **Goal:** Build the automated data ingestion pipeline that fetches UK government repositories from repos.json feed, generates gitingest summaries, implements smart caching to avoid expensive regeneration, and stores processed data in Cloudflare R2. This epic implements the "write path" that prepares code for semantic search.
 
-**Value:** Transforms raw repository URLs into searchable, LLM-ready code summaries. Smart caching keeps costs <£50/month by avoiding unnecessary gitingest regeneration (90%+ cache hit rate target). Parallelization support enables processing ~21k repos in <6 hours.
+**Value:** Transforms raw repository URLs into searchable, LLM-ready code summaries. Smart caching keeps costs <£50/month by avoiding unnecessary gitingest regeneration (90%+ cache hit rate target). Parallelization support enables processing 24,500+ repos in <6 hours.
 
 ---
 
@@ -311,7 +311,7 @@ So that **we can generate LLM-ready code summaries for semantic search**.
 - Exponential backoff: 1s, 2s, 4s between retries
 - Module location: container/ingest.py (separate from src/)
 - This implements FR-1.2 gitingest Summary Generation from PRD
-- NFR-1.3: Average ~10s per repo → 21k repos = 58 hours sequential (parallelization in Story 2.5)
+- NFR-1.3: Average ~10s per repo → 24,500+ repos = 58 hours sequential (parallelization in Story 2.5)
 
 ---
 
@@ -346,7 +346,7 @@ So that **Vertex AI Search can index the content and we can validate caching log
 - Object path structure: `alphagov/govuk-frontend.md` (simplified from gitingest/ subdirectory)
 - Custom metadata stored in GCS object metadata (no separate database needed)
 - Metadata example: `{ pushedAt: "2025-10-15T14:30:00Z", url: "https://github.com/alphagov/govuk-frontend", processedAt: "2025-11-12T10:05:23Z", org: "alphagov", repo: "govuk-frontend", size: "123456" }`
-- GCS storage cost: ~10GB for 21k repos × 500KB avg = $0.20/month ($0.020/GB)
+- GCS storage cost: ~10GB for 24,500+ repos × 500KB avg = $0.20/month ($0.020/GB)
 - Module location: container/gcs_client.py (Python for container)
 - This completes FR-1.3 Smart Caching implementation (via GCS metadata comparison, no KV store needed)
 
@@ -356,7 +356,7 @@ So that **Vertex AI Search can index the content and we can validate caching log
 
 As a **performance engineer**,
 I want **CLI arguments for batch-size and offset to enable parallel container execution**,
-So that **we can process ~21k repos in <6 hours instead of 58 hours sequential**.
+So that **we can process 24,500+ repos in <6 hours instead of 58 hours sequential**.
 
 **Acceptance Criteria:**
 
@@ -368,7 +368,7 @@ So that **we can process ~21k repos in <6 hours instead of 58 hours sequential**
 
 **Given** I launch 10 containers in parallel with offsets 0-9
 **When** all containers complete processing
-**Then** all 21,000 repositories have been processed exactly once
+**Then** all 24,500+ repositories have been processed exactly once
 **And** processing completes in ~6 hours (10× speedup from ~58 hours sequential)
 **And** each container logs its progress: "Processing batch 10, offset 3: 2,100 repos"
 
@@ -382,7 +382,7 @@ So that **we can process ~21k repos in <6 hours instead of 58 hours sequential**
 **Technical Notes:**
 - Parallelization strategy: Modulo arithmetic (batch-size=10, offset=0 → repos where index % 10 == 0)
 - 10 parallel containers = 10× speedup → 58 hours ÷ 10 = ~5.8 hours
-- Initial seeding: 21k repos × 10s avg ÷ 10 parallel = ~6 hours (within MVP timeline)
+- Initial seeding: 24,500+ repos × 10s avg ÷ 10 parallel = ~6 hours (within MVP timeline)
 - Each container is independent (no coordination needed, fail-safe)
 - Example command: `docker run govscraperepo-ingest --batch-size=10 --offset=0`
 - Run locally for MVP (manual execution), migrate to GitHub Actions matrix in Phase 2
@@ -401,13 +401,13 @@ So that **the complete workflow (fetch → cache check → gitingest → R2 uplo
 **Given** all pipeline components exist (Stories 2.1-2.5)
 **When** I run the orchestrator
 **Then** it executes the pipeline in order: fetch repos.json → check cache → process uncached → upload to R2
-**And** progress is reported periodically: "Processed 500/21,000 repos (2.4%), cache hit rate: 91.2%"
+**And** progress is reported periodically: "Processed 500/24,500 repos (2.0%), cache hit rate: 91.2%"
 **And** errors don't halt the entire pipeline (fail-safe: log and continue)
 
 **Given** the pipeline completes
 **When** I review the final statistics
 **Then** logs show: total repos, cached (skipped), processed (gitingest), failed, cache hit rate, total time
-**And** example: "Pipeline complete: 21,000 total, 19,000 cached (90.5%), 1,800 processed, 200 failed, completed in 5h 47m"
+**And** example: "Pipeline complete: 24,500 total, 22,050 cached (90.0%), 2,200 processed, 250 failed, completed in 5h 47m"
 
 **And** Orchestrator supports dry-run mode: `--dry-run` (simulate without processing)
 **And** Orchestrator has graceful shutdown on SIGTERM (save progress, cleanup)
@@ -1140,7 +1140,7 @@ So that **gitingest summaries are uploaded to a production-ready search service 
 - Auto-creates File Search Store with display name "govreposcrape-uk-code"
 - Operation polling prevents indefinite hangs (unlike Cloudflare AI Search)
 - Service account authentication via GOOGLE_APPLICATION_CREDENTIALS
-- Cost: ~$37.50 one-time indexing (21k repos × 250M tokens × $0.15/1M)
+- Cost: ~$37.50 one-time indexing (24,500+ repos × 250M tokens × $0.15/1M)
 - Migration commit: e779851 "feat: Phase 2a - Google Cloud Platform container layer migration"
 - Status: COMPLETED 2025-11-17
 
@@ -1150,7 +1150,7 @@ So that **gitingest summaries are uploaded to a production-ready search service 
 
 As a **quality assurance engineer**,
 I want **to validate the Google File Search container with small batch testing**,
-So that **we confirm the migration works correctly before processing all 21k repositories**.
+So that **we confirm the migration works correctly before processing all 24,500+ repositories**.
 
 **Acceptance Criteria:**
 

@@ -52,7 +52,7 @@ MCP servers for GitHub Copilot will likely be configured in VS Code settings (`s
   "github.copilot.mcpServers": {
     "govscraperepo": {
       "url": "https://govreposcrape-api-1060386346356.us-central1.run.app/mcp",
-      "description": "UK Government code discovery - semantic search over 21k government repositories",
+      "description": "UK Government code discovery - semantic search over 24,500+ government repositories",
       "enabled": true
     }
   }

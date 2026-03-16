@@ -33,7 +33,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
     tools: [
       {
         name: 'search_uk_gov_code',
-        description: 'Search across ~21,000 UK government repositories for code examples, libraries, and patterns. Returns repository names and GitHub URLs.',
+        description: 'Search across 24,500+ UK government repositories for code examples, libraries, and patterns. Returns repository names and GitHub URLs.',
         inputSchema: {
           type: 'object',
           properties: {

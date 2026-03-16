@@ -1,6 +1,6 @@
 # govreposcrape
 
-Semantic code search over ~21k UK government repositories using Google Cloud Run and Vertex AI Search.
+Semantic code search over 24,500+ UK government repositories using Google Cloud Run and Vertex AI Search.
 
 ## Quick Start: Integrate with Claude Desktop
 
@@ -22,7 +22,7 @@ govscraperepo provides an MCP API for discovering UK government code through AI 
      "mcpServers": {
        "govscraperepo": {
          "url": "https://govreposcrape-api-1060386346356.us-central1.run.app/mcp",
-         "description": "UK Government code discovery - semantic search over 21k government repositories"
+         "description": "UK Government code discovery - semantic search over 24,500+ government repositories"
        }
      }
    }
@@ -38,6 +38,54 @@ govscraperepo provides an MCP API for discovering UK government code through AI 
 - [GitHub Copilot Integration Guide](./docs/integration/github-copilot.md) - Coming soon (awaiting MCP support)
 
 **Production API:** `https://govreposcrape-api-1060386346356.us-central1.run.app`
+
+---
+
+## Install as Claude Code Plugin
+
+Three ways to add govreposcrape to Claude Code, from easiest to most manual:
+
+### Option 1: Plugin Marketplace (Recommended)
+
+```bash
+# Add the marketplace
+/plugin marketplace add chrisns/govreposcrape
+
+# Install the plugin
+/plugin install govreposcrape@govreposcrape
+```
+
+This auto-configures the MCP server and adds the `/govreposcrape:search-gov-code` slash command.
+
+### Option 2: Direct MCP Server
+
+```bash
+claude mcp add --transport http govreposcrape https://govreposcrape-api-1060386346356.us-central1.run.app/mcp
+```
+
+### Option 3: Manual Configuration
+
+Add to your project's `.mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "govreposcrape": {
+      "type": "http",
+      "url": "https://govreposcrape-api-1060386346356.us-central1.run.app/mcp"
+    }
+  }
+}
+```
+
+### Verify Installation
+
+After installing, test with:
+```
+Search UK government code for authentication middleware
+```
+
+Claude will use the `search_uk_gov_code` tool to search across 24,500+ UK government repositories.
 
 ---
 
@@ -261,7 +309,7 @@ Unlike keyword search, semantic search understands the *meaning* behind your que
 **Good query** → `"UK government authentication middleware JWT token validation"`
 **Bad query** → `"auth"` (too vague, lacks context)
 
-The system analyzes your natural language query, compares it semantically to ~21,000 UK government code summaries, and returns the top matches with relevance scores (0.0-1.0 range).
+The system analyzes your natural language query, compares it semantically to 24,500+ UK government code summaries, and returns the top matches with relevance scores (0.0-1.0 range).
 
 ### Query Best Practices
 

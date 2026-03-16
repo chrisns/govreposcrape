@@ -400,7 +400,7 @@ const detailedResults = await govscraperepo.search({
 **Additional Storage:**
 - `snippets.json`: ~10KB per repo
 - `metadata.json`: ~5KB per repo
-- **Total additional:** ~15KB × 21,000 repos = ~315MB
+- **Total additional:** ~15KB × 24,500+ repos = ~315MB
 
 **Storage Cost Impact:**
 - Current: ~1GB (gitingest summaries)

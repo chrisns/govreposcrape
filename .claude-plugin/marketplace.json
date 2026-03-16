@@ -1,0 +1,12 @@
+{
+  "name": "govreposcrape",
+  "owner": { "name": "chrisns" },
+  "plugins": [
+    {
+      "name": "govreposcrape",
+      "source": "./",
+      "description": "Search 24,500+ UK government code repositories",
+      "version": "1.0.0"
+    }
+  ]
+}

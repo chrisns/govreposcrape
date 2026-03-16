@@ -3,7 +3,7 @@
 # Story 2.5: Parallel Execution Support
 #
 # Run 10 containers in parallel for govscraperepo ingestion
-# Expected speedup: 10× (58 hours → ~6 hours for 21k repos)
+# Expected speedup: 10× (58 hours → ~6 hours for 24,500+ repos)
 
 set -e
 

@@ -215,7 +215,7 @@ This is a **hybrid architecture serving multiple user types through phased deliv
 **What Ships in MVP:**
 
 **1. Automated Data Pipeline (Write Path)**
-- Fetch repos.json from xgov-opensource-repo-scraper feed (~21,000 repos currently)
+- Fetch repos.json from xgov-opensource-repo-scraper feed (~24,500+ repos currently)
 - Container-based gitingest processing (Python 3.11, Docker)
 - Generate gitingest summaries for each repository using Python library
 - **Smart caching:** Only regenerate gitingest when pushedAt timestamp changes (90%+ cache hit rate)
@@ -225,7 +225,7 @@ This is a **hybrid architecture serving multiple user types through phased deliv
   - CLI arguments: `--batch-size=N --offset=M`
   - Example: Process every 10th repo starting at offset 0-9
   - Run 10 containers in parallel for 10× speedup
-  - Initial seeding: ~21k repos × 10s avg ÷ 10 parallel = ~6 hours
+  - Initial seeding: ~24,500+ repos × 10s avg ÷ 10 parallel = ~6 hours
 - **Run locally on-demand** for MVP (manual execution when needed)
 
 **2. AI Search Auto-Indexing (Managed Service)**
@@ -464,12 +464,12 @@ This is a **hybrid architecture serving multiple user types through phased deliv
 
 **Performance Requirements:**
 - <2 second query response (p95) - developer tool UX expectation
-- No performance degradation at scale (~21k repos now, 30k+ future)
+- No performance degradation at scale (~24,500+ repos now, 30k+ future)
 - Edge deployment preferred (low latency for remote developers)
 - **Rationale:** Developer tools must be fast or they won't be used
 
 **Scaling Economics:**
-- Linear cost growth unacceptable (£50/month at 21k repos → £150/month at 30k repos is acceptable)
+- Linear cost growth unacceptable (£50/month at 24,500+ repos → £150/month at 30k repos is acceptable)
 - Architecture must scale sub-linearly (90%+ cache hit rate, edge distribution, managed services)
 - **Rationale:** Long-term sustainability requires smart architecture + caching strategy
 
@@ -1217,7 +1217,7 @@ Expanded Result
 - **Domain Constraint:** Cost-consciousness critical for public sector
 
 **FR-1.4: Parallel Container Execution (MVP)**
-- **Requirement:** Run ingestion pipeline with parallelization support for ~21k repos
+- **Requirement:** Run ingestion pipeline with parallelization support for ~24,500+ repos
 - **Acceptance Criteria:**
   - Docker container with Python 3.11, gitingest, boto3
   - CLI arguments: `--batch-size=N --offset=M` for parallel execution
@@ -1226,7 +1226,7 @@ Expanded Result
   - Environment variable configuration (.env file)
   - Processing statistics logged (total, cached, processed, errors)
   - Graceful shutdown and error reporting
-  - **Initial seeding:** ~21k repos × 10s avg ÷ 10 parallel = ~6 hours
+  - **Initial seeding:** ~24,500+ repos × 10s avg ÷ 10 parallel = ~6 hours
 - **User Value:** Makes initial seeding feasible within 6-hour window
 - **Rationale:** Sequential processing would take 58+ hours (unacceptable for MVP)
 - **Phase 2:** Migrate to GitHub Actions matrix for automation
@@ -1549,8 +1549,8 @@ Expanded Result
 - **Validation:** Google Cloud Monitoring metrics
 
 **NFR-1.3: AI Search Indexing Throughput**
-- **Metric:** ~21,000 repos processed in < 6 hours (initial seeding)
-- **Sequential:** 21k × 10s avg = 58 hours (unacceptable)
+- **Metric:** ~24,500+ repos processed in < 6 hours (initial seeding)
+- **Sequential:** 24,500+ × 10s avg = 58 hours (unacceptable)
 - **Parallel (10 containers):** 58 hours ÷ 10 = 5.8 hours ✓
 - **Breakdown:** ~35 repos/minute aggregate with 10 parallel containers
 - **Rationale:** Initial seeding must be feasible for MVP validation
@@ -1618,19 +1618,19 @@ Expanded Result
 ### NFR-3: Scalability Requirements
 
 **Why Scale Matters for THIS Product:**
-- Current scope: ~21,000 repos already exceeds typical dev tools
-- Growth trajectory: 21k → 30k+ as local councils, arms-length bodies added
+- Current scope: ~24,500+ repos already exceeds typical dev tools
+- Growth trajectory: 24,500+ → 30k+ as local councils, arms-length bodies added
 - Cross-department expansion: 24 departments → 400+ local authorities
 - Query volume: Hundreds/week (MVP) → thousands/day (scale)
-- Data growth: 21k repos requires parallelization even for MVP
+- Data growth: 24,500+ repos requires parallelization even for MVP
 
 **Scalability Criteria:**
 
 **NFR-3.1: Repository Capacity**
-- **Current:** ~21,000 repositories (uk-x-gov-software-community feed)
+- **Current:** ~24,500+ repositories (uk-x-gov-software-community feed)
 - **Target (12 months):** 30,000+ repositories (local councils, arms-length bodies)
 - **Architecture:** Horizontal scaling via container parallelization (MVP: 10 parallel, Phase 2: 20+ via GitHub Actions)
-- **Validation:** MVP proves 21k feasible, extrapolate to 30k+
+- **Validation:** MVP proves 24,500+ feasible, extrapolate to 30k+
 
 **NFR-3.2: Query Throughput**
 - **MVP:** 100 queries/day sustained
@@ -1639,7 +1639,7 @@ Expanded Result
 - **Bottleneck:** AI Search query limits (unknown, monitor early)
 
 **NFR-3.3: Storage Capacity**
-- **Current Estimate:** ~21,000 repos × 50KB avg gitingest = ~1GB
+- **Current Estimate:** ~24,500+ repos × 50KB avg gitingest = ~1GB
 - **Target (30,000 repos):** ~1.5GB gitingest summaries
 - **Cloud Storage Limits:** 10GB storage at $0.020/GB = ~£0.20/month
 - **Vector Storage:** Vertex AI Search managed, enterprise capacity
@@ -1649,7 +1649,7 @@ Expanded Result
 - **Requirement:** Support concurrent container execution via CLI arguments
 - **MVP Target:** 10 parallel containers manually launched (10× speedup)
 - **Phase 2 Target:** 20+ parallel jobs via GitHub Actions matrix automation
-- **Rationale:** 21k repos requires parallelization even for initial MVP seeding
+- **Rationale:** 24,500+ repos requires parallelization even for initial MVP seeding
 
 ---
 
@@ -1781,7 +1781,7 @@ Expanded Result
 **Cost Criteria:**
 
 **NFR-7.1: Production Infrastructure Cost**
-- **Target:** £50-80/month for ~21,000 repos, 100-1000 queries/day
+- **Target:** £50-80/month for ~24,500+ repos, 100-1000 queries/day
 - **Breakdown (actual Google Cloud costs):**
   - Google Cloud Run (API): ~£10-15/month (4GB memory, 2 vCPU, pay-per-request pricing)
   - Google Cloud Run (Ingestion Jobs): ~£10/month (scheduled daily runs)
@@ -1865,7 +1865,7 @@ Expanded Result
 
 **Critical Path NFRs (MVP Blockers):**
 - NFR-1.1: < 2s query response time (p95)
-- NFR-1.3: 21k repos processed in < 6 hours (parallel execution required)
+- NFR-1.3: 24,500+ repos processed in < 6 hours (parallel execution required)
 - NFR-2.1: NCSC secure coding compliance
 - NFR-2.3: Audit logging for all queries
 - NFR-3.4: Parallelization support via CLI arguments (--batch-size, --offset)

@@ -80,7 +80,7 @@ curl -X POST https://govreposcrape-api-1060386346356.us-central1.run.app/mcp \
 
 ### search_uk_gov_code
 
-Search across ~21,000 UK government repositories for code examples, libraries, and patterns.
+Search across 24,500+ UK government repositories for code examples, libraries, and patterns.
 
 **Parameters:**
 - `query` (string, required): Search query (e.g., "authentication middleware", "postcode validation", "NHS API")

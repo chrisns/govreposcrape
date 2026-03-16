@@ -36,7 +36,7 @@ This document catalogs all technical debt accumulated during Epic 2 (Data Ingest
 Story 2-2 was marked "done" but KV caching was completely broken. Cache comparison logic was inverted - checking `cachedPushedAt !== repoPushedAt` instead of `cachedPushedAt === repoPushedAt`, causing 0% cache hits instead of 90%+ target.
 
 **Impact:**
-- Wasting compute resources reprocessing all 21k repos daily
+- Wasting compute resources reprocessing all 24,500+ repos daily
 - Cost overruns (target <£50/month exceeded)
 - Unable to efficiently scale ingestion pipeline
 - 6-hour processing window not achievable without caching

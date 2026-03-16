@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-govscraperepo is a Google Cloud Platform-based MCP API server providing semantic code search over ~21k UK government repositories. The architecture follows a **write path / read path separation** pattern: a Python containerized ingestion pipeline (gitingest) processes repositories, stores summaries as Markdown files in Google Cloud Storage with custom metadata (one file per repo: `{org}/{repo}.md`), which are automatically indexed by Vertex AI Search (managed service), and exposed via a TypeScript MCP v2 API deployed on Cloud Run. The architecture prioritizes managed services, incremental updates (based on `pushedAt` timestamp comparison), and simple URI-based metadata extraction.
+govscraperepo is a Google Cloud Platform-based MCP API server providing semantic code search over 24,500+ UK government repositories. The architecture follows a **write path / read path separation** pattern: a Python containerized ingestion pipeline (gitingest) processes repositories, stores summaries as Markdown files in Google Cloud Storage with custom metadata (one file per repo: `{org}/{repo}.md`), which are automatically indexed by Vertex AI Search (managed service), and exposed via a TypeScript MCP v2 API deployed on Cloud Run. The architecture prioritizes managed services, incremental updates (based on `pushedAt` timestamp comparison), and simple URI-based metadata extraction.
 
 ## Project Initialization
 
@@ -634,10 +634,10 @@ Content-Type: application/json
 
 ### Ingestion Performance (NFR-1.3)
 
-**Target: Process 21k repos in <6 hours**
-- Sequential: ~10s per repo × 21k = 58 hours
+**Target: Process 24,500+ repos in <6 hours**
+- Sequential: ~10s per repo × 24,500 = 68 hours
 - **Solution: Parallelization with --batch-size and --offset**
-- 10 parallel containers: 58 hours ÷ 10 = 5.8 hours ✓
+- 10 parallel containers: 68 hours ÷ 10 = 6.8 hours ✓
 
 **Container Performance:**
 - gitingest timeout: 5 minutes per repo
@@ -833,7 +833,7 @@ docker run --rm \
 
 ### ADR-001: Google Cloud Platform as Primary Platform
 
-**Context:** Need managed cloud platform with semantic search, object storage, and container runtime for ~21k UK government repositories.
+**Context:** Need managed cloud platform with semantic search, object storage, and container runtime for 24,500+ UK government repositories.
 
 **Decision:** Migrate from Cloudflare to Google Cloud Platform with Cloud Run, GCS, and Vertex AI Search.
 
@@ -878,7 +878,7 @@ docker run --rm \
 
 ### ADR-003: Vertex AI Search vs Custom Embeddings
 
-**Context:** Need semantic search over 21k repositories with metadata extraction.
+**Context:** Need semantic search over 24,500+ repositories with metadata extraction.
 
 **Decision:** Use Vertex AI Search (managed service) with "content" schema and URI-based metadata extraction.
 
@@ -897,7 +897,7 @@ docker run --rm \
 
 ### ADR-004: GCS Custom Metadata for Incremental Updates
 
-**Context:** Reprocessing 21k repos daily with gitingest is expensive and slow.
+**Context:** Reprocessing 24,500+ repos daily with gitingest is expensive and slow.
 
 **Decision:** Store metadata (org, repo, pushedAt) as GCS custom metadata and use pushedAt comparison for incremental updates.
 
