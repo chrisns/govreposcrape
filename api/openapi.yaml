@@ -61,14 +61,32 @@ paths:
               $ref: '#/components/schemas/SearchRequest'
             examples:
               basicSearch:
-                summary: Basic search with query only
+                summary: Basic search with query only (defaults to snippets mode)
                 value:
                   query: "authentication patterns in UK government repos"
+                description: "When resultMode is omitted, defaults to 'snippets' mode for backward compatibility"
               limitedSearch:
                 summary: Search with result limit
                 value:
                   query: "OAuth2 implementation"
                   limit: 10
+                description: "Limit parameter works with default snippets mode"
+              minimalMode:
+                summary: Minimal mode - fastest, metadata only
+                value:
+                  query: "API gateway patterns"
+                  resultMode: minimal
+              snippetsMode:
+                summary: Snippets mode - balanced (default)
+                value:
+                  query: "OAuth2 implementation"
+                  resultMode: snippets
+                description: "Default mode providing code snippets with context. Same behavior as omitting resultMode parameter."
+              fullMode:
+                summary: Full mode - comprehensive summaries
+                value:
+                  query: "microservices architecture"
+                  resultMode: full
       responses:
         '200':
           description: Successful search
@@ -77,23 +95,78 @@ paths:
               schema:
                 $ref: '#/components/schemas/SearchResponse'
               examples:
-                searchResults:
-                  summary: Sample search results
+                snippetsModeResults:
+                  summary: Snippets mode results (default - code excerpts with context)
                   value:
                     results:
-                      - title: "alphagov/govuk-frontend"
-                        url: "https://github.com/alphagov/govuk-frontend"
-                        snippet: "Authentication patterns using OAuth2..."
+                      - repo_url: "https://github.com/alphagov/govuk-frontend"
+                        repo_org: "alphagov"
+                        repo_name: "govuk-frontend"
+                        language: "TypeScript"
+                        last_updated: "2025-01-15T10:30:00Z"
+                        similarity_score: 0.87
+                        github_link: "https://github.com/alphagov/govuk-frontend"
                         metadata:
-                          org: "alphagov"
-                          repo: "govuk-frontend"
-                          pushedAt: "2025-01-15T10:30:00Z"
-                          processedAt: "2025-01-15T11:00:00Z"
+                          stars: 1234
+                          license: "MIT"
+                        snippet: "function authenticate(user) {\n  return validateUser(user);\n}"
+                        snippet_file_path: "src/auth/authenticate.ts"
+                        snippet_line_range: "45-47"
+                        context_lines_before: 2
+                        context_lines_after: 2
+                        codespaces_link: "https://github.dev/alphagov/govuk-frontend"
+                      - repo_url: "https://github.com/alphagov/govuk-design-system"
+                        repo_org: "alphagov"
+                        repo_name: "govuk-design-system"
+                        language: "JavaScript"
+                        last_updated: "2025-01-14T09:15:00Z"
+                        similarity_score: 0.82
+                        github_link: "https://github.com/alphagov/govuk-design-system"
+                        metadata:
+                          stars: 856
+                          license: "MIT"
+                        snippet: "const user = await fetchUser(id);\nif (!user) throw new Error('Not found');"
+                        snippet_file_path: "lib/user-service.js"
+                        snippet_line_range: "12-14"
+                        context_lines_before: 2
+                        context_lines_after: 2
+                        codespaces_link: "https://github.dev/alphagov/govuk-design-system"
                     metadata:
                       query: "authentication patterns"
                       limit: 20
-                      resultCount: 1
-                      duration: 342
+                      resultCount: 2
+                      duration: 682
+                    mode: snippets
+                minimalModeResults:
+                  summary: Minimal mode results (fast browsing)
+                  value:
+                    results:
+                      - repo_url: "https://github.com/alphagov/govuk-frontend"
+                        repo_org: "alphagov"
+                        repo_name: "govuk-frontend"
+                        language: "TypeScript"
+                        last_updated: "2025-01-15T10:30:00Z"
+                        similarity_score: 0.87
+                        github_link: "https://github.com/alphagov/govuk-frontend"
+                        metadata:
+                          stars: 1234
+                          license: "MIT"
+                      - repo_url: "https://github.com/alphagov/govuk-design-system"
+                        repo_org: "alphagov"
+                        repo_name: "govuk-design-system"
+                        language: "JavaScript"
+                        last_updated: "2025-01-14T09:15:00Z"
+                        similarity_score: 0.82
+                        github_link: "https://github.com/alphagov/govuk-design-system"
+                        metadata:
+                          stars: 856
+                          license: "MIT"
+                    metadata:
+                      query: "authentication patterns"
+                      limit: 20
+                      resultCount: 2
+                      duration: 245
+                    mode: minimal
         '400':
           description: Invalid request
           content:
@@ -113,6 +186,13 @@ paths:
                     error:
                       code: "INVALID_REQUEST"
                       message: "Invalid field: limit (must be a number between 1 and 100)"
+                invalidResultMode:
+                  summary: Invalid resultMode parameter
+                  value:
+                    error:
+                      code: "INVALID_RESULT_MODE"
+                      message: "resultMode must be one of: minimal, snippets, full"
+                      allowed_values: ["minimal", "snippets", "full"]
         '408':
           description: Request timeout
           content:
@@ -185,12 +265,26 @@ components:
           maximum: 100
           default: 20
           example: 20
+        resultMode:
+          type: string
+          description: |
+            Result detail level (controls verbosity of response)
+            - minimal: Metadata only (fastest, smallest payload)
+            - snippets: Code snippets with context (balanced, default)
+            - full: Complete repository summaries (comprehensive)
+          enum:
+            - minimal
+            - snippets
+            - full
+          default: snippets
+          example: snippets
 
     SearchResponse:
       type: object
       required:
         - results
         - metadata
+        - mode
       properties:
         results:
           type: array
@@ -199,6 +293,14 @@ components:
             $ref: '#/components/schemas/SearchResult'
         metadata:
           $ref: '#/components/schemas/SearchMetadata'
+        mode:
+          type: string
+          description: Effective result mode used for this response (echoes request or default)
+          enum:
+            - minimal
+            - snippets
+            - full
+          example: snippets
 
     SearchResult:
       type: object
@@ -223,6 +325,326 @@ components:
           example: "Authentication patterns using OAuth2 for secure user login..."
         metadata:
           $ref: '#/components/schemas/ResultMetadata'
+
+    SnippetResult:
+      type: object
+      required:
+        - repo_url
+        - repo_org
+        - repo_name
+        - language
+        - last_updated
+        - similarity_score
+        - github_link
+        - metadata
+        - snippet
+        - snippet_file_path
+        - snippet_line_range
+        - context_lines_before
+        - context_lines_after
+        - codespaces_link
+      description: |
+        Snippet result format (default mode). Extends minimal mode with focused code excerpts.
+        Provides balanced response with 3-5 lines of code and context for AI assistant integration.
+        Default when resultMode parameter is omitted (backward compatible).
+      properties:
+        repo_url:
+          type: string
+          format: uri
+          description: Repository URL (GitHub HTTPS URL)
+          example: "https://github.com/alphagov/govuk-frontend"
+        repo_org:
+          type: string
+          description: GitHub organization name
+          example: "alphagov"
+        repo_name:
+          type: string
+          description: Repository name
+          example: "govuk-frontend"
+        language:
+          type: string
+          description: Primary programming language
+          example: "TypeScript"
+        last_updated:
+          type: string
+          format: date-time
+          description: Last update timestamp (ISO 8601 format)
+          example: "2025-01-15T10:30:00Z"
+        similarity_score:
+          type: number
+          format: float
+          description: Semantic relevance score (0-1) from Vertex AI Search
+          minimum: 0
+          maximum: 1
+          example: 0.87
+        github_link:
+          type: string
+          format: uri
+          description: Direct link to GitHub repository
+          example: "https://github.com/alphagov/govuk-frontend"
+        metadata:
+          type: object
+          description: Optional metadata fields
+          properties:
+            stars:
+              type: integer
+              description: Repository star count
+              example: 1234
+            license:
+              type: string
+              description: Repository license type
+              example: "MIT"
+        snippet:
+          type: string
+          description: Code snippet (3-5 lines from Vertex AI Search highlights)
+          example: "function authenticate(user) {\n  return validateUser(user);\n}"
+        snippet_file_path:
+          type: string
+          description: File path where snippet originates
+          example: "src/auth/authenticate.ts"
+        snippet_line_range:
+          type: string
+          description: Line range in format "start-end"
+          example: "45-47"
+          pattern: '^\d+-\d+$'
+        context_lines_before:
+          type: integer
+          description: Number of context lines before snippet (fixed at 2)
+          example: 2
+          enum: [2]
+        context_lines_after:
+          type: integer
+          description: Number of context lines after snippet (fixed at 2)
+          example: 2
+          enum: [2]
+        codespaces_link:
+          type: string
+          format: uri
+          description: GitHub Codespaces quick edit link
+          example: "https://github.dev/alphagov/govuk-frontend"
+
+    FullResult:
+      type: object
+      required:
+        - repo_url
+        - repo_org
+        - repo_name
+        - language
+        - last_updated
+        - similarity_score
+        - github_link
+        - metadata
+        - snippet
+        - snippet_file_path
+        - snippet_line_range
+        - context_lines_before
+        - context_lines_after
+        - codespaces_link
+        - gitingest_summary
+      description: |
+        Full result format (comprehensive mode). Extends snippet mode with complete gitingest summaries
+        and enhanced metadata for deep analysis. Includes complete repository context, dependencies,
+        and statistics.
+
+        **Use case:** CLI tools, researchers, and developers needing complete repository context for
+        in-depth analysis, comprehensive code review, or full understanding of architecture.
+
+        **Performance:** Target p95 latency <3000ms, ~50KB per result
+      properties:
+        repo_url:
+          type: string
+          format: uri
+          description: Repository URL (GitHub HTTPS URL)
+          example: "https://github.com/alphagov/govuk-frontend"
+        repo_org:
+          type: string
+          description: GitHub organization name
+          example: "alphagov"
+        repo_name:
+          type: string
+          description: Repository name
+          example: "govuk-frontend"
+        language:
+          type: string
+          description: Primary programming language
+          example: "TypeScript"
+        last_updated:
+          type: string
+          format: date-time
+          description: Last update timestamp (ISO 8601 format)
+          example: "2025-01-15T10:30:00Z"
+        similarity_score:
+          type: number
+          format: float
+          description: Semantic relevance score (0-1) from Vertex AI Search
+          minimum: 0
+          maximum: 1
+          example: 0.87
+        github_link:
+          type: string
+          format: uri
+          description: Direct link to GitHub repository
+          example: "https://github.com/alphagov/govuk-frontend"
+        metadata:
+          type: object
+          description: Optional metadata fields
+          properties:
+            stars:
+              type: integer
+              description: Repository star count
+              example: 1234
+            license:
+              type: string
+              description: Repository license type
+              example: "MIT"
+        snippet:
+          type: string
+          description: Code snippet (3-5 lines from Vertex AI Search highlights)
+          example: "function authenticate(user) {\n  return validateUser(user);\n}"
+        snippet_file_path:
+          type: string
+          description: File path where snippet originates
+          example: "src/auth/authenticate.ts"
+        snippet_line_range:
+          type: string
+          description: Line range in format "start-end"
+          example: "45-47"
+          pattern: '^\d+-\d+$'
+        context_lines_before:
+          type: integer
+          description: Number of context lines before snippet (fixed at 2)
+          example: 2
+          enum: [2]
+        context_lines_after:
+          type: integer
+          description: Number of context lines after snippet (fixed at 2)
+          example: 2
+          enum: [2]
+        codespaces_link:
+          type: string
+          format: uri
+          description: GitHub Codespaces quick edit link
+          example: "https://github.dev/alphagov/govuk-frontend"
+        gitingest_summary:
+          type: string
+          description: |
+            Complete gitingest Markdown summary from Cloud Storage. Includes repository structure,
+            README content, code analysis, and metadata. Empty string if GCS fetch fails (graceful degradation).
+          example: "# Repository Summary\n\n## README\n\nThis is the GOV.UK Frontend repository...\n\n## Dependencies\n\n..."
+        full_file_context:
+          type: string
+          description: Full file context (future enhancement - complete file if available)
+          example: "Complete file contents would appear here"
+        readme_excerpt:
+          type: string
+          description: README excerpt (first 500 characters or first paragraph)
+          example: "This is the GOV.UK Frontend repository. It provides reusable components and styles for government services..."
+        repository_stats:
+          type: object
+          description: Repository statistics and activity metrics
+          properties:
+            contributors:
+              type: integer
+              description: Number of contributors to the repository
+              example: 42
+              minimum: 0
+            commits_last_month:
+              type: integer
+              description: Number of commits in the last month
+              example: 15
+              minimum: 0
+            open_issues:
+              type: integer
+              description: Number of open issues
+              example: 8
+              minimum: 0
+            last_commit:
+              type: string
+              format: date-time
+              description: Last commit timestamp (ISO 8601 format)
+              example: "2025-01-14T15:30:00Z"
+        dependencies:
+          type: array
+          description: Parsed dependencies from package manifests (package.json, requirements.txt, go.mod)
+          items:
+            type: object
+            required:
+              - name
+              - version
+              - type
+            properties:
+              name:
+                type: string
+                description: Package/module name
+                example: "express"
+              version:
+                type: string
+                description: Version string (e.g., "^1.2.3", ">=2.0.0")
+                example: "^4.18.2"
+              type:
+                type: string
+                description: Dependency type
+                enum: ["runtime", "dev"]
+                example: "runtime"
+
+    MinimalResult:
+      type: object
+      required:
+        - repo_url
+        - repo_org
+        - repo_name
+        - language
+        - last_updated
+        - similarity_score
+        - github_link
+        - metadata
+      properties:
+        repo_url:
+          type: string
+          format: uri
+          description: Repository URL (GitHub HTTPS URL)
+          example: "https://github.com/alphagov/govuk-frontend"
+        repo_org:
+          type: string
+          description: GitHub organization name
+          example: "alphagov"
+        repo_name:
+          type: string
+          description: Repository name
+          example: "govuk-frontend"
+        language:
+          type: string
+          description: Primary programming language
+          example: "TypeScript"
+        last_updated:
+          type: string
+          format: date-time
+          description: Last update timestamp (ISO 8601 format)
+          example: "2025-01-15T10:30:00Z"
+        similarity_score:
+          type: number
+          format: float
+          description: Semantic relevance score (0-1) from Vertex AI Search
+          minimum: 0
+          maximum: 1
+          example: 0.87
+        github_link:
+          type: string
+          format: uri
+          description: Direct link to GitHub repository
+          example: "https://github.com/alphagov/govuk-frontend"
+        metadata:
+          type: object
+          description: Optional metadata fields
+          properties:
+            stars:
+              type: integer
+              description: Repository star count
+              example: 1234
+            license:
+              type: string
+              description: Repository license type
+              example: "MIT"
 
     ResultMetadata:
       type: object
@@ -320,6 +742,7 @@ components:
           description: Error code
           enum:
             - INVALID_REQUEST
+            - INVALID_RESULT_MODE
             - TIMEOUT
             - NOT_FOUND
             - INTERNAL_ERROR
@@ -332,6 +755,12 @@ components:
           type: object
           description: Additional error details (development mode only)
           additionalProperties: true
+        allowed_values:
+          type: array
+          description: For enum validation errors, list of allowed values
+          items:
+            type: string
+          example: ["minimal", "snippets", "full"]
 
   securitySchemes:
     noAuth:

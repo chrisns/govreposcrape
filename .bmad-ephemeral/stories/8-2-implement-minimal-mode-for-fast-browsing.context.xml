@@ -1,0 +1,307 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>8</epicId>
+    <storyId>2</storyId>
+    <title>Implement Minimal Mode for Fast Browsing</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-19</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>.bmad-ephemeral/stories/8-2-implement-minimal-mode-for-fast-browsing.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer building a low-bandwidth client</asA>
+    <iWant>minimal mode to return only essential repo metadata without code snippets</iWant>
+    <soThat>I can quickly browse repositories with minimal data transfer and latency</soThat>
+    <tasks>
+### Task 1: Create MinimalResult TypeScript Interface (AC: #3)
+
+- [ ] 1.1 Add `MinimalResult` interface to `api/src/types/mcp.ts`
+- [ ] 1.2 Define base fields: `repo_url`, `repo_org`, `repo_name`, `language`, `last_updated`, `similarity_score`, `github_link`
+- [ ] 1.3 Add `metadata` object with optional `stars` and `license` fields
+- [ ] 1.4 Add JSDoc comments explaining minimal mode purpose (fast browsing, low bandwidth)
+- [ ] 1.5 Ensure TypeScript strict mode compliance
+
+### Task 2: Create Minimal Mode Formatter (AC: #1, #2)
+
+- [ ] 2.1 Create `api/src/formatters/minimalFormatter.ts`
+- [ ] 2.2 Implement `formatMinimal(results: VertexSearchResult[]): MinimalResult[]` function
+- [ ] 2.3 Extract base metadata from Vertex AI Search results (org, repo from GCS URI)
+- [ ] 2.4 Build GitHub URL: `https://github.com/{org}/{repo}`
+- [ ] 2.5 Extract language from Vertex AI metadata (if available)
+- [ ] 2.6 Extract `last_updated` from Vertex AI metadata (pushedAt or processedAt)
+- [ ] 2.7 Map `similarity_score` from Vertex AI Search relevance score
+- [ ] 2.8 Skip all Cloud Storage operations (no GCS reads for gitingest)
+- [ ] 2.9 Return only base metadata fields (no snippet, no summary)
+- [ ] 2.10 Add structured logging: log minimal mode usage and result count
+
+### Task 3: Integrate Formatter into Mode Router (AC: #1, #3)
+
+- [ ] 3.1 Update `api/src/controllers/searchController.ts` to branch on `resultMode`
+- [ ] 3.2 Import `formatMinimal` from `api/src/formatters/minimalFormatter.ts`
+- [ ] 3.3 Add conditional: `if (resultMode === 'minimal') { results = formatMinimal(rawResults); }`
+- [ ] 3.4 Ensure mode echo: response includes `mode: "minimal"`
+- [ ] 3.5 Verify no Cloud Storage reads for minimal mode (code review check)
+- [ ] 3.6 Update searchController logging to include formatter used
+
+### Task 4: Add Unit Tests for Minimal Formatter (AC: #1, #3)
+
+- [ ] 4.1 Create `api/test/formatters/minimalFormatter.test.ts`
+- [ ] 4.2 Test: valid Vertex AI result → MinimalResult with all required fields
+- [ ] 4.3 Test: GCS URI parsing extracts correct org/repo
+- [ ] 4.4 Test: GitHub URL formatted correctly: `https://github.com/{org}/{repo}`
+- [ ] 4.5 Test: no extra fields present (no snippet, no summary)
+- [ ] 4.6 Test: metadata object structure (optional stars, license)
+- [ ] 4.7 Test: handles missing optional fields gracefully (no errors)
+
+### Task 5: Add Integration Tests for Minimal Mode (AC: #1, #2, #3)
+
+- [ ] 5.1 Extend `api/test/integration/resultMode.test.ts` with minimal mode tests
+- [ ] 5.2 Test: `POST /mcp/search { query: "test", resultMode: "minimal" }` returns MinimalResult array
+- [ ] 5.3 Test: response schema matches MinimalResult interface
+- [ ] 5.4 Test: no snippet fields present in minimal mode response
+- [ ] 5.5 Test: mode field in response is "minimal"
+- [ ] 5.6 Test: response size is ~1KB per result or less (measure JSON size)
+- [ ] 5.7 Test: minimal mode is faster than snippets mode (compare response times)
+
+### Task 6: Performance Benchmarking (AC: #2)
+
+- [ ] 6.1 Create performance test script: `api/test/performance/minimalMode.perf.ts`
+- [ ] 6.2 Measure p95 latency for minimal mode with 5 results (100 requests)
+- [ ] 6.3 Verify p95 < 500ms threshold
+- [ ] 6.4 Compare minimal mode latency vs snippets mode (minimal should be faster)
+- [ ] 6.5 Measure response payload size (~1KB per result target)
+- [ ] 6.6 Document performance results in test output
+- [ ] 6.7 Add performance metrics to structured logging
+
+### Task 7: Update OpenAPI Specification (AC: #3)
+
+- [ ] 7.1 Update `api/openapi.yaml` with MinimalResult schema definition
+- [ ] 7.2 Add example response for minimal mode
+- [ ] 7.3 Document fields included in minimal mode vs other modes
+- [ ] 7.4 Update performance characteristics table (minimal: <500ms, ~1KB/result)
+- [ ] 7.5 Add use case documentation: "For low-bandwidth clients, fast browsing"
+
+### Task 8: Smoke Testing and Validation (AC: #1, #2, #3)
+
+- [ ] 8.1 Build TypeScript project: `npm run build`
+- [ ] 8.2 Run all unit tests: `npm test`
+- [ ] 8.3 Run integration tests: `npm run test:integration`
+- [ ] 8.4 Manual test: Query with minimal mode and verify response structure
+- [ ] 8.5 Manual test: Measure actual response time (<500ms target)
+- [ ] 8.6 Manual test: Measure actual payload size (~1KB per result target)
+- [ ] 8.7 Verify no Cloud Storage reads in logs (optimization check)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+**AC-1: Minimal Result Fields**
+
+- **Given** I send a search request with `resultMode: "minimal"`
+- **When** the API processes the query
+- **Then** each result includes only: `repo_url`, `repo_org`, `repo_name`, `language`, `last_updated`, `similarity_score`, `github_link`, `metadata.stars`, `metadata.license`
+- **And** no code snippets are included (no `snippet`, `snippet_file_path`, `snippet_line_range` fields)
+- **And** no gitingest summaries are included (no `gitingest_summary` field)
+- **And** response size is ~1KB per result or less
+
+**AC-2: Performance Target**
+
+- **Given** minimal mode is requested with 5 results
+- **When** I measure response time across multiple requests
+- **Then** p95 latency is <500ms
+- **And** latency is faster than snippets or full modes
+- **And** no Cloud Storage reads are performed (optimization)
+
+**AC-3: Response Schema Compliance**
+
+- **Given** minimal mode returns results
+- **When** I validate the response schema
+- **Then** response schema matches `MinimalResult` TypeScript interface
+- **And** mode field in response indicates `"minimal"`
+- **And** GitHub links are correctly formatted: `https://github.com/{org}/{repo}`
+- **And** TypeScript strict mode compilation passes
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>.bmad-ephemeral/stories/tech-spec-epic-8.md</path>
+        <title>Epic 8 Technical Specification: MCP API Enhancements - Result Modes</title>
+        <section>Detailed Design - Data Models and Contracts</section>
+        <snippet>Defines MinimalResult interface with base fields: repo_url, repo_org, repo_name, language, last_updated, similarity_score, github_link, metadata (stars, license). Performance optimization: skip Cloud Storage reads for minimal mode (fastest response path).</snippet>
+      </doc>
+      <doc>
+        <path>.bmad-ephemeral/stories/tech-spec-epic-8.md</path>
+        <title>Epic 8 Technical Specification: MCP API Enhancements - Result Modes</title>
+        <section>System Architecture Alignment - Performance Optimization Strategy</section>
+        <snippet>Minimal mode: Skip Cloud Storage reads entirely (metadata from Vertex AI Search results). Snippets mode: Use Vertex AI Search highlights (current behavior). Full mode: Single GCS read per result.</snippet>
+      </doc>
+      <doc>
+        <path>docs/PRD-Enhancement-MCP-Result-Modes.md</path>
+        <title>PRD Enhancement: MCP API Result Modes</title>
+        <section>Proposed Enhancement - Three Result Modes</section>
+        <snippet>Minimal mode use case: Performance-sensitive integrations that only need repo links and scores. Faster responses for clients that don't need full context. Bandwidth optimization for mobile/edge use cases.</snippet>
+      </doc>
+      <doc>
+        <path>api/openapi.yaml</path>
+        <title>GovRepoScrape Cloud Run API - OpenAPI Specification</title>
+        <section>SearchRequest Schema - resultMode Parameter</section>
+        <snippet>resultMode: enum [minimal, snippets, full], default: snippets. Minimal mode: Metadata only (fastest, smallest payload). Includes example requests for each mode.</snippet>
+      </doc>
+      <doc>
+        <path>.bmad-ephemeral/stories/8-1-add-resultmode-parameter-to-api-schema.md</path>
+        <title>Story 8.1: Add resultMode Parameter to API Schema (Completion Notes)</title>
+        <section>Learnings from Previous Story</section>
+        <snippet>Established TypeScript type definitions pattern in api/src/types/mcp.ts. Middleware validation pattern. Mode echo in response. Backward compatibility via default value. Vitest + supertest testing infrastructure.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>api/src/types/mcp.ts</path>
+        <kind>types</kind>
+        <symbol>ResultMode, MCPSearchResponse, SearchResult</symbol>
+        <lines>1-75</lines>
+        <reason>Existing type definitions for MCP API. Story 8.2 will add MinimalResult interface here following same pattern (JSDoc, TypeScript strict mode).</reason>
+      </artifact>
+      <artifact>
+        <path>api/src/controllers/searchController.ts</path>
+        <kind>controller</kind>
+        <symbol>search</symbol>
+        <lines>22-88</lines>
+        <reason>Main search endpoint handler. Story 8.2 will add mode routing logic here: if (resultMode === 'minimal') { results = formatMinimal(rawResults); }. Currently passes resultMode to service but doesn't branch on it.</reason>
+      </artifact>
+      <artifact>
+        <path>api/src/services/vertexSearchService.ts</path>
+        <kind>service</kind>
+        <symbol>VertexSearchService.search, SearchOptions</symbol>
+        <lines>1-100</lines>
+        <reason>Vertex AI Search integration. Returns raw search results with metadata from GCS URI (org, repo, timestamps). Minimal formatter will extract this metadata without GCS reads. SearchOptions interface already includes resultMode parameter (added in Story 8.1).</reason>
+      </artifact>
+      <artifact>
+        <path>api/test/validation.test.ts</path>
+        <kind>test</kind>
+        <symbol>validation unit tests</symbol>
+        <lines>all</lines>
+        <reason>Existing unit test pattern for Story 8.1. Story 8.2 will create api/test/formatters/minimalFormatter.test.ts following same Vitest structure (describe/it/expect).</reason>
+      </artifact>
+      <artifact>
+        <path>api/test/integration/resultMode.test.ts</path>
+        <kind>test</kind>
+        <symbol>resultMode integration tests</symbol>
+        <lines>1-167</lines>
+        <reason>Existing integration tests for resultMode parameter validation (Story 8.1). Story 8.2 will extend this file with minimal mode response validation tests (Task 5).</reason>
+      </artifact>
+      <artifact>
+        <path>api/src/middleware/validateRequest.ts</path>
+        <kind>middleware</kind>
+        <symbol>validateResultMode</symbol>
+        <lines>all</lines>
+        <reason>Request validation middleware created in Story 8.1. Validates resultMode enum and applies default value. Already wired into Express pipeline before searchController.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <nodejs>
+        <package name="@google-cloud/discoveryengine" version="^2.5.2" />
+        <package name="express" version="^4.18.2" />
+        <package name="cors" version="^2.8.5" />
+        <package name="vitest" version="^1.0.4" dev="true" />
+        <package name="supertest" version="^6.3.3" dev="true" />
+        <package name="typescript" version="^5.3.3" dev="true" />
+        <package name="@types/express" version="^4.17.21" dev="true" />
+        <package name="@types/node" version="^20.10.0" dev="true" />
+        <package name="ts-node" version="^10.9.2" dev="true" />
+      </nodejs>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Formatter Pattern: Create separate formatter module for each mode (minimalFormatter.ts, snippetFormatter.ts, fullFormatter.ts in api/src/formatters/)</constraint>
+    <constraint>Mode Router: Controller branches on resultMode to select appropriate formatter (if/else logic in searchController.ts)</constraint>
+    <constraint>Performance Optimization: Minimal mode MUST skip Cloud Storage reads (fastest response path, metadata only from Vertex AI Search results)</constraint>
+    <constraint>TypeScript Strict Mode: All code must pass strict mode compilation (noUnusedLocals, noImplicitReturns, noUnusedParameters enabled)</constraint>
+    <constraint>Structured JSON Logging: Log minimal mode usage, result count, and formatter selection for analytics</constraint>
+    <constraint>Response Schema: MinimalResult interface must match OpenAPI spec exactly (no extra fields, all required fields present)</constraint>
+    <constraint>GitHub URL Construction: https://github.com/{org}/{repo} format for all results</constraint>
+    <constraint>GCS URI Parsing: Extract org and repo from Vertex AI Search GCS URIs (gs://bucket/org/repo.md pattern)</constraint>
+    <constraint>No Breaking Changes: Existing clients using default (snippets) mode must work unchanged</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>MinimalResult (NEW - to be created)</name>
+      <kind>TypeScript interface</kind>
+      <signature>
+interface MinimalResult {
+  repo_url: string;
+  repo_org: string;
+  repo_name: string;
+  language: string;
+  last_updated: string;
+  similarity_score: number;
+  github_link: string;
+  metadata: {
+    stars?: number;
+    license?: string;
+  };
+}
+      </signature>
+      <path>api/src/types/mcp.ts</path>
+    </interface>
+    <interface>
+      <name>formatMinimal (NEW - to be created)</name>
+      <kind>function signature</kind>
+      <signature>function formatMinimal(results: VertexSearchResult[]): MinimalResult[]</signature>
+      <path>api/src/formatters/minimalFormatter.ts</path>
+    </interface>
+    <interface>
+      <name>MCPSearchResponse (existing)</name>
+      <kind>TypeScript interface</kind>
+      <signature>
+interface MCPSearchResponse {
+  results: SearchResult[];
+  metadata: { query: string; limit: number; resultCount: number; duration: number; };
+  mode: ResultMode;  // "minimal" | "snippets" | "full"
+}
+      </signature>
+      <path>api/src/types/mcp.ts</path>
+    </interface>
+    <interface>
+      <name>VertexSearchService.search (existing)</name>
+      <kind>class method</kind>
+      <signature>async search(options: SearchOptions): Promise&lt;SearchResult[]&gt;</signature>
+      <path>api/src/services/vertexSearchService.ts</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Vitest testing framework for all unit and integration tests. Supertest for HTTP endpoint testing. Test structure: describe() blocks for grouping, it() for individual test cases, expect() for assertions. TypeScript strict mode in tests. Mock Vertex AI Search results for unit tests (no external dependencies). Integration tests use real Express app with test middleware. Test coverage expectations: all acceptance criteria mapped to test cases, edge cases for optional fields, error conditions tested.
+    </standards>
+    <locations>
+      api/test/formatters/ (unit tests for formatters)
+      api/test/integration/ (integration tests for full request/response cycle)
+      api/test/performance/ (performance benchmarking tests)
+    </locations>
+    <ideas>
+      <test ac="AC-1" desc="Minimal formatter returns only required fields without snippets or summaries">
+        - Unit test: Mock Vertex AI result with GCS URI → MinimalResult has all base fields
+        - Unit test: Verify no snippet, snippet_file_path, snippet_line_range, gitingest_summary fields
+        - Unit test: Verify metadata object has optional stars and license fields
+        - Integration test: POST /mcp/search with resultMode=minimal → response has no snippet fields
+        - Integration test: Measure JSON response size (should be ~1KB per result)
+      </test>
+      <test ac="AC-2" desc="Minimal mode meets performance targets (p95 &lt;500ms, no GCS reads)">
+        - Performance test: 100 requests with 5 results each → measure p95 latency
+        - Performance test: Compare minimal vs snippets mode response times (minimal should be faster)
+        - Integration test: Verify no Cloud Storage operations in logs when using minimal mode
+      </test>
+      <test ac="AC-3" desc="Response schema matches MinimalResult interface">
+        - Unit test: MinimalResult conforms to TypeScript interface (strict mode compilation check)
+        - Unit test: GitHub URL formatting: https://github.com/{org}/{repo}
+        - Unit test: GCS URI parsing extracts correct org/repo from gs://bucket/org/repo.md
+        - Integration test: Response mode field equals "minimal"
+        - Integration test: TypeScript build passes (npm run build)
+      </test>
+    </ideas>
+  </tests>
+</story-context>

@@ -1,0 +1,588 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Story Context: 8.4 - Implement Full Mode for Comprehensive Analysis
+Generated: 2025-11-19
+Story Key: 8-4-implement-full-mode-for-comprehensive-analysis
+Epic: 8 - MCP API Enhancements - Result Modes
+Status: ready-for-dev
+-->
+<story-context>
+	<metadata>
+		<story_id>8.4</story_id>
+		<story_key>8-4-implement-full-mode-for-comprehensive-analysis</story_key>
+		<epic_id>8</epic_id>
+		<epic_title>MCP API Enhancements - Result Modes</epic_title>
+		<story_title>Implement Full Mode for Comprehensive Analysis</story_title>
+		<generated_date>2025-11-19</generated_date>
+		<project_root>/Users/cns/httpdocs/cddo/govreposcrape</project_root>
+	</metadata>
+
+	<user_story>
+		<as_a>CLI tool developer or researcher</as_a>
+		<i_want>full mode to return complete gitingest summaries and enhanced metadata</i_want>
+		<so_that>I can perform deep analysis with all available context</so_that>
+	</user_story>
+
+	<acceptance_criteria>
+		<criterion id="AC-1" priority="high">
+			<title>Full Result Fields</title>
+			<given>I send a search request with resultMode: "full"</given>
+			<when>the API processes the query</when>
+			<then>each result includes: all snippets mode fields PLUS gitingest_summary, full_file_context, readme_excerpt, repository_stats, dependencies</then>
+			<and>gitingest_summary contains the complete Markdown summary from Cloud Storage</and>
+			<and>response size is ~50KB per result</and>
+			<source>docs/epics.md#Story-8.4, .bmad-ephemeral/stories/tech-spec-epic-8.md#AC-4</source>
+		</criterion>
+		<criterion id="AC-2" priority="high">
+			<title>Enhanced Metadata Extraction</title>
+			<given>full mode is requested</given>
+			<when>the API retrieves additional metadata</when>
+			<then>repository_stats includes: contributors count, commits_last_month, open_issues, last_commit timestamp</then>
+			<and>dependencies array lists runtime and dev dependencies (if extractable from gitingest)</and>
+			<and>readme_excerpt contains first 500 characters of README (if available)</and>
+			<source>docs/epics.md#Story-8.4, .bmad-ephemeral/stories/tech-spec-epic-8.md#AC-4</source>
+		</criterion>
+		<criterion id="AC-3" priority="high">
+			<title>Performance and Schema Compliance</title>
+			<given>full mode returns results</given>
+			<when>I validate response performance and schema</when>
+			<then>p95 latency is &lt;3000ms for top 5 results</then>
+			<and>response schema matches FullResult TypeScript interface</and>
+			<and>all fields are properly typed and documented</and>
+			<and>Cloud Storage reads are efficient (single read per result)</and>
+			<source>docs/epics.md#Story-8.4, .bmad-ephemeral/stories/tech-spec-epic-8.md#AC-4</source>
+		</criterion>
+	</acceptance_criteria>
+
+	<story_tasks>
+		<task id="task-1" status="pending" relates_to="AC-1,AC-3">
+			<title>Create FullResult TypeScript Interface</title>
+			<subtasks>
+				<subtask>1.1 Add FullResult interface to api/src/types/mcp.ts</subtask>
+				<subtask>1.2 Extend SnippetResult interface (inherit all snippet mode fields)</subtask>
+				<subtask>1.3 Add gitingest fields: gitingest_summary, full_file_context, readme_excerpt</subtask>
+				<subtask>1.4 Add repository_stats object with: contributors, commits_last_month, open_issues, last_commit</subtask>
+				<subtask>1.5 Add dependencies array with: name, version, type ('runtime' | 'dev')</subtask>
+				<subtask>1.6 Add JSDoc comments explaining full mode purpose (comprehensive analysis)</subtask>
+				<subtask>1.7 Ensure TypeScript strict mode compliance</subtask>
+			</subtasks>
+		</task>
+		<task id="task-2" status="pending" relates_to="AC-1,AC-2,AC-3">
+			<title>Create Full Mode Formatter</title>
+			<subtasks>
+				<subtask>2.1 Create api/src/formatters/fullFormatter.ts</subtask>
+				<subtask>2.2 Implement formatFull(results: VertexSearchResult[]): Promise&lt;FullResult[]&gt; function (async for GCS reads)</subtask>
+				<subtask>2.3 Extract all base metadata from SnippetResult (reuse snippet formatter logic)</subtask>
+				<subtask>2.4 Fetch complete gitingest summary from Cloud Storage: gs://govreposcrape-summaries/{org}/{repo}.md</subtask>
+				<subtask>2.5 Extract README excerpt: first 500 characters or first paragraph from gitingest</subtask>
+				<subtask>2.6 Parse dependencies from gitingest summary (package.json, requirements.txt, go.mod sections)</subtask>
+				<subtask>2.7 Extract repository stats from gitingest metadata (contributors, commits, issues, last_commit)</subtask>
+				<subtask>2.8 Implement fallback: If GCS read fails, log error and return snippet-mode data only</subtask>
+				<subtask>2.9 Add structured logging: log full mode usage, GCS read success rate, payload sizes</subtask>
+				<subtask>2.10 Optimize: Batch GCS reads if multiple results (consider Promise.all for parallel fetches)</subtask>
+			</subtasks>
+		</task>
+		<task id="task-3" status="pending" relates_to="AC-1,AC-3">
+			<title>Integrate Formatter into Mode Router</title>
+			<subtasks>
+				<subtask>3.1 Update api/src/controllers/searchController.ts mode routing</subtask>
+				<subtask>3.2 Import formatFull from api/src/formatters/fullFormatter.ts</subtask>
+				<subtask>3.3 Add conditional: if (effectiveMode === 'full') { results = await formatFull(rawResults); }</subtask>
+				<subtask>3.4 Pass GCS client instance to formatter (dependency injection or import from services)</subtask>
+				<subtask>3.5 Update controller logging to track full mode usage and performance</subtask>
+				<subtask>3.6 Handle async formatting (formatFull returns Promise)</subtask>
+				<subtask>3.7 Maintain minimal and snippets mode routing from previous stories</subtask>
+			</subtasks>
+		</task>
+		<task id="task-4" status="pending" relates_to="AC-1,AC-2,AC-3">
+			<title>Add Unit Tests for Full Formatter</title>
+			<subtasks>
+				<subtask>4.1 Create api/test/formatters/fullFormatter.test.ts</subtask>
+				<subtask>4.2 Test: valid Vertex AI result + GCS summary → FullResult with all required fields</subtask>
+				<subtask>4.3 Test: gitingest summary fetched from Cloud Storage and included in response</subtask>
+				<subtask>4.4 Test: README excerpt extracted (first 500 chars or first paragraph)</subtask>
+				<subtask>4.5 Test: dependencies parsed from gitingest (package.json, requirements.txt sections)</subtask>
+				<subtask>4.6 Test: repository stats extracted (contributors, commits, issues, last_commit)</subtask>
+				<subtask>4.7 Test: fallback when GCS read fails (returns snippet-mode data, logs error)</subtask>
+				<subtask>4.8 Test: handles missing optional fields gracefully (empty arrays, undefined for missing stats)</subtask>
+				<subtask>4.9 Test: handles malformed gitingest summaries (missing sections)</subtask>
+			</subtasks>
+		</task>
+		<task id="task-5" status="pending" relates_to="AC-1,AC-2,AC-3">
+			<title>Add Integration Tests for Full Mode</title>
+			<subtasks>
+				<subtask>5.1 Extend api/test/integration/resultMode.test.ts with full mode tests</subtask>
+				<subtask>5.2 Test: POST /mcp/search { query: "test", resultMode: "full" } returns FullResult array</subtask>
+				<subtask>5.3 Test: response schema matches FullResult interface</subtask>
+				<subtask>5.4 Test: gitingest_summary field present and non-empty in full mode response</subtask>
+				<subtask>5.5 Test: repository_stats fields present (contributors, commits_last_month, open_issues, last_commit)</subtask>
+				<subtask>5.6 Test: dependencies array present (if dependencies exist in gitingest)</subtask>
+				<subtask>5.7 Test: readme_excerpt present (if README exists in gitingest)</subtask>
+				<subtask>5.8 Test: response size is ~50KB per result or less (measure JSON size)</subtask>
+				<subtask>5.9 Test: p95 latency validation (&lt;3000ms for top 5 results)</subtask>
+			</subtasks>
+		</task>
+		<task id="task-6" status="pending" relates_to="AC-3">
+			<title>Performance Validation and Optimization</title>
+			<subtasks>
+				<subtask>6.1 Measure p95 latency for full mode with 5 results</subtask>
+				<subtask>6.2 Verify p95 &lt; 3000ms threshold</subtask>
+				<subtask>6.3 Compare full mode latency vs snippets mode (full should be slower but under target)</subtask>
+				<subtask>6.4 Measure response payload size (~50KB per result target)</subtask>
+				<subtask>6.5 Optimize: Implement Promise.all for parallel GCS reads (multiple results)</subtask>
+				<subtask>6.6 Add performance metrics to structured logging (GCS read time, parsing time, total duration)</subtask>
+				<subtask>6.7 Document performance results in integration tests</subtask>
+			</subtasks>
+		</task>
+		<task id="task-7" status="pending" relates_to="AC-3">
+			<title>Update OpenAPI Specification</title>
+			<subtasks>
+				<subtask>7.1 Update api/openapi.yaml with FullResult schema definition</subtask>
+				<subtask>7.2 Add example response for full mode</subtask>
+				<subtask>7.3 Document performance characteristics: full mode (&lt;3000ms, ~50KB/result)</subtask>
+				<subtask>7.4 Add use case documentation: "Comprehensive mode for deep analysis - includes complete gitingest summaries and enhanced metadata"</subtask>
+				<subtask>7.5 Update resultMode parameter description to include full mode details</subtask>
+				<subtask>7.6 Add dependencies schema with name, version, type fields</subtask>
+				<subtask>7.7 Add repository_stats schema with all stat fields</subtask>
+			</subtasks>
+		</task>
+		<task id="task-8" status="pending" relates_to="AC-1,AC-2">
+			<title>Cloud Storage Integration Testing</title>
+			<subtasks>
+				<subtask>8.1 Test: Fetch gitingest summary from real GCS bucket (integration test with live service)</subtask>
+				<subtask>8.2 Test: Verify GCS URI parsing (extract org, repo from URI)</subtask>
+				<subtask>8.3 Test: Handle missing gitingest files in GCS (404 errors)</subtask>
+				<subtask>8.4 Test: Verify gitingest summary format matches expected Markdown structure</subtask>
+				<subtask>8.5 Test: All existing integration tests still pass with full mode available</subtask>
+			</subtasks>
+		</task>
+		<task id="task-9" status="pending" relates_to="AC-1,AC-2,AC-3">
+			<title>Smoke Testing and Validation</title>
+			<subtasks>
+				<subtask>9.1 Build TypeScript project: npm run build</subtask>
+				<subtask>9.2 Run all unit tests: npm test</subtask>
+				<subtask>9.3 Run integration tests: npm run test:integration</subtask>
+				<subtask>9.4 Manual test: Query with full mode and verify response structure</subtask>
+				<subtask>9.5 Manual test: Verify gitingest summary content is complete and accurate</subtask>
+				<subtask>9.6 Manual test: Measure actual response time (&lt;3000ms target)</subtask>
+				<subtask>9.7 Manual test: Verify response size (~50KB per result target)</subtask>
+			</subtasks>
+		</task>
+	</story_tasks>
+
+	<artifacts>
+		<documentation>
+			<doc>
+				<path>docs/PRD-Enhancement-MCP-Result-Modes.md</path>
+				<title>PRD Enhancement: MCP API Result Modes</title>
+				<section>Full Mode Specification</section>
+				<snippet>
+Full mode returns: all snippet mode fields PLUS complete gitingest_summary from Cloud Storage, full_file_context, readme_excerpt (first 500 chars), repository_stats (contributors, commits_last_month, open_issues, last_commit), and dependencies array (name, version, type).
+
+Performance targets: p95 latency &lt;3000ms, bandwidth ~50KB per result.
+Use case: Deep analysis, CLI tools, research when full context needed.
+				</snippet>
+			</doc>
+			<doc>
+				<path>.bmad-ephemeral/stories/tech-spec-epic-8.md</path>
+				<title>Epic Technical Specification: MCP API Enhancements - Result Modes</title>
+				<section>Data Models and Contracts</section>
+				<snippet>
+FullResult interface extends SnippetResult with:
+- gitingest_summary: string (Complete Markdown from GCS)
+- full_file_context?: string (Future: Extract full file if available)
+- readme_excerpt?: string (First 500 chars of README from gitingest)
+- repository_stats?: { contributors, commits_last_month, open_issues, last_commit }
+- dependencies?: Array&lt;{ name, version, type: 'runtime' | 'dev' }&gt;
+
+Implementation strategy: Single GCS read per result for complete gitingest summary. Parallel processing with Promise.all for concurrent fetches (up to 5 results). Timeout: 2 seconds per fetch. Graceful degradation: Return SnippetResult if GCS fetch fails.
+				</snippet>
+			</doc>
+			<doc>
+				<path>docs/epics.md</path>
+				<title>Epic 8: MCP API Enhancements - Result Modes</title>
+				<section>Story 8.4: Implement Full Mode for Comprehensive Analysis</section>
+				<snippet>
+Full mode provides comprehensive analysis capabilities for CLI tools and researchers. Extends SnippetResult with complete gitingest summaries from Cloud Storage, enhanced metadata (repository stats, dependencies), and README excerpts.
+
+Technical Notes:
+- Fetch complete gitingest summary from Cloud Storage: gs://govreposcrape-summaries/{org}/{repo}/summary.txt
+- Extract repository stats from GitHub API (cached for 1 hour to avoid rate limits)
+- Parse dependencies from gitingest summary (package.json, requirements.txt sections)
+- README excerpt: First 500 chars or first paragraph
+- Performance target: &lt;3000ms p95 (comprehensive mode, slower acceptable)
+- Bandwidth target: ~50KB per result
+- Consider adding pre-computed metadata to Cloud Storage objects for faster retrieval (future optimization)
+				</snippet>
+			</doc>
+		</documentation>
+
+		<code>
+			<artifact>
+				<path>api/src/types/mcp.ts</path>
+				<kind>interface</kind>
+				<symbol>MinimalResult, SnippetResult</symbol>
+				<lines>64-107</lines>
+				<reason>FullResult must extend SnippetResult to maintain interface inheritance chain. Current interfaces show pattern: SnippetResult extends MinimalResult. Study these interfaces to understand field structure.</reason>
+			</artifact>
+			<artifact>
+				<path>api/src/formatters/minimalFormatter.ts</path>
+				<kind>formatter</kind>
+				<symbol>formatMinimal</symbol>
+				<lines>18-88</lines>
+				<reason>Reference implementation showing formatter pattern: synchronous transformation, error handling with try/catch per result, structured logging, placeholder values with TODO comments for future enhancements. Full formatter will follow similar pattern but async.</reason>
+			</artifact>
+			<artifact>
+				<path>api/src/formatters/snippetFormatter.ts</path>
+				<kind>formatter</kind>
+				<symbol>formatSnippet</symbol>
+				<lines>18-114</lines>
+				<reason>Reference implementation for snippet extraction and result building. Full formatter will reuse snippet logic and add GCS fetch for gitingest_summary. Study error handling (lines 97-110) and metadata extraction (lines 23-57) patterns.</reason>
+			</artifact>
+			<artifact>
+				<path>api/src/controllers/searchController.ts</path>
+				<kind>controller</kind>
+				<symbol>search</symbol>
+				<lines>66-84</lines>
+				<reason>Mode routing logic. Currently handles minimal and snippets modes (lines 72-84). Full mode integration point at line 81 - add "else if (effectiveMode === 'full')" branch with async await: results = await formatFull(rawResults).</reason>
+			</artifact>
+			<artifact>
+				<path>api/test/formatters/snippetFormatter.test.ts</path>
+				<kind>test</kind>
+				<symbol>Snippet Formatter - Unit Tests</symbol>
+				<lines>6-320</lines>
+				<reason>Testing pattern reference for full formatter tests. Shows: AC-based test organization, mock data structure, field validation, error handling tests, type safety tests. Replicate this structure for fullFormatter.test.ts.</reason>
+			</artifact>
+			<artifact>
+				<path>api/package.json</path>
+				<kind>dependency-manifest</kind>
+				<symbol>dependencies</symbol>
+				<lines>23-27</lines>
+				<reason>Current dependencies. Note: @google-cloud/storage SDK is NOT present. Must add "@google-cloud/storage": "^7.7.0" to dependencies for Cloud Storage integration.</reason>
+			</artifact>
+		</code>
+	</artifacts>
+
+	<interfaces>
+		<interface>
+			<name>MinimalResult</name>
+			<kind>TypeScript interface</kind>
+			<signature>
+interface MinimalResult {
+  repo_url: string;
+  repo_org: string;
+  repo_name: string;
+  language: string;
+  last_updated: string;
+  similarity_score: number;
+  github_link: string;
+  metadata: { stars?: number; license?: string; };
+}
+			</signature>
+			<path>api/src/types/mcp.ts</path>
+		</interface>
+		<interface>
+			<name>SnippetResult extends MinimalResult</name>
+			<kind>TypeScript interface</kind>
+			<signature>
+interface SnippetResult extends MinimalResult {
+  snippet: string;
+  snippet_file_path: string;
+  snippet_line_range: string;
+  context_lines_before: number;
+  context_lines_after: number;
+  codespaces_link: string;
+}
+			</signature>
+			<path>api/src/types/mcp.ts</path>
+		</interface>
+		<interface>
+			<name>FullResult extends SnippetResult (TO BE IMPLEMENTED)</name>
+			<kind>TypeScript interface</kind>
+			<signature>
+interface FullResult extends SnippetResult {
+  gitingest_summary: string;
+  full_file_context?: string;
+  readme_excerpt?: string;
+  repository_stats?: {
+    contributors: number;
+    commits_last_month: number;
+    open_issues: number;
+    last_commit: string;
+  };
+  dependencies?: Array&lt;{
+    name: string;
+    version: string;
+    type: 'runtime' | 'dev';
+  }&gt;;
+}
+			</signature>
+			<path>api/src/types/mcp.ts (TO BE ADDED)</path>
+		</interface>
+		<interface>
+			<name>Cloud Storage Bucket Path</name>
+			<kind>GCS URI pattern</kind>
+			<signature>gs://govreposcrape-summaries/{org}/{repo}.md</signature>
+			<path>Cloud Storage</path>
+		</interface>
+	</interfaces>
+
+	<constraints>
+		<constraint priority="critical">
+			<category>Architecture Pattern</category>
+			<description>Follow established formatter pattern from Stories 8.2 and 8.3. Formatters are pure transformation functions with error handling per result (graceful degradation). Full formatter is FIRST async formatter - must handle Promise-based GCS reads.</description>
+		</constraint>
+		<constraint priority="critical">
+			<category>Interface Inheritance</category>
+			<description>FullResult MUST extend SnippetResult (which extends MinimalResult). This maintains inheritance chain and ensures all base fields are automatically included without duplication.</description>
+		</constraint>
+		<constraint priority="high">
+			<category>Cloud Storage Integration</category>
+			<description>Use @google-cloud/storage SDK (version ^7.7.0) for fetching gitingest summaries. Path pattern: gs://govreposcrape-summaries/{org}/{repo}.md. Implement graceful degradation: if GCS read fails, log error and return snippet-mode data (don't fail entire request).</description>
+		</constraint>
+		<constraint priority="high">
+			<category>Performance Optimization</category>
+			<description>Parallel GCS reads with Promise.all for multiple results. Timeout: 2 seconds per fetch. Target: p95 latency &lt;3000ms for top 5 results. Log performance metrics: GCS read time, parsing time, total duration.</description>
+		</constraint>
+		<constraint priority="high">
+			<category>TypeScript Strict Mode</category>
+			<description>All interfaces must be properly typed with JSDoc comments. No 'any' types. Proper error handling with Error type guards. Match strictness level from Stories 8.2 and 8.3.</description>
+		</constraint>
+		<constraint priority="medium">
+			<category>Backward Compatibility</category>
+			<description>Existing minimal and snippets mode routing must continue working. Default behavior (no resultMode parameter) remains snippets mode. Full mode is additive only - no breaking changes.</description>
+		</constraint>
+		<constraint priority="medium">
+			<category>Testing Standards</category>
+			<description>Follow testing pattern from snippetFormatter.test.ts: AC-based test organization, mock GCS reads (unit tests), live GCS integration (integration tests), error handling tests, type safety validation.</description>
+		</constraint>
+	</constraints>
+
+	<dependencies>
+		<node>
+			<package>@google-cloud/storage</package>
+			<version>^7.7.0</version>
+			<purpose>Cloud Storage client for fetching gitingest summaries</purpose>
+			<status>TO BE ADDED</status>
+		</node>
+		<node>
+			<package>@google-cloud/discoveryengine</package>
+			<version>^2.5.2</version>
+			<purpose>Vertex AI Search client (already installed)</purpose>
+			<status>INSTALLED</status>
+		</node>
+		<node>
+			<package>express</package>
+			<version>^4.18.2</version>
+			<purpose>HTTP server framework (already installed)</purpose>
+			<status>INSTALLED</status>
+		</node>
+		<node>
+			<package>typescript</package>
+			<version>^5.3.3</version>
+			<purpose>Type safety and compilation (already installed)</purpose>
+			<status>INSTALLED</status>
+		</node>
+		<node>
+			<package>vitest</package>
+			<version>^1.0.4</version>
+			<purpose>Testing framework (already installed)</purpose>
+			<status>INSTALLED</status>
+		</node>
+	</dependencies>
+
+	<tests>
+		<standards>
+Unit tests using Vitest framework. Test formatFull logic with mocked GCS reads (gitingest fetch, README extraction, dependency parsing, repository stats extraction, fallback behavior). Integration tests with live GCS service to validate end-to-end full mode request/response cycle. Performance tests to validate p95 latency &lt;3000ms and payload size ~50KB per result.
+
+Test file location: api/test/formatters/fullFormatter.test.ts
+Integration test location: api/test/integration/resultMode.test.ts (extend existing)
+		</standards>
+		<locations>
+			<pattern>api/test/formatters/*.test.ts</pattern>
+			<pattern>api/test/integration/*.test.ts</pattern>
+		</locations>
+		<ideas>
+			<test_idea criterion="AC-1">
+Unit test: Valid Vertex AI result + mocked GCS summary → FullResult with all required fields (gitingest_summary, snippet fields, base fields). Verify field presence and types.
+			</test_idea>
+			<test_idea criterion="AC-1">
+Unit test: GCS read failure → graceful degradation to SnippetResult format, error logged but request doesn't fail.
+			</test_idea>
+			<test_idea criterion="AC-2">
+Unit test: README excerpt extraction from gitingest Markdown - first 500 chars or first paragraph. Test with/without README in summary.
+			</test_idea>
+			<test_idea criterion="AC-2">
+Unit test: Dependency parsing from gitingest (package.json, requirements.txt, go.mod sections). Test with/without dependencies. Verify name, version, type fields.
+			</test_idea>
+			<test_idea criterion="AC-2">
+Unit test: Repository stats extraction from gitingest metadata. Test with complete stats, partial stats, missing stats.
+			</test_idea>
+			<test_idea criterion="AC-3">
+Integration test: POST /mcp/search with resultMode: "full" → FullResult array matches schema, gitingest_summary present and non-empty, response size ~50KB per result.
+			</test_idea>
+			<test_idea criterion="AC-3">
+Performance test: Measure p95 latency with 5 full mode results. Verify &lt;3000ms target. Compare to snippets mode (should be slower but within bounds).
+			</test_idea>
+			<test_idea criterion="AC-3">
+Integration test: Verify Cloud Storage reads are efficient - single read per result, parallel fetches with Promise.all, no duplicate reads.
+			</test_idea>
+			<test_idea criterion="AC-1,AC-2">
+Integration test: Handle missing gitingest files in GCS (404 errors) - verify fallback to snippet mode, error logged, response still successful.
+			</test_idea>
+		</ideas>
+	</tests>
+
+	<dev_notes>
+		<note category="formatter-pattern">
+Follow async version of snippetFormatter pattern:
+1. Import SnippetResult and SearchResult types
+2. Export async formatFull(results: SearchResult[]): Promise&lt;FullResult[]&gt;
+3. Initialize empty formatted array
+4. For each result: try/catch block with graceful error handling
+5. Extract base metadata (reuse snippet formatter logic)
+6. Await GCS fetch for gitingest summary
+7. Parse README excerpt, dependencies, repository stats from gitingest
+8. Build FullResult object extending SnippetResult fields
+9. Structured logging: first result only, log mode usage and GCS metrics
+10. Return formatted array
+
+Key difference from snippetFormatter: ASYNC function, await GCS reads, Promise.all optimization for parallel fetches.
+		</note>
+		<note category="gcs-integration">
+Cloud Storage setup:
+1. Install @google-cloud/storage: npm install --save @google-cloud/storage
+2. Create gcsClient.ts service in api/src/services/
+3. Initialize Storage client with GOOGLE_APPLICATION_CREDENTIALS
+4. Method: fetchGitingestSummary(org: string, repo: string): Promise&lt;string&gt;
+5. Path construction: `{org}/{repo}.md` (bucket: govreposcrape-summaries)
+6. Error handling: 404 → return null (missing file), 5xx → retry with backoff, timeout → return null
+7. Caching consideration: LRU cache for frequently accessed summaries (future optimization)
+
+GCS URI pattern from Epic 7: gs://govreposcrape-summaries/{org}/{repo}.md
+Example: gs://govreposcrape-summaries/alphagov/govuk-frontend.md
+		</note>
+		<note category="mode-router-integration">
+searchController.ts integration (lines 66-84):
+- effectiveMode already defined (line 66): const effectiveMode = resultMode || 'snippets';
+- Current routing: if (minimal) → formatMinimal, else if (snippets) → formatSnippet, else → rawResults
+- Add full mode branch at line 81: else if (effectiveMode === 'full') { results = await formatFull(rawResults); }
+- IMPORTANT: formatFull is async - must use await
+- Import formatFull at top: import { formatFull } from "../formatters/fullFormatter";
+- Update logging (line 96): Include formatter: formatterUsed variable
+- Existing formatter logging already tracks mode: minimal, snippet, default
+- Add 'full' to formatterUsed options
+		</note>
+		<note category="interface-design">
+FullResult interface inheritance:
+- Extends SnippetResult (which extends MinimalResult)
+- Inherits all base fields automatically: repo_url, repo_org, repo_name, language, last_updated, similarity_score, github_link, metadata, snippet, snippet_file_path, snippet_line_range, context_lines_before, context_lines_after, codespaces_link
+- Add ONLY new fields: gitingest_summary, full_file_context?, readme_excerpt?, repository_stats?, dependencies?
+- Use optional fields (?) for metadata that may not be available (repository_stats, dependencies, readme_excerpt)
+- JSDoc comment: "Comprehensive mode for deep analysis - includes complete gitingest summaries and enhanced metadata. Extends SnippetResult with Cloud Storage integration. Target: &lt;3000ms p95 latency, ~50KB per result."
+		</note>
+		<note category="performance-optimization">
+Parallel GCS reads optimization:
+1. Extract all org/repo pairs from results array
+2. Create array of GCS fetch promises: results.map(r =&gt; fetchGitingestSummary(r.metadata.org, r.metadata.repo))
+3. Use Promise.all for concurrent fetches: const summaries = await Promise.all(fetchPromises)
+4. Map summaries back to results by index
+5. Timeout per fetch: 2 seconds (use Promise.race with timeout promise)
+6. Log metrics: total GCS time, successful fetches, failed fetches, average fetch time
+
+Performance targets:
+- p95 latency: &lt;3000ms for top 5 results
+- Payload size: ~50KB per result (measure actual JSON.stringify size in tests)
+- GCS read efficiency: single read per result, no duplicate fetches
+- Graceful degradation: failed GCS read doesn't block entire request
+		</note>
+		<note category="technical-debt">
+Placeholder values from Stories 8.2/8.3 to address in Story 8.4:
+1. similarity_score: Currently hardcoded 0.85 (snippetFormatter.ts:37, minimalFormatter.ts:38)
+   - TODO: Extract real similarity scores from Vertex AI Search response
+2. snippet_file_path: Currently placeholder "src/example.ts" (snippetFormatter.ts:52)
+   - TODO: Extract actual file paths from Vertex AI metadata
+3. snippet_line_range: Currently placeholder "1-5" (snippetFormatter.ts:53)
+   - TODO: Extract real line ranges from highlights metadata
+4. language: Currently "Unknown" (snippetFormatter.ts:31, minimalFormatter.ts:31)
+   - TODO: Extract from Vertex AI metadata when available
+
+For Story 8.4: Continue using placeholders for consistency with Stories 8.2/8.3. Add TODOs for future enhancement. Focus on gitingest_summary, repository_stats, dependencies extraction (core Story 8.4 objectives).
+		</note>
+		<note category="testing-strategy">
+Unit test mocking strategy:
+1. Mock GCS client: Create MockGCSClient class with fetchGitingestSummary method
+2. Return sample gitingest Markdown with README, dependencies sections
+3. Test README parsing: Extract first 500 chars or first paragraph
+4. Test dependency parsing: Mock package.json section, verify name/version/type extraction
+5. Test repository stats: Mock metadata section with contributors, commits, issues
+6. Test error cases: Mock GCS 404, timeout, malformed Markdown
+7. Verify fallback: Failed GCS read returns SnippetResult fields only
+
+Integration test live GCS strategy:
+1. Use real GCS bucket: govreposcrape-summaries
+2. Test with known repository: alphagov/govuk-frontend (reliable test data)
+3. Verify gitingest_summary content matches expected structure
+4. Measure response time and payload size with real data
+5. Test missing file scenario (fictional org/repo that doesn't exist)
+6. Validate all existing tests still pass (backward compatibility)
+		</note>
+	</dev_notes>
+
+	<related_stories>
+		<story>
+			<id>8.1</id>
+			<title>Add resultMode Parameter to API Schema</title>
+			<status>done</status>
+			<relevance>Established resultMode parameter validation and default handling. Full mode relies on this foundation.</relevance>
+		</story>
+		<story>
+			<id>8.2</id>
+			<title>Implement Minimal Mode for Fast Browsing</title>
+			<status>done</status>
+			<relevance>Established formatter pattern and MinimalResult interface. Full mode follows same pattern but async.</relevance>
+		</story>
+		<story>
+			<id>8.3</id>
+			<title>Implement Snippets Mode as Default</title>
+			<status>done</status>
+			<relevance>Established SnippetResult interface and snippet extraction logic. Full mode extends SnippetResult and reuses snippet logic.</relevance>
+		</story>
+		<story>
+			<id>7.1</id>
+			<title>Container Layer Migration to Google File Search</title>
+			<status>done</status>
+			<relevance>Established Cloud Storage upload pattern. Full mode reads from same GCS bucket populated by container layer.</relevance>
+		</story>
+		<story>
+			<id>7.5</id>
+			<title>Vertex AI Search Migration</title>
+			<status>done</status>
+			<relevance>Vertex AI Search integration complete. Full mode uses same search service, adds GCS enrichment.</relevance>
+		</story>
+	</related_stories>
+
+	<learnings_from_previous_stories>
+		<learning story="8.3">
+Formatter pattern established: Separate formatter module with consistent structure. Export single format function. Graceful error handling with try/catch per result. Structured JSON logging. Placeholder values with TODO comments for future enhancements. New files: snippetFormatter.ts (118 lines), snippetFormatter.test.ts (14 tests). REUSE this pattern for fullFormatter.ts.
+		</learning>
+		<learning story="8.3">
+Interface inheritance pattern: SnippetResult extends MinimalResult. All base fields from MinimalResult automatically included. For Story 8.4: FullResult extends SnippetResult (maintains inheritance chain).
+		</learning>
+		<learning story="8.3">
+Mode router integration: searchController.ts line 66: const effectiveMode = resultMode || 'snippets'. Lines 72-84: Mode conditional branching (minimal → snippets → full). For Story 8.4: Add else if (effectiveMode === 'full') branch. IMPORTANT: Full mode requires async handling - results = await formatFull(rawResults).
+		</learning>
+		<learning story="8.3">
+Testing infrastructure: 14 unit tests for snippet formatter (all passing). 14 integration tests added to resultMode.test.ts (282 new lines). For Story 8.4: Follow same test structure (unit + integration). NOTE: Integration tests require live Vertex AI service (expected failures without credentials).
+		</learning>
+		<learning story="8.3">
+Performance considerations: Snippet mode ~5KB per result, &lt;1500ms p95. Snippet truncation: 200 chars to maintain size target. For Story 8.4: Target ~50KB per result, &lt;3000ms p95. Optimization needed: Parallel GCS reads with Promise.all.
+		</learning>
+		<learning story="8.3">
+TypeScript strict mode compliance: All interfaces properly typed with JSDoc comments. No any types used. Proper error handling with Error type guards. For Story 8.4: Maintain same strict mode standards.
+		</learning>
+		<learning story="8.3">
+Technical debt from Story 8.3: Placeholder values for file_path and line_range in snippetFormatter.ts (lines 52-53). Placeholder similarity_score: 0.85 (snippetFormatter.ts:37). For Story 8.4: Continue using placeholders for consistency, extract real values if Vertex AI metadata available.
+		</learning>
+	</learnings_from_previous_stories>
+</story-context>

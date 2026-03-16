@@ -1,4 +1,5 @@
 import { SearchServiceClient } from "@google-cloud/discoveryengine";
+import { ResultMode } from "../types/mcp";
 
 export interface SearchResult {
 	title: string;
@@ -15,6 +16,12 @@ export interface SearchResult {
 export interface SearchOptions {
 	query: string;
 	limit?: number;
+	/**
+	 * Result detail level (minimal, snippets, full)
+	 * Note: Implementation of different modes will be in stories 8.2-8.4
+	 * For now, this parameter is accepted but not used
+	 */
+	resultMode?: ResultMode;
 }
 
 export class VertexSearchService {

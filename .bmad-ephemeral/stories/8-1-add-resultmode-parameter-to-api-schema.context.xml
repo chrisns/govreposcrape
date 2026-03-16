@@ -1,0 +1,188 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>8</epicId>
+    <storyId>1</storyId>
+    <title>Add `resultMode` Parameter to API Schema</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-19</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>.bmad-ephemeral/stories/8-1-add-resultmode-parameter-to-api-schema.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>backend developer</asA>
+    <iWant>to add the `resultMode` parameter to the `/mcp/search` endpoint schema with validation</iWant>
+    <soThat>clients can specify which level of detail they need in search results (minimal, snippets, or full)</soThat>
+    <tasks>
+      - Task 1: Update TypeScript Type Definitions (5 subtasks)
+      - Task 2: Implement Request Validation Middleware (7 subtasks)
+      - Task 3: Update Search Endpoint Handler (6 subtasks)
+      - Task 4: Add Error Handling Tests (5 subtasks)
+      - Task 5: Integration Testing and Backward Compatibility (7 subtasks)
+      - Task 6: Update OpenAPI Specification (7 subtasks)
+      - Task 7: Deploy and Smoke Test (7 subtasks)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    **AC-1: API Parameter Handling**
+    - API accepts resultMode values: "minimal", "snippets", "full" (case-sensitive)
+    - Defaults to "snippets" if parameter omitted
+    - Returns 400 Bad Request for invalid resultMode values with clear error message
+
+    **AC-2: Error Response Format**
+    - Error response includes: {"error": {"code": "INVALID_RESULT_MODE", "message": "resultMode must be one of: minimal, snippets, full", "allowed_values": ["minimal", "snippets", "full"]}}
+    - HTTP status code is 400 Bad Request
+    - Error response follows MCP v2 protocol format
+
+    **AC-3: Response Mode Echo**
+    - Response includes `mode` field indicating which mode was used
+    - `mode` field matches requested resultMode (or "snippets" if omitted)
+    - `mode` field included in all successful responses
+
+    **AC-4: Backward Compatibility**
+    - Existing clients without resultMode parameter continue working
+    - API defaults to "snippets" mode (current production behavior)
+    - No breaking changes to existing response structure
+    - All existing clients work without modifications
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path=".bmad-ephemeral/stories/tech-spec-epic-8.md" title="Epic 8 Technical Specification" section="Story 8.1">
+        Defines the `resultMode` parameter schema, validation rules, error response format, and traceability mapping. Specifies enum values (minimal, snippets, full), default value ("snippets"), and backward compatibility requirements. Includes TypeScript interfaces for MinimalResult, SnippetResult, FullResult.
+      </doc>
+      <doc path="docs/PRD-Enhancement-MCP-Result-Modes.md" title="PRD Enhancement: MCP API Result Modes" section="Proposed Enhancement">
+        Describes the motivation for result modes (AI assistants need different detail levels, performance optimization, bandwidth control). Defines three result modes with use cases and example responses. Specifies performance targets: minimal &lt;500ms, snippets &lt;1500ms, full &lt;3000ms.
+      </doc>
+      <doc path="api/openapi.yaml" title="OpenAPI Specification" section="N/A">
+        Current API schema documentation. Will be extended with resultMode parameter definition, enum constraint, default value documentation, and error response examples for invalid modes.
+      </doc>
+    </docs>
+
+    <code>
+      <file path="api/src/controllers/searchController.ts" kind="controller" symbol="search" lines="40-171" reason="Main search endpoint handler - will be modified to extract and validate resultMode parameter, pass to service layer, and echo mode in response">
+        Current implementation: Validates query and limit parameters, calls VertexSearchService, returns results with metadata. Contains inline type definitions (MCPSearchRequest, MCPErrorResponse) that should be extracted to separate types file.
+      </file>
+      <file path="api/src/controllers/searchController.ts" kind="types" symbol="MCPSearchRequest" lines="20-23" reason="Request interface to be extended with resultMode field">
+        Current definition: interface MCPSearchRequest { query: string; limit?: number; }. Will add: resultMode?: 'minimal' | 'snippets' | 'full';
+      </file>
+      <file path="api/src/controllers/searchController.ts" kind="types" symbol="MCPErrorResponse" lines="28-34" reason="Error response interface - used for validation errors">
+        Defines MCP v2 error format: { error: { code: string; message: string; details?: any; } }. Already correct format for INVALID_RESULT_MODE errors.
+      </file>
+      <file path="api/src/services/vertexSearchService.ts" kind="service" symbol="search" lines="39-148" reason="Search service implementation - will be modified to accept resultMode parameter (no logic changes in this story)">
+        Current signature: async search(options: SearchOptions): Promise&lt;SearchResult[]&gt;. Will extend SearchOptions to include resultMode (for stories 8.2-8.4 to use).
+      </file>
+      <file path="api/src/services/vertexSearchService.ts" kind="types" symbol="SearchOptions" lines="15-18" reason="Service options interface to be extended with resultMode">
+        Current definition: interface SearchOptions { query: string; limit?: number; }. Will add: resultMode?: 'minimal' | 'snippets' | 'full';
+      </file>
+      <file path="api/src/services/vertexSearchService.ts" kind="types" symbol="SearchResult" lines="3-13" reason="Result interface used by all modes">
+        Base result structure with title, url, snippet, metadata. Serves as baseline for all three result modes.
+      </file>
+      <file path="api/src/index.ts" kind="server" symbol="app.post" lines="44" reason="Route definition for /mcp/search endpoint">
+        Current route: app.post("/mcp/search", search). No changes needed, but good to understand Express middleware flow.
+      </file>
+      <file path="api/src/middleware/errorHandler.ts" kind="middleware" symbol="errorHandler" lines="N/A" reason="Global error handling middleware - reference for consistent error responses">
+        Handles unhandled errors. Validation errors will be caught earlier in request validation middleware, but this provides pattern reference.
+      </file>
+      <file path="api/test/integration/search.test.ts" kind="test" symbol="N/A" lines="N/A" reason="Existing integration tests - will be extended with resultMode test cases">
+        Current tests validate search functionality. Will add tests for: valid resultMode values, invalid values, omitted parameter (default behavior), mode echo in response.
+      </file>
+    </code>
+
+    <dependencies>
+      <node>
+        <dependency name="express" version="^4.18.2">HTTP server framework - used for routing and middleware</dependency>
+        <dependency name="@google-cloud/discoveryengine" version="^2.5.2">Vertex AI Search client</dependency>
+        <dependency name="cors" version="^2.8.5">CORS middleware</dependency>
+        <dependency name="typescript" version="^5.3.3">TypeScript compiler (strict mode enabled)</dependency>
+        <dependency name="vitest" version="^1.0.4">Testing framework for unit and integration tests</dependency>
+        <dependency name="supertest" version="^6.3.3">HTTP testing library for API integration tests</dependency>
+        <dependency name="@types/express" version="^4.17.21">TypeScript types for Express</dependency>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - **TypeScript Strict Mode**: All code must compile with strict: true (noUnusedLocals, noImplicitReturns, etc.)
+    - **Backward Compatibility**: CRITICAL - existing clients without resultMode parameter must continue working unchanged
+    - **MCP v2 Protocol**: Error responses must follow MCP v2 format: { error: { code, message, [details] } }
+    - **Enum Validation**: resultMode must be validated as one of three exact strings: "minimal", "snippets", "full" (case-sensitive)
+    - **Default Value**: When resultMode is omitted or undefined, must default to "snippets" (maintains current behavior)
+    - **No Breaking Changes**: Response structure must remain compatible - mode field is additive
+    - **Validation at Boundary**: Validate resultMode in middleware/controller before passing to service layer
+    - **Error Message Clarity**: Invalid enum errors must include allowed_values array for developer clarity
+    - **Structured Logging**: Log resultMode usage for analytics (query success logs should include mode field)
+  </constraints>
+
+  <interfaces>
+    <interface name="MCPSearchRequest" kind="TypeScript interface" signature="interface MCPSearchRequest { query: string; limit?: number; resultMode?: 'minimal' | 'snippets' | 'full'; }" path="api/src/types/mcp.ts (to be created)">
+      Request schema for /mcp/search endpoint. Will be extracted from inline definition in searchController.ts to new types file.
+    </interface>
+
+    <interface name="MCPSearchResponse" kind="TypeScript interface" signature="interface MCPSearchResponse { results: SearchResult[]; metadata: { query: string; limit: number; resultCount: number; duration: number; }; mode: 'minimal' | 'snippets' | 'full'; }" path="api/src/types/mcp.ts (to be created)">
+      Response schema with new mode field. Currently response is inline in searchController.ts, will be formalized in types file.
+    </interface>
+
+    <interface name="MCPErrorResponse" kind="TypeScript interface" signature="interface MCPErrorResponse { error: { code: string; message: string; details?: any; allowed_values?: string[]; } }" path="api/src/types/mcp.ts (to be created)">
+      Error response schema. Extended to include allowed_values for INVALID_RESULT_MODE errors.
+    </interface>
+
+    <interface name="POST /mcp/search" kind="REST endpoint" signature="POST /mcp/search { query: string, limit?: number, resultMode?: 'minimal' | 'snippets' | 'full' } → { results: SearchResult[], metadata: {...}, mode: string }" path="api/src/controllers/searchController.ts">
+      Main search endpoint. Accepts resultMode parameter (optional, defaults to "snippets"). Returns results with mode echo field.
+    </interface>
+
+    <interface name="validateRequest" kind="Express middleware" signature="(req: Request, res: Response, next: NextFunction) => void" path="api/src/middleware/validateRequest.ts (to be created)">
+      Request validation middleware to be created. Validates resultMode enum, sets default value, returns 400 error for invalid values.
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Testing framework: Vitest (configured in package.json).
+      Test locations follow pattern: api/test/unit/*.test.ts for unit tests, api/test/integration/*.test.ts for integration tests.
+      TypeScript strict mode applies to test files.
+      Integration tests use supertest for HTTP testing.
+      Test commands: npm test (all tests), npm run test:integration (integration only).
+      Coverage not currently configured but recommended for new code.
+    </standards>
+
+    <locations>
+      - api/test/unit/ - Unit tests for validation logic and helpers
+      - api/test/integration/ - Integration tests for full request/response cycle
+      - api/test/validation.test.ts - New file for resultMode validation unit tests
+      - api/test/integration/resultMode.test.ts - New file for resultMode integration tests
+    </locations>
+
+    <ideas>
+      **AC-1 Tests (API Parameter Handling):**
+      - Test valid resultMode: "minimal" → accepts and processes
+      - Test valid resultMode: "snippets" → accepts and processes
+      - Test valid resultMode: "full" → accepts and processes
+      - Test omitted resultMode → defaults to "snippets"
+      - Test invalid resultMode: "invalid" → returns 400 INVALID_RESULT_MODE
+      - Test case sensitivity: "MINIMAL" → returns 400 (not "minimal")
+      - Test invalid types: null, 123, {}, [] → all return 400
+
+      **AC-2 Tests (Error Response Format):**
+      - Verify error response structure matches: { error: { code, message, allowed_values } }
+      - Verify code is "INVALID_RESULT_MODE"
+      - Verify message is clear and actionable
+      - Verify allowed_values array contains ["minimal", "snippets", "full"]
+      - Verify HTTP status code is 400
+
+      **AC-3 Tests (Response Mode Echo):**
+      - Request with resultMode: "minimal" → response.mode === "minimal"
+      - Request with resultMode: "snippets" → response.mode === "snippets"
+      - Request with resultMode: "full" → response.mode === "full"
+      - Request without resultMode → response.mode === "snippets"
+      - Verify mode field present in all successful responses
+
+      **AC-4 Tests (Backward Compatibility):**
+      - Test existing request format (query only) → still works, gets snippets mode
+      - Test existing request format (query + limit) → still works, gets snippets mode
+      - Run full existing test suite → all tests pass without modification
+      - Verify no breaking changes to response structure (results, metadata still present)
+    </ideas>
+  </tests>
+</story-context>

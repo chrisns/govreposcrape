@@ -1,0 +1,274 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>8</epicId>
+    <storyId>5</storyId>
+    <title>Update Documentation and OpenAPI Specification</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-19</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>.bmad-ephemeral/stories/8-5-update-documentation-and-openapi-specification.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer integrating with the MCP API</asA>
+    <iWant>clear documentation of the new resultMode parameter and response schemas</iWant>
+    <soThat>I can choose the appropriate mode for my use case</soThat>
+    <tasks>
+      ### Task 1: Update OpenAPI Specification for resultMode Parameter (8 subtasks)
+      - Review current OpenAPI spec, add resultMode parameter with enum values
+      - Set default to "snippets", document error responses
+      - Add mode field to response schema
+
+      ### Task 2: Document Response Schemas for Each Mode (13 subtasks)
+      - Add MinimalResult schema with all base metadata fields
+      - Add SnippetResult schema extending MinimalResult
+      - Add FullResult schema with gitingest_summary and repository_stats
+      - Add example responses for each mode
+
+      ### Task 3: Create Integration Examples (12 subtasks)
+      - Create api/examples/result-modes/ directory
+      - Create cURL examples: minimal-mode.sh, snippets-mode.sh, full-mode.sh
+      - Create TypeScript examples: minimal-mode.ts, snippets-mode.ts, full-mode.ts
+      - Create Python examples: minimal_mode.py, snippets_mode.py, full_mode.py
+
+      ### Task 4: Create Mode Selection Usage Guide (6 subtasks)
+      - Create api/docs/result-modes.md usage guide
+      - Document when to use each mode, performance characteristics table
+      - Add decision tree for mode selection
+
+      ### Task 5: Update MCP Configuration Guide (5 subtasks)
+      - Review existing Claude Desktop configuration guide
+      - Add result modes section with examples for each mode
+      - Document performance expectations
+
+      ### Task 6: Create Migration Guide (5 subtasks)
+      - Create api/docs/migration-result-modes.md
+      - Document backward compatibility guarantee
+      - Provide optimization guidance for switching modes
+
+      ### Task 7: Update README.md with Result Modes Overview (5 subtasks)
+      - Add "Result Modes" section to main README.md
+      - Provide quick overview of three modes
+      - Link to detailed documentation
+
+      ### Task 8: Validate Swagger UI Rendering (7 subtasks)
+      - Start local API server, access Swagger UI at /docs
+      - Verify resultMode parameter renders with enum dropdown
+      - Test example responses
+
+      ### Task 9: Create Performance Documentation (5 subtasks)
+      - Create api/docs/performance.md
+      - Document performance targets for each mode
+      - Add optimization strategies
+
+      ### Task 10: Review and Validate All Documentation (7 subtasks)
+      - Spell check, validate code examples
+      - Check internal links, verify consistency
+      - Validate OpenAPI spec with validator tool
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    AC-1: OpenAPI Specification Updates
+    - /mcp/search endpoint documents resultMode parameter with enum values
+    - Request schema shows enum values with descriptions
+    - Response schemas defined for MinimalResult, SnippetResult, FullResult
+    - Examples provided for each mode
+
+    AC-2: Integration Documentation
+    - Clear explanation of when to use each mode
+    - Performance characteristics table (latency, bandwidth)
+    - Code examples for TypeScript/JavaScript clients
+    - MCP configuration examples for Claude Desktop
+    - Migration guide for existing clients
+
+    AC-3: API Documentation Completeness
+    - Swagger UI at /docs renders updated spec correctly
+    - Example responses show realistic data for each mode
+    - Error scenarios documented (invalid mode values)
+    - Performance table from PRD included (minimal <500ms, snippets <1500ms, full <3000ms)
+    - Backward compatibility guarantee documented
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>.bmad-ephemeral/stories/tech-spec-epic-8.md</path>
+        <title>Epic 8 Technical Specification - MCP API Result Modes</title>
+        <section>Complete technical specification</section>
+        <snippet>Defines three result modes (minimal, snippets, full) with performance targets, data models (MinimalResult, SnippetResult, FullResult interfaces), API contracts, and acceptance criteria AC-5 for documentation completeness</snippet>
+      </doc>
+      <doc>
+        <path>docs/PRD-Enhancement-MCP-Result-Modes.md</path>
+        <title>PRD Enhancement: MCP API Result Modes</title>
+        <section>Feature definition and use cases</section>
+        <snippet>Defines motivation, three result modes with examples, performance characteristics table (minimal <500ms ~1KB, snippets <1500ms ~5KB, full <3000ms ~50KB), client integration patterns, and acceptance criteria AC-5 for documentation</snippet>
+      </doc>
+      <doc>
+        <path>api/openapi.yaml</path>
+        <title>OpenAPI 3.0 Specification (Current)</title>
+        <section>Existing API schema with partial result modes implementation</section>
+        <snippet>Already includes resultMode parameter with enum (minimal/snippets/full), SearchRequest/SearchResponse schemas, SnippetResult schema (95 lines), FullResult schema (164 lines), MinimalResult schema (partial). Stories 8.1-8.4 completed schema updates.</snippet>
+      </doc>
+      <doc>
+        <path>api/src/types/mcp.ts</path>
+        <title>MCP TypeScript Type Definitions</title>
+        <section>ResultMode types and interfaces</section>
+        <snippet>Defines ResultMode type ('minimal'|'snippets'|'full'), MCPSearchRequest with resultMode parameter, MinimalResult interface (9 fields), SnippetResult extends MinimalResult (+6 fields), FullResult extends SnippetResult (+gitingest_summary, repository_stats, dependencies)</snippet>
+      </doc>
+      <doc>
+        <path>.bmad-ephemeral/stories/8-1-add-resultmode-parameter-to-api-schema.md</path>
+        <title>Story 8.1 - Parameter Schema (Completed)</title>
+        <section>OpenAPI parameter pattern reference</section>
+        <snippet>Established resultMode parameter validation, enum with description, INVALID_RESULT_MODE error code with allowed_values field, backward compatibility with default parameter value</snippet>
+      </doc>
+      <doc>
+        <path>.bmad-ephemeral/stories/8-2-implement-minimal-mode-for-fast-browsing.md</path>
+        <title>Story 8.2 - Minimal Mode (Completed)</title>
+        <section>MinimalResult schema and performance</section>
+        <snippet>9 base fields (repo_url, repo_org, repo_name, language, last_updated, similarity_score, github_link, metadata), performance <500ms p95 ~1KB per result, use case: fast browsing and metadata exploration</snippet>
+      </doc>
+      <doc>
+        <path>.bmad-ephemeral/stories/8-3-implement-snippets-mode-as-default.md</path>
+        <title>Story 8.3 - Snippets Mode Default (Completed)</title>
+        <section>SnippetResult schema and OpenAPI documentation pattern</section>
+        <snippet>MinimalResult + 6 snippet fields (snippet, snippet_file_path, snippet_line_range, context_lines_before/after, codespaces_link), default behavior when resultMode omitted, performance <1500ms p95 ~5KB, OpenAPI schema 95 lines with comprehensive field descriptions</snippet>
+      </doc>
+      <doc>
+        <path>.bmad-ephemeral/stories/8-4-implement-full-mode-for-comprehensive-analysis.md</path>
+        <title>Story 8.4 - Full Mode (Completed)</title>
+        <section>FullResult schema completeness</section>
+        <snippet>SnippetResult + 5 full-mode fields (gitingest_summary, full_file_context, readme_excerpt, repository_stats, dependencies), RepositoryStats interface (contributors, commits_last_month, open_issues, last_commit), Dependency interface (name, version, type), performance <3000ms p95 ~50KB, OpenAPI 164 lines added</snippet>
+      </doc>
+      <doc>
+        <path>api/README.md</path>
+        <title>API README (Current)</title>
+        <section>Main API documentation</section>
+        <snippet>Overview, architecture diagram, prerequisites, environment variables, local development, deployment instructions. Needs "Result Modes" section added per Task 7.</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <artifact>
+        <path>api/src/types/mcp.ts</path>
+        <kind>TypeScript interfaces</kind>
+        <symbol>ResultMode, MinimalResult, SnippetResult, FullResult</symbol>
+        <lines>1-174</lines>
+        <reason>Source of truth for TypeScript type definitions - use for OpenAPI schema validation and documentation examples</reason>
+      </artifact>
+      <artifact>
+        <path>api/openapi.yaml</path>
+        <kind>OpenAPI 3.0 specification</kind>
+        <symbol>SearchRequest, SearchResponse, MinimalResult, SnippetResult, FullResult</symbol>
+        <lines>1-599</lines>
+        <reason>Current OpenAPI spec with result modes schemas from Stories 8.1-8.4 - needs final validation and example enhancements for Story 8.5</reason>
+      </artifact>
+      <artifact>
+        <path>api/src/services/vertexSearchService.ts</path>
+        <kind>Vertex AI Search integration</kind>
+        <symbol>VertexSearchService</symbol>
+        <lines>N/A</lines>
+        <reason>Search service implementation - reference for understanding data flow and performance characteristics</reason>
+      </artifact>
+      <artifact>
+        <path>api/src/services/gcsClient.ts</path>
+        <kind>Cloud Storage client</kind>
+        <symbol>GCSClient</symbol>
+        <lines>N/A</lines>
+        <reason>GCS integration for full mode - reference for understanding gitingest summary fetching</reason>
+      </artifact>
+    </code>
+
+    <dependencies>
+      <nodejs>
+        <package name="express" version="^4.18.2" />
+        <package name="@google-cloud/discoveryengine" version="^3.1.0" />
+        <package name="@google-cloud/storage" version="^7.7.0" />
+        <package name="typescript" version="^5.3.3" />
+      </nodejs>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - Documentation-only story - NO code implementation
+    - All formatter implementations (Stories 8.1-8.4) already complete
+    - OpenAPI spec must validate with OpenAPI 3.0 validator
+    - Code examples must be executable and tested
+    - Markdown follows GitHub-flavored Markdown
+    - Links use relative paths for internal documentation
+    - Examples use realistic data from govreposcrape domain (UK government repositories)
+    - Maintain consistency with existing docs/ directory structure
+    - Follow OpenAPI 3.0 schema definition patterns from Story 5.2
+    - Reference backward compatibility patterns from Epic 7 migration docs
+    - Examples should use alphagov/govuk-frontend and HMRC repositories for realism
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>POST /mcp/search</name>
+      <kind>REST endpoint</kind>
+      <signature>
+        Request: { query: string, limit?: number, resultMode?: 'minimal'|'snippets'|'full' }
+        Response: { results: MinimalResult[]|SnippetResult[]|FullResult[], metadata: {...}, mode: ResultMode }
+      </signature>
+      <path>api/src/index.ts</path>
+    </interface>
+    <interface>
+      <name>MinimalResult</name>
+      <kind>TypeScript interface</kind>
+      <signature>9 base fields: repo_url, repo_org, repo_name, language, last_updated, similarity_score, github_link, metadata</signature>
+      <path>api/src/types/mcp.ts</path>
+    </interface>
+    <interface>
+      <name>SnippetResult</name>
+      <kind>TypeScript interface</kind>
+      <signature>MinimalResult + 6 snippet fields: snippet, snippet_file_path, snippet_line_range, context_lines_before, context_lines_after, codespaces_link</signature>
+      <path>api/src/types/mcp.ts</path>
+    </interface>
+    <interface>
+      <name>FullResult</name>
+      <kind>TypeScript interface</kind>
+      <signature>SnippetResult + 5 full-mode fields: gitingest_summary, full_file_context, readme_excerpt, repository_stats, dependencies</signature>
+      <path>api/src/types/mcp.ts</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      - Vitest testing framework for unit tests
+      - Integration tests for end-to-end API calls
+      - TypeScript strict mode compliance required
+      - Test coverage target: 80%+ for new code
+      - Documentation validation: spell check, link checking, OpenAPI validator
+      - Code examples must be executable (can run curl/TypeScript/Python examples)
+      - Realistic test data from UK government repositories (alphagov, HMRC)
+    </standards>
+
+    <locations>
+      - test/ - Integration tests
+      - api/examples/ - Executable example code (to be created)
+      - api/docs/ - Documentation files (to be created)
+    </locations>
+
+    <ideas>
+      AC-1: OpenAPI Specification Updates
+      - Validate OpenAPI spec syntax with OpenAPI 3.0 validator tool
+      - Verify resultMode parameter enum values match TypeScript types
+      - Check response schema definitions for MinimalResult, SnippetResult, FullResult completeness
+      - Validate example responses use realistic UK government repository data
+
+      AC-2: Integration Documentation
+      - Verify all code examples (cURL, TypeScript, Python) are executable
+      - Test MCP configuration examples work with Claude Desktop
+      - Validate performance characteristics table matches tech spec targets
+      - Check migration guide confirms backward compatibility
+
+      AC-3: API Documentation Completeness
+      - Manual test: Start server, access Swagger UI at /docs
+      - Verify resultMode parameter renders with enum dropdown
+      - Test example responses in Swagger UI
+      - Validate error response schemas render correctly
+      - Check all internal documentation links resolve correctly
+    </ideas>
+  </tests>
+</story-context>

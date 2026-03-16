@@ -39,6 +39,7 @@
 		"vitest": "~4.1.0"
 	},
 	"dependencies": {
+		"@anthropic-ai/claude-code": "^2.0.45",
 		"@modelcontextprotocol/sdk": "^1.22.0"
 	}
 }

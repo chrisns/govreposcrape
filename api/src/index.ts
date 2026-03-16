@@ -5,6 +5,7 @@ import { handleMCP } from "./controllers/mcpController";
 import { loggingMiddleware } from "./middleware/logging";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 import { timeoutMiddleware } from "./middleware/timeout";
+import { validateResultMode } from "./middleware/validateRequest";
 
 // Create Express app
 const app = express();
@@ -40,8 +41,8 @@ app.get("/health", (_req: Request, res: Response) => {
 	});
 });
 
-// MCP Search endpoint (legacy)
-app.post("/mcp/search", search);
+// MCP Search endpoint (with validation middleware)
+app.post("/mcp/search", validateResultMode, search);
 
 // MCP HTTP endpoint (SSE-based for remote MCP)
 app.post("/mcp", handleMCP);

@@ -13,21 +13,25 @@ This document provides the complete epic and story breakdown for govreposcrape, 
 
 ### Epic Summary
 
-This project follows a **write path / read path separation** architecture pattern optimized for Cloudflare's edge platform:
+This project follows a **write path / read path separation** architecture pattern, now deployed on Google Cloud Platform:
 
 **Epic 1: Foundation & Infrastructure Setup** - Project initialization, Cloudflare Workers configuration, service bindings, deployment pipeline. Sets up the foundation that enables all subsequent development.
 
 **Epic 2: Data Ingestion Pipeline (Write Path)** - Repository discovery from repos.json feed, gitingest container processing with parallelization, smart caching via R2 metadata, automated data pipeline.
 
-**Epic 3: AI Search Integration (Managed Service)** - Cloudflare AI Search configuration to auto-index R2 bucket contents, query API integration, baseline performance validation.
+**Epic 3: AI Search Integration (Managed Service)** - Cloudflare AI Search configuration to auto-index R2 bucket contents, query API integration, baseline performance validation. ⚠️ **MIGRATED** to Vertex AI Search.
 
-**Epic 4: MCP API Server (Read Path)** - MCP v2 protocol compliance, semantic search endpoint, result formatting with rich metadata, error handling and logging.
+**Epic 4: MCP API Server (Read Path)** - MCP v2 protocol compliance, semantic search endpoint, result formatting with rich metadata, error handling and logging. ⚠️ **MIGRATED** to Cloud Run.
 
 **Epic 5: Developer Experience & Documentation** - MCP configuration guides for Claude Desktop, OpenAPI specification, integration examples, testing tools.
 
 **Epic 6: Operational Excellence** - Structured logging, cost monitoring, security compliance (NCSC standards), error alerting, health checks.
 
-**Sequencing Rationale:** Epic 1 establishes foundation (must be first for greenfield). Epics 2-3 build the data pipeline and search capability. Epic 4 exposes the read API. Epics 5-6 enable developer adoption and production readiness.
+**Epic 7: Google Cloud Platform Migration** - Migration from Cloudflare architecture to unified Google Cloud Platform (Cloud Run, GCS, Vertex AI Search) for enterprise reliability and production-grade search quality.
+
+**Epic 8: MCP API Enhancements - Result Modes** - Extend MCP API with configurable result detail levels (`minimal`, `snippets`, `full`) for flexible client integration patterns and performance optimization.
+
+**Sequencing Rationale:** Epic 1 establishes foundation (must be first for greenfield). Epics 2-3 build the data pipeline and search capability. Epic 4 exposes the read API. Epics 5-6 enable developer adoption and production readiness. Epic 7 was an architectural migration for production reliability. Epic 8 adds API flexibility for diverse use cases.
 
 ---
 
@@ -1338,6 +1342,226 @@ repos.json → Container (gitingest) → Cloud Storage (GCS) → Vertex AI Searc
 2. **Enterprise SLA Matters:** 99.9% SLA justifies higher cost (£50-80/month vs <£50/month)
 3. **Unified Platform Simplifies Operations:** One cloud provider (GCP) easier than mixed Cloudflare/Docker/GCP
 4. **Managed Services Enable Rapid Iteration:** Vertex AI Search provided production-ready search in days, not weeks
+
+---
+
+## Epic 8: MCP API Enhancements - Result Modes
+
+**Goal:** Extend the MCP API with configurable result detail levels (`minimal`, `snippets`, `full`) to provide flexibility for different client use cases while optimizing bandwidth and latency. This epic enables AI assistants to choose appropriate detail levels based on context window constraints, performance requirements, and analysis needs.
+
+**Value:** Clients gain control over response verbosity, enabling faster responses for performance-sensitive integrations (minimal mode), balanced default behavior for AI assistants (snippets mode), and comprehensive analysis capabilities for deep research (full mode). This flexibility improves user experience across diverse integration patterns while maintaining backward compatibility.
+
+**Related Documents:** [PRD Enhancement - MCP Result Modes](./PRD-Enhancement-MCP-Result-Modes.md)
+
+---
+
+### Story 8.1: Add `resultMode` Parameter to API Schema
+
+As a **backend developer**,
+I want **to add the `resultMode` parameter to the `/mcp/search` endpoint**,
+So that **clients can specify which level of detail they need in search results**.
+
+**Acceptance Criteria:**
+
+**Given** the MCP API is running on Cloud Run
+**When** I send a POST request to `/mcp/search` with a `resultMode` parameter
+**Then** the API accepts values: `"minimal"`, `"snippets"`, `"full"`
+**And** defaults to `"snippets"` if the parameter is omitted
+**And** returns 400 Bad Request for invalid `resultMode` values with clear error message
+
+**Given** an invalid `resultMode` value is provided
+**When** the API validates the request
+**Then** the error response includes: `{"error": {"code": "INVALID_RESULT_MODE", "message": "resultMode must be one of: minimal, snippets, full", "allowed_values": ["minimal", "snippets", "full"]}}`
+
+**And** Request schema is updated in TypeScript types
+**And** Validation middleware enforces schema compliance
+**And** API returns `mode` field in response indicating which mode was used
+
+**Prerequisites:** Epic 4 stories (MCP API Server implemented)
+
+**Technical Notes:**
+- Add `resultMode?: 'minimal' | 'snippets' | 'full'` to request schema in `src/types.ts`
+- Default value: `'snippets'` (maintains backward compatibility)
+- Update validation middleware to check enum values
+- Add `mode: string` to response schema for transparency
+- Update OpenAPI spec with parameter documentation
+- No breaking changes - existing clients continue working
+
+---
+
+### Story 8.2: Implement Minimal Mode for Fast Browsing
+
+As a **developer building a low-bandwidth client**,
+I want **minimal mode to return only essential repo metadata without code snippets**,
+So that **I can quickly browse repositories with minimal data transfer and latency**.
+
+**Acceptance Criteria:**
+
+**Given** I send a search request with `resultMode: "minimal"`
+**When** the API processes the query
+**Then** each result includes only: `repo_url`, `repo_org`, `repo_name`, `language`, `last_updated`, `similarity_score`, `github_link`, `metadata.stars`, `metadata.license`
+**And** no code snippets, no gitingest summaries, no file paths are included
+**And** response size is ~1KB per result or less
+
+**Given** minimal mode is requested
+**When** I measure response time
+**Then** p95 latency is <500ms for top 5 results
+**And** latency is faster than snippets or full modes
+
+**And** Response schema matches MinimalResult TypeScript interface
+**And** Mode field in response indicates `"minimal"`
+**And** GitHub links are correctly formatted and functional
+
+**Prerequisites:** Story 8.1 (resultMode parameter implemented)
+
+**Technical Notes:**
+- Query Vertex AI Search as normal (same semantic retrieval)
+- Strip all snippet/summary fields from response
+- Keep only base metadata fields
+- Optimize: Skip Cloud Storage reads for gitingest summaries
+- Performance target: <500ms p95 (fastest mode)
+- Bandwidth target: ~1KB per result
+- Test with real MCP client to verify usability
+
+---
+
+### Story 8.3: Implement Snippets Mode as Default
+
+As a **backend developer**,
+I want **snippets mode to provide focused code excerpts with context**,
+So that **AI assistants get relevant code samples without overwhelming context**.
+
+**Acceptance Criteria:**
+
+**Given** I send a search request with `resultMode: "snippets"` (or omitted for default)
+**When** the API processes the query
+**Then** each result includes: all minimal mode fields PLUS `snippet`, `snippet_file_path`, `snippet_line_range`, `context_lines_before`, `context_lines_after`, `codespaces_link`
+**And** snippets contain 3-5 lines of relevant code with surrounding context
+**And** response size is ~5KB per result
+
+**Given** snippets mode is the default
+**When** I send a request without specifying `resultMode`
+**Then** the API automatically uses snippets mode
+**And** response matches current production behavior (backward compatible)
+
+**And** Snippets are extracted from gitingest summaries intelligently
+**And** File paths and line ranges are accurate
+**And** p95 latency is <1500ms for top 5 results
+**And** Response schema matches SnippetResult TypeScript interface
+
+**Prerequisites:** Story 8.1 (resultMode parameter implemented)
+
+**Technical Notes:**
+- This mode matches current API behavior (ensures backward compatibility)
+- Extract snippets from Vertex AI Search result highlights
+- Fall back to gitingest summary first 200 chars if highlights unavailable
+- Include file path extraction from Vertex AI Search metadata
+- Codespaces link: `https://github.dev/{org}/{repo}`
+- Performance target: <1500ms p95 (balanced default)
+- Bandwidth target: ~5KB per result
+
+---
+
+### Story 8.4: Implement Full Mode for Comprehensive Analysis
+
+As a **CLI tool developer or researcher**,
+I want **full mode to return complete gitingest summaries and enhanced metadata**,
+So that **I can perform deep analysis with all available context**.
+
+**Acceptance Criteria:**
+
+**Given** I send a search request with `resultMode: "full"`
+**When** the API processes the query
+**Then** each result includes: all snippets mode fields PLUS `gitingest_summary`, `full_file_context`, `readme_excerpt`, `repository_stats`, `dependencies`
+**And** `gitingest_summary` contains the complete summary from Cloud Storage
+**And** response size is ~50KB per result
+
+**Given** full mode is requested
+**When** the API retrieves additional metadata
+**Then** `repository_stats` includes: contributors count, commits_last_month, open_issues, last_commit timestamp
+**And** `dependencies` array lists runtime and dev dependencies (if extractable from gitingest)
+**And** `readme_excerpt` contains first 500 characters of README (if available)
+
+**And** Response schema matches FullResult TypeScript interface
+**And** p95 latency is <3000ms for top 5 results
+**And** All fields are properly typed and documented
+
+**Prerequisites:** Story 8.3 (snippets mode implemented)
+
+**Technical Notes:**
+- Fetch complete gitingest summary from Cloud Storage: `gs://govreposcrape-summaries/{org}/{repo}/summary.txt`
+- Extract repository stats from GitHub API (cached for 1 hour to avoid rate limits)
+- Parse dependencies from gitingest summary (package.json, requirements.txt sections)
+- README excerpt: First 500 chars or first paragraph
+- Performance target: <3000ms p95 (comprehensive mode, slower acceptable)
+- Bandwidth target: ~50KB per result
+- Consider adding pre-computed metadata to Cloud Storage objects for faster retrieval (future optimization)
+
+---
+
+### Story 8.5: Update Documentation and OpenAPI Specification
+
+As a **developer integrating with the MCP API**,
+I want **clear documentation of the new resultMode parameter and response schemas**,
+So that **I can choose the appropriate mode for my use case**.
+
+**Acceptance Criteria:**
+
+**Given** the result modes feature is implemented
+**When** I access the OpenAPI specification at `/openapi.json`
+**Then** the `/mcp/search` endpoint documents the `resultMode` parameter
+**And** request schema shows enum values with descriptions
+**And** response schemas are defined for MinimalResult, SnippetResult, FullResult
+**And** examples are provided for each mode
+
+**Given** I read the integration documentation
+**When** I look for result modes guidance
+**Then** I find:
+- Clear explanation of when to use each mode
+- Performance characteristics table (latency, bandwidth)
+- Code examples for TypeScript/JavaScript clients
+- MCP configuration examples for Claude Desktop
+**And** migration guide for existing clients (no changes required, but can optimize by using minimal/full modes)
+
+**And** Swagger UI at `/docs` renders the updated spec correctly
+**And** Example responses show realistic data for each mode
+**And** Error scenarios are documented (invalid mode values)
+
+**Prerequisites:** Stories 8.2, 8.3, 8.4 (all modes implemented)
+
+**Technical Notes:**
+- Update OpenAPI spec in `api/openapi.yaml` or generate from code
+- Add JSDoc comments to TypeScript types for auto-generated docs
+- Update README.md with result modes section
+- Create examples in `examples/result-modes/` directory
+- Performance table from PRD enhancement:
+  - minimal: <500ms, ~1KB
+  - snippets: <1500ms, ~5KB (default)
+  - full: <3000ms, ~50KB
+- Document backward compatibility guarantee
+- Add to MCP integration guide for Claude Desktop
+
+---
+
+## Epic 8 Summary
+
+**Stories:** 5 stories total
+**Estimated Effort:** 2-3 weeks (phased rollout)
+**Priority:** Medium (enhances existing MVP, not blocking)
+
+**Key Deliverables:**
+1. Flexible API with 3 result detail levels
+2. Backward-compatible default behavior (snippets mode)
+3. Optimized performance for different use cases
+4. Comprehensive documentation and examples
+
+**Success Metrics:**
+- 30%+ of queries use non-default modes within 4 weeks
+- Minimal mode: <500ms p95 ✅
+- Snippets mode: <1500ms p95 ✅ (maintains current performance)
+- Full mode: <3000ms p95 ✅
+- Positive user feedback on flexibility
+- No performance degradation to existing behavior
 
 ---
 

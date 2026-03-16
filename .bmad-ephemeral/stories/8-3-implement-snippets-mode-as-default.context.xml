@@ -1,0 +1,322 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>8</epicId>
+    <storyId>3</storyId>
+    <title>Implement Snippets Mode as Default</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-19</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>.bmad-ephemeral/stories/8-3-implement-snippets-mode-as-default.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>backend developer</asA>
+    <iWant>snippets mode to provide focused code excerpts with context</iWant>
+    <soThat>AI assistants get relevant code samples without overwhelming context</soThat>
+    <tasks>
+      **Task 1: Create SnippetResult TypeScript Interface**
+      - Add SnippetResult interface extending MinimalResult
+      - Add snippet-specific fields: snippet, snippet_file_path, snippet_line_range, context_lines_before, context_lines_after, codespaces_link
+      - JSDoc comments explaining balanced default mode
+
+      **Task 2: Create Snippet Mode Formatter**
+      - Implement formatSnippet() in api/src/formatters/snippetFormatter.ts
+      - Extract snippets from Vertex AI Search highlights (3-5 lines)
+      - Parse file paths and line ranges from metadata
+      - Build Codespaces URL format
+      - Fallback to gitingest first 200 chars if highlights unavailable
+
+      **Task 3: Mode Router Integration with Default Handling**
+      - Update searchController.ts with default handling (resultMode || 'snippets')
+      - Add snippets mode conditional branching
+      - Echo mode in response even when omitted
+      - Maintain minimal mode routing from Story 8.2
+
+      **Task 4: Unit Tests for Snippet Formatter**
+      - Create snippetFormatter.test.ts (9 tests minimum)
+      - Test snippet extraction, file path parsing, line range format
+      - Test Codespaces URL formatting
+      - Test fallback behavior when highlights unavailable
+
+      **Task 5: Integration Tests for Snippets Mode and Default**
+      - Extend resultMode.test.ts with snippets mode tests
+      - Test explicit resultMode:"snippets" behavior
+      - Test omitted resultMode defaults to snippets
+      - Verify backward compatibility
+
+      **Task 6: Performance Validation**
+      - Measure p95 latency <1500ms for top 5 results
+      - Compare snippets vs minimal mode latency
+      - Validate ~5KB per result payload size
+
+      **Task 7: Update OpenAPI Specification**
+      - Add SnippetResult schema definition
+      - Document default behavior when resultMode omitted
+      - Add snippets mode example responses
+      - Update performance characteristics table
+
+      **Task 8: Backward Compatibility Testing**
+      - Verify existing clients (no resultMode) work identically
+      - Test response structure matches pre-resultMode API
+      - Ensure all existing integration tests pass
+
+      **Task 9: Smoke Testing and Validation**
+      - Build passes, all tests pass
+      - Manual verification of snippet quality (3-5 lines)
+      - Verify default behavior identical to snippets mode
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    **AC-1: Snippet Result Fields**
+    - Request with resultMode:"snippets" (or omitted) returns SnippetResult array
+    - Each result includes all minimal mode fields PLUS: snippet, snippet_file_path, snippet_line_range, context_lines_before (2), context_lines_after (2), codespaces_link
+    - Snippets contain 3-5 lines of relevant code with context
+    - Response size ~5KB per result
+
+    **AC-2: Snippets Mode as Default (Backward Compatibility)**
+    - Request without resultMode parameter automatically uses snippets mode
+    - Response matches current production behavior (backward compatible)
+    - Mode field in response indicates "snippets" (even when omitted)
+    - Zero breaking changes for existing clients
+
+    **AC-3: Performance and Schema Compliance**
+    - p95 latency <1500ms for top 5 results
+    - Response schema matches SnippetResult TypeScript interface
+    - File paths and line ranges are accurate
+    - Codespaces link formatted as: https://github.dev/{org}/{repo}
+    - TypeScript strict mode compilation passes
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/PRD-Enhancement-MCP-Result-Modes.md</path>
+        <title>MCP API Result Modes Enhancement PRD</title>
+        <section>Epic 8 Requirements</section>
+        <snippet>Defines three result detail levels (minimal, snippets, full) for flexible client integration. Snippets mode is the default for backward compatibility, providing balanced response with code excerpts (3-5 lines) and context. Target: p95 latency <1500ms, ~5KB per result.</snippet>
+      </doc>
+
+      <doc>
+        <path>.bmad-ephemeral/stories/tech-spec-epic-8.md</path>
+        <title>Epic 8: MCP API Enhancements - Result Modes Technical Specification</title>
+        <section>AC-3: Snippets Mode</section>
+        <snippet>Snippets mode returns base fields + focused code snippets (3-5 lines) extracted from Vertex AI Search highlights. Includes file path, line range, context lines. p95 latency <1500ms. Defaults to snippets mode if resultMode omitted (backward compatible). Response schema matches SnippetResult TypeScript interface.</snippet>
+      </doc>
+
+      <doc>
+        <path>.bmad-ephemeral/stories/tech-spec-epic-8.md</path>
+        <title>Data Models and Contracts - SnippetResult Interface</title>
+        <section>TypeScript Interfaces</section>
+        <snippet>SnippetResult extends BaseResult with: snippet (3-5 lines from highlights), snippet_file_path (extracted from metadata), snippet_line_range ("45-50" format), context_lines_before/after (fixed at 2), codespaces_link (https://github.dev/{org}/{repo}). Falls back to gitingest first 200 chars if highlights unavailable.</snippet>
+      </doc>
+
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic 8: Story 8.3 Requirements</title>
+        <section>Story 8.3: Implement Snippets Mode as Default</section>
+        <snippet>Backend developer wants snippets mode to provide focused code excerpts with context so AI assistants get relevant code samples without overwhelming context. Implements default mode for backward compatibility. Uses Vertex AI Search highlights for snippet extraction.</snippet>
+      </doc>
+
+      <doc>
+        <path>api/openapi.yaml</path>
+        <title>MCP API OpenAPI Specification</title>
+        <section>SearchRequest and SearchResponse schemas</section>
+        <snippet>Documents resultMode parameter with enum values (minimal, snippets, full) and default behavior. Defines response schemas for each mode. Snippets mode is the default when parameter omitted.</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <artifact>
+        <path>api/src/formatters/minimalFormatter.ts</path>
+        <kind>formatter</kind>
+        <symbol>formatMinimal</symbol>
+        <lines>1-89</lines>
+        <reason>Pattern reference for snippet formatter implementation. Demonstrates formatter structure, base metadata extraction (org/repo from result.metadata), GitHub URL construction, graceful error handling, and structured logging. Follow this pattern for formatSnippet().</reason>
+      </artifact>
+
+      <artifact>
+        <path>api/src/services/vertexSearchService.ts</path>
+        <kind>service</kind>
+        <symbol>VertexSearchService.search</symbol>
+        <lines>46-155</lines>
+        <reason>Search service that returns SearchResult[] with snippet field populated from Vertex AI Search highlights (lines 122-128). Snippet extraction from derivedData.snippets array. This is the source data for snippet mode formatter - reuse the snippet field directly.</reason>
+      </artifact>
+
+      <artifact>
+        <path>api/src/controllers/searchController.ts</path>
+        <kind>controller</kind>
+        <symbol>search</symbol>
+        <lines>64-77</lines>
+        <reason>Mode routing logic to extend. Currently handles minimal mode (lines 68-71). Add snippets mode conditional with default handling: const effectiveMode = resultMode || 'snippets'. Maintain minimal mode routing while adding snippets branch.</reason>
+      </artifact>
+
+      <artifact>
+        <path>api/src/types/mcp.ts</path>
+        <kind>types</kind>
+        <symbol>MinimalResult</symbol>
+        <lines>64-86</lines>
+        <reason>Base interface to extend for SnippetResult. Defines all base fields (repo_url, repo_org, repo_name, language, last_updated, similarity_score, github_link, metadata). SnippetResult will extend this with snippet-specific fields.</reason>
+      </artifact>
+
+      <artifact>
+        <path>api/test/formatters/minimalFormatter.test.ts</path>
+        <kind>test</kind>
+        <symbol>minimalFormatter.test.ts</symbol>
+        <lines>1-271</lines>
+        <reason>Unit testing pattern to follow for snippetFormatter.test.ts. Demonstrates 12 comprehensive tests covering formatter logic, field validation, error handling, and TypeScript type safety. Follow this test structure and coverage patterns.</reason>
+      </artifact>
+
+      <artifact>
+        <path>api/test/integration/resultMode.test.ts</path>
+        <kind>integration-test</kind>
+        <symbol>resultMode.test.ts</symbol>
+        <lines>1-352</lines>
+        <reason>Integration test file to extend with snippets mode tests (existing Story 8.1 and 8.2 tests). Add new describe block for Story 8.3. Test both explicit resultMode:"snippets" and omitted resultMode (default behavior). Verify backward compatibility.</reason>
+      </artifact>
+    </code>
+
+    <dependencies>
+      <node>
+        <package name="express" version="^4.18.2" />
+        <package name="@google-cloud/discoveryengine" version="^2.5.2" />
+        <package name="@google/generative-ai" version="^0.24.1" />
+        <package name="cors" version="^2.8.5" />
+        <package name="typescript" version="^5.3.3" />
+        <package name="vitest" version="^1.0.4" />
+        <package name="supertest" version="^6.3.3" />
+        <package name="ts-node" version="^10.9.2" />
+        <package name="@types/express" version="^4.17.21" />
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    1. **TypeScript Strict Mode Compliance** - All code must pass TypeScript compilation with strict mode enabled (noUnusedLocals, noImplicitReturns, noUnusedParameters)
+
+    2. **Formatter Pattern Consistency** - Follow minimalFormatter.ts structure exactly: separate formatter module, export single format function, graceful error handling with continue on failure, structured JSON logging
+
+    3. **Backward Compatibility Critical** - Snippets mode MUST be the default when resultMode omitted. Existing clients without resultMode parameter must receive identical behavior to pre-Epic 8 API. Zero breaking changes allowed.
+
+    4. **Mode Router Pattern** - Controller must handle default value: const effectiveMode = resultMode || 'snippets'. Maintain existing minimal mode routing while adding snippets conditional.
+
+    5. **Snippet Extraction Strategy** - Primary source: Vertex AI Search highlights from SearchResult.snippet field (vertexSearchService.ts:122-128). Fallback: gitingest summary first 200 chars (not yet implemented in current service).
+
+    6. **File Path and Line Range Parsing** - Extract from Vertex AI Search metadata (derivedData structure). If unavailable, gracefully handle with placeholder values. Document TODO for future enhancement.
+
+    7. **Structured JSON Logging** - All formatters and controllers must log using JSON.stringify() with level, message, formatter, resultCount, timestamp fields. Follow minimalFormatter.ts logging pattern (lines 61-69).
+
+    8. **MCP v2 Protocol Compliance** - Response must include mode field echoing the effective mode used ("snippets" even when parameter omitted). Maintain all existing MCPSearchResponse structure.
+
+    9. **Testing Standards** - Unit tests for formatter logic (9+ tests), integration tests for full request/response cycle (7+ tests), backward compatibility tests (5+ tests). Follow existing test patterns in minimalFormatter.test.ts and resultMode.test.ts.
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>SnippetResult (extends MinimalResult)</name>
+      <kind>TypeScript Interface</kind>
+      <signature>
+        interface SnippetResult extends MinimalResult {
+          snippet: string;              // 3-5 lines from Vertex AI highlights
+          snippet_file_path: string;     // Extracted from highlights metadata
+          snippet_line_range: string;    // "45-50" format
+          context_lines_before: number;  // Fixed at 2
+          context_lines_after: number;   // Fixed at 2
+          codespaces_link: string;       // https://github.dev/{org}/{repo}
+        }
+      </signature>
+      <path>api/src/types/mcp.ts</path>
+    </interface>
+
+    <interface>
+      <name>formatSnippet Function</name>
+      <kind>Formatter Function Signature</kind>
+      <signature>
+        export function formatSnippet(results: SearchResult[]): SnippetResult[]
+      </signature>
+      <path>api/src/formatters/snippetFormatter.ts</path>
+    </interface>
+
+    <interface>
+      <name>SearchResult Interface</name>
+      <kind>Vertex AI Search Result Type</kind>
+      <signature>
+        interface SearchResult {
+          title: string;
+          url: string;
+          snippet: string;  // Populated from Vertex AI Search highlights
+          metadata: {
+            org: string;
+            repo: string;
+            pushedAt?: string;
+            processedAt?: string;
+          };
+        }
+      </signature>
+      <path>api/src/services/vertexSearchService.ts</path>
+    </interface>
+
+    <interface>
+      <name>Mode Router Pattern</name>
+      <kind>Controller Logic Pattern</kind>
+      <signature>
+        const effectiveMode = resultMode || 'snippets';
+
+        if (effectiveMode === 'minimal') {
+          results = formatMinimal(rawResults);
+        } else if (effectiveMode === 'snippets') {
+          results = formatSnippet(rawResults);
+        } else {
+          // full mode (Story 8.4)
+        }
+      </signature>
+      <path>api/src/controllers/searchController.ts</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Testing uses Vitest framework with supertest for integration tests. Unit tests verify formatter logic in isolation with mocked Vertex AI results. Integration tests validate full request/response cycle through Express app. All tests must pass TypeScript strict mode compilation. Follow existing test patterns: descriptive test names with Given/When/Then structure, comprehensive edge case coverage, explicit type assertions, structured error validation. Test files co-located with source in api/test/ directory mirroring src/ structure.
+    </standards>
+
+    <locations>
+      - api/test/formatters/snippetFormatter.test.ts (unit tests, to be created)
+      - api/test/integration/resultMode.test.ts (integration tests, extend existing)
+      - api/test/validation.test.ts (request validation tests, reuse existing patterns)
+    </locations>
+
+    <ideas>
+      **AC-1 Tests (Snippet Result Fields):**
+      - Test snippet extraction from Vertex AI Search highlights (3-5 lines)
+      - Verify all MinimalResult fields present PLUS snippet-specific fields
+      - Validate file path parsing from metadata
+      - Verify line range format ("45-50")
+      - Test context_lines_before/after fixed at 2
+      - Validate Codespaces URL format
+      - Test response size ~5KB per result
+
+      **AC-2 Tests (Default Behavior and Backward Compatibility):**
+      - Test explicit resultMode:"snippets" returns SnippetResult array
+      - Test omitted resultMode defaults to snippets mode
+      - Verify mode field echoes "snippets" in both cases
+      - Test backward compatibility: no resultMode param works identically to snippets
+      - Validate existing integration tests still pass (no breaking changes)
+      - Test response structure matches pre-resultMode API format
+
+      **AC-3 Tests (Performance and Schema):**
+      - Measure p95 latency <1500ms for top 5 results
+      - Compare snippets mode latency vs minimal mode (snippets should be slightly slower)
+      - Validate TypeScript interface compliance (SnippetResult structure)
+      - Test file path accuracy
+      - Test Codespaces URL correctness
+      - Verify TypeScript strict mode compilation passes
+
+      **Edge Cases:**
+      - Test fallback when Vertex AI Search highlights unavailable
+      - Test graceful handling of missing file path metadata
+      - Test empty results array handling
+      - Test malformed result handling (skip and continue)
+      - Test snippet truncation if exceeds expected length
+    </ideas>
+  </tests>
+</story-context>

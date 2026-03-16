@@ -9,6 +9,7 @@ This Cloud Run API provides a REST endpoint for searching through UK government 
 **Key Features:**
 - MCP v2 compliant search endpoint
 - Vertex AI Search integration for semantic search
+- **Configurable result modes** (minimal, snippets, full)
 - Structured JSON logging
 - Health monitoring endpoint
 - Request timeout protection (10s)
@@ -165,6 +166,37 @@ curl -X POST https://govreposcrape-api-XXXXX-uc.a.run.app/mcp/search \
   -d '{"query": "authentication patterns", "limit": 5}'
 ```
 
+## Result Modes
+
+The API supports three result detail levels to optimize performance for different use cases:
+
+| Mode | Latency | Bandwidth | Best For |
+|------|---------|-----------|----------|
+| **minimal** | <500ms | ~1KB/result | Fast browsing, low-bandwidth clients |
+| **snippets** | <1500ms | ~5KB/result | **Default** - AI assistants, web UI |
+| **full** | <3000ms | ~50KB/result | Deep analysis, CLI tools |
+
+**Quick Example:**
+```bash
+# Minimal mode - fast metadata only
+curl -X POST https://api.../mcp/search \
+  -d '{"query": "auth", "resultMode": "minimal"}'
+
+# Snippets mode - balanced (default when resultMode omitted)
+curl -X POST https://api.../mcp/search \
+  -d '{"query": "auth", "resultMode": "snippets"}'
+
+# Full mode - comprehensive with gitingest summaries
+curl -X POST https://api.../mcp/search \
+  -d '{"query": "auth", "resultMode": "full"}'
+```
+
+**Learn More:**
+- [Result Modes Usage Guide](./docs/result-modes.md) - Detailed comparison and decision tree
+- [Migration Guide](./docs/migration-result-modes.md) - Backward compatibility information
+- [Performance Documentation](./docs/performance.md) - Latency and bandwidth analysis
+- [Code Examples](./examples/result-modes/) - cURL, TypeScript, Python examples
+
 ## API Endpoints
 
 ### `POST /mcp/search`
@@ -175,13 +207,15 @@ Perform semantic search across UK government repositories.
 ```json
 {
   "query": "authentication patterns in government code",
-  "limit": 20
+  "limit": 20,
+  "resultMode": "snippets"
 }
 ```
 
 **Parameters:**
 - `query` (string, required): Search query
 - `limit` (number, optional): Maximum results (1-100, default: 20)
+- `resultMode` (string, optional): Result detail level - `"minimal"`, `"snippets"`, or `"full"` (default: `"snippets"`)
 
 **Response (200 OK):**
 ```json

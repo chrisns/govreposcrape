@@ -112,3 +112,13 @@ development_status:
   7-4-documentation-updates-for-google-cloud-migration: done  # Documentation updates complete, code reviewed and approved (2025-11-18)
   7-5-vertex-ai-search-migration: done  # Vertex AI Search migration complete (2025-11-18)
   epic-7-retrospective: optional
+
+  # Epic 8: MCP API Enhancements - Result Modes
+  # Added 2025-11-19 - Extends MCP API with configurable result detail levels
+  epic-8: contexted  # Epic tech context created 2025-11-19 (.bmad-ephemeral/stories/tech-spec-epic-8.md)
+  8-1-add-resultmode-parameter-to-api-schema: done
+  8-2-implement-minimal-mode-for-fast-browsing: done
+  8-3-implement-snippets-mode-as-default: done
+  8-4-implement-full-mode-for-comprehensive-analysis: done
+  8-5-update-documentation-and-openapi-specification: done
+  epic-8-retrospective: optional

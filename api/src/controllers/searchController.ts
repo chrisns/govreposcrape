@@ -1,8 +1,16 @@
 import { Request, Response } from "express";
 import { VertexSearchService } from "../services/vertexSearchService";
+import { MCPSearchRequest, MCPSearchResponse, MCPErrorResponse, ResultMode } from "../types/mcp";
+import { formatMinimal } from "../formatters/minimalFormatter";
+import { formatSnippet } from "../formatters/snippetFormatter";
+import { formatFull } from "../formatters/fullFormatter";
+import { GCSClient } from "../services/gcsClient";
 
 // Singleton instance of the search service
 let searchService: VertexSearchService | null = null;
+
+// Singleton instance of the GCS client
+let gcsClient: GCSClient | null = null;
 
 /**
  * Get or create the search service instance
@@ -15,22 +23,13 @@ function getSearchService(): VertexSearchService {
 }
 
 /**
- * MCP Search Request Schema
+ * Get or create the GCS client instance
  */
-interface MCPSearchRequest {
-	query: string;
-	limit?: number;
-}
-
-/**
- * MCP Error Response
- */
-interface MCPErrorResponse {
-	error: {
-		code: string;
-		message: string;
-		details?: any;
-	};
+function getGCSClient(): GCSClient {
+	if (!gcsClient) {
+		gcsClient = new GCSClient();
+	}
+	return gcsClient;
 }
 
 /**
@@ -41,8 +40,9 @@ export async function search(req: Request, res: Response): Promise<void> {
 	const startTime = Date.now();
 
 	try {
-		// Validate request body
-		const { query, limit }: MCPSearchRequest = req.body;
+		// Extract and validate request body
+		// Note: resultMode is validated and defaulted by validateResultMode middleware
+		const { query, limit, resultMode }: MCPSearchRequest = req.body;
 
 		// Validation: query is required
 		if (!query || typeof query !== "string") {
@@ -71,12 +71,39 @@ export async function search(req: Request, res: Response): Promise<void> {
 
 		// Perform search
 		const service = getSearchService();
-		const results = await service.search({
+		let rawResults = await service.search({
 			query: query.trim(),
 			limit: parsedLimit,
+			resultMode: resultMode as ResultMode, // Already validated by middleware
 		});
 
-		// Log request metrics
+		// Default handling: Use snippets mode if resultMode omitted (backward compatibility)
+		const effectiveMode = resultMode || "snippets";
+
+		// Mode routing: Apply formatter based on effectiveMode
+		let results: any[];
+		let formatterUsed: string;
+
+		if (effectiveMode === "minimal") {
+			// Minimal mode: Transform to MinimalResult format
+			results = formatMinimal(rawResults);
+			formatterUsed = "minimal";
+		} else if (effectiveMode === "snippets") {
+			// Snippets mode (default): Transform to SnippetResult format
+			results = formatSnippet(rawResults);
+			formatterUsed = "snippet";
+		} else if (effectiveMode === "full") {
+			// Full mode: Transform to FullResult format with GCS enrichment (async)
+			const gcs = getGCSClient();
+			results = await formatFull(rawResults, gcs);
+			formatterUsed = "full";
+		} else {
+			// Fallback: Use raw results
+			results = rawResults;
+			formatterUsed = "default";
+		}
+
+		// Log request metrics (including effectiveMode and formatter for analytics)
 		const duration = Date.now() - startTime;
 		console.log(
 			JSON.stringify({
@@ -84,14 +111,17 @@ export async function search(req: Request, res: Response): Promise<void> {
 				message: "Search request completed",
 				query,
 				limit: parsedLimit,
+				resultMode: resultMode || "default",
+				effectiveMode,
+				formatter: formatterUsed,
 				resultCount: results.length,
 				duration,
 				timestamp: new Date().toISOString(),
 			}),
 		);
 
-		// Return results in MCP format
-		res.status(200).json({
+		// Return results in MCP format with mode echo (use effectiveMode for backward compatibility)
+		const response: MCPSearchResponse = {
 			results,
 			metadata: {
 				query,
@@ -99,7 +129,9 @@ export async function search(req: Request, res: Response): Promise<void> {
 				resultCount: results.length,
 				duration,
 			},
-		});
+			mode: effectiveMode as ResultMode, // Echo the effective mode used (defaults to snippets)
+		};
+		res.status(200).json(response);
 	} catch (error) {
 		// Log error
 		const duration = Date.now() - startTime;
