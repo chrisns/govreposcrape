@@ -100,7 +100,8 @@ class CloudStorageClient:
         repo: str,
         summary_content: str,
         metadata: Dict[str, Any],
-        max_retries: int = 3
+        max_retries: int = 3,
+        force: bool = False
     ) -> bool:
         """
         Upload gitingest summary to GCS in JSON Lines format with embedded metadata.
@@ -111,6 +112,7 @@ class CloudStorageClient:
             summary_content: Gitingest summary text
             metadata: Repository metadata (pushedAt, url, processedAt, etc.)
             max_retries: Maximum retry attempts (default 3)
+            force: Skip pushedAt cache check and always upload (default False)
 
         Returns:
             True if upload succeeded, False otherwise
@@ -126,27 +128,30 @@ class CloudStorageClient:
         # Simple object path: {org}/{repo}.md (one file per repo)
         object_path = f"{org}/{repo}.md"
 
-        # Check if file exists and if pushedAt has changed
-        try:
-            check_blob = self.bucket.blob(object_path)
-            check_blob.reload()  # Fetch metadata from GCS
+        # Check if file exists and if pushedAt has changed (skip when force=True)
+        if not force:
+            try:
+                check_blob = self.bucket.blob(object_path)
+                check_blob.reload()  # Fetch metadata from GCS
 
-            if check_blob.exists():
-                existing_metadata = check_blob.metadata or {}
-                existing_pushed_at = existing_metadata.get('pushedAt', '')
-                new_pushed_at = str(metadata.get('pushedAt', ''))
+                if check_blob.exists():
+                    existing_metadata = check_blob.metadata or {}
+                    existing_pushed_at = existing_metadata.get('pushedAt', '')
+                    new_pushed_at = str(metadata.get('pushedAt', ''))
 
-                if existing_pushed_at == new_pushed_at:
-                    logger.info(f"⊘ Skipping {org}/{repo} (already up-to-date, pushedAt: {existing_pushed_at})")
-                    self.stats['total_uploaded'] += 1  # Count as success (already uploaded)
-                    return True
-                else:
-                    logger.info(f"↻ Updating {org}/{repo} (pushedAt changed: {existing_pushed_at} → {new_pushed_at})")
-        except exceptions.NotFound:
-            # File doesn't exist, continue with upload
-            logger.info(f"+ Creating new file {org}/{repo}")
-        except Exception as e:
-            logger.warning(f"Could not check existing file for {org}/{repo}: {e}")
+                    if existing_pushed_at == new_pushed_at:
+                        logger.info(f"⊘ Skipping {org}/{repo} (already up-to-date, pushedAt: {existing_pushed_at})")
+                        self.stats['total_uploaded'] += 1  # Count as success (already uploaded)
+                        return True
+                    else:
+                        logger.info(f"↻ Updating {org}/{repo} (pushedAt changed: {existing_pushed_at} → {new_pushed_at})")
+            except exceptions.NotFound:
+                # File doesn't exist, continue with upload
+                logger.info(f"+ Creating new file {org}/{repo}")
+            except Exception as e:
+                logger.warning(f"Could not check existing file for {org}/{repo}: {e}")
+        else:
+            logger.info(f"⚡ Force uploading {org}/{repo}")
 
         # Extract text content from gitingest summary
         # gitingest returns tuple: (summary_text, tree_structure, file_contents)

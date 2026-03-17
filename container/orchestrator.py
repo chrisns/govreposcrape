@@ -253,12 +253,21 @@ def main():
         type=int,
         help='Limit processing to first N repos (for testing)'
     )
+    parser.add_argument(
+        '--force',
+        action='store_true',
+        help='Force reprocessing of all repos, even if pushedAt unchanged'
+    )
 
     args = parser.parse_args()
 
     # Check for Cloud Run Task Index (for parallel execution)
     task_index = os.getenv('CLOUD_RUN_TASK_INDEX')
     task_count = os.getenv('CLOUD_RUN_TASK_COUNT')
+
+    # Support FORCE_REINDEX env var for Cloud Run Jobs (can't change CLI args per execution)
+    if os.getenv('FORCE_REINDEX', '').lower() in ('1', 'true', 'yes'):
+        args.force = True
 
     if task_index is not None and task_count is not None:
         # Running as Cloud Run Job with multiple tasks - use task index
@@ -409,7 +418,8 @@ def main():
                             org=org,
                             repo=name,
                             summary_content=summary_content,
-                            metadata=metadata
+                            metadata=metadata,
+                            force=args.force
                         )
 
                         if upload_success:
