@@ -155,10 +155,12 @@ export async function handleMCP(req: Request, res: Response): Promise<void> {
 
 				const formattedResults = searchResults
 					.map((result: SearchResult, index: number) => {
+						const sbomUrl = `https://uk-x-gov-software-community.github.io/xgov-opensource-repo-scraper/sbom/${result.metadata.org}/${result.metadata.repo}.json.gz`;
 						return `${index + 1}. **${result.title}**
    - URL: ${result.url}
    - Organization: ${result.metadata.org}
-   - Repository: ${result.metadata.repo}`;
+   - Repository: ${result.metadata.repo}
+   - SBOM: ${sbomUrl}`;
 					})
 					.join("\n\n");
 

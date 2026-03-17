@@ -57,6 +57,9 @@ export function formatSnippet(results: SearchResult[]): SnippetResult[] {
 			const context_lines_before = 2;
 			const context_lines_after = 2;
 
+			// Build SBOM URL from xgov-opensource-repo-scraper published data
+			const sbomUrl = `https://uk-x-gov-software-community.github.io/xgov-opensource-repo-scraper/sbom/${org}/${repo}.json.gz`;
+
 			// Create snippet result object
 			const snippetResult: SnippetResult = {
 				// Base fields from MinimalResult
@@ -67,6 +70,7 @@ export function formatSnippet(results: SearchResult[]): SnippetResult[] {
 				last_updated,
 				similarity_score,
 				github_link: githubLink,
+				sbom_url: sbomUrl,
 				metadata: {
 					stars: undefined,
 					license: undefined,

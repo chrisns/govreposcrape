@@ -76,6 +76,8 @@ export interface MinimalResult {
 	similarity_score: number;
 	/** Direct link to GitHub repository */
 	github_link: string;
+	/** SBOM (Software Bill of Materials) download URL - SPDX 2.3 format, gzipped */
+	sbom_url: string;
 	/** Optional metadata fields */
 	metadata: {
 		/** Repository star count */

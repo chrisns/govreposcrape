@@ -38,6 +38,9 @@ export function formatMinimal(results: SearchResult[]): MinimalResult[] {
 			// In production, this would come from Vertex AI Search relevance score
 			const similarity_score = 0.85; // TODO: Extract from Vertex AI Search response
 
+			// Build SBOM URL from xgov-opensource-repo-scraper published data
+			const sbomUrl = `https://uk-x-gov-software-community.github.io/xgov-opensource-repo-scraper/sbom/${org}/${repo}.json.gz`;
+
 			// Create minimal result object
 			const minimalResult: MinimalResult = {
 				repo_url: result.url,
@@ -47,6 +50,7 @@ export function formatMinimal(results: SearchResult[]): MinimalResult[] {
 				last_updated,
 				similarity_score,
 				github_link: githubLink,
+				sbom_url: sbomUrl,
 				metadata: {
 					// Optional fields - not available in current implementation
 					// These would come from GitHub API or cached metadata

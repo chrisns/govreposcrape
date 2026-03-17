@@ -33,7 +33,8 @@ import argparse
 import signal
 import time
 import json
-from typing import Dict, Any, List
+import requests as http_requests
+from typing import Dict, Any, List, Optional
 from datetime import datetime
 
 # Import from existing modules
@@ -47,6 +48,72 @@ from ingest import (
 
 # Import Cloud Storage client (Vertex AI Search backend)
 from gcs_client import CloudStorageClient
+
+# SBOM base URL from xgov-opensource-repo-scraper GitHub Pages
+SBOM_BASE_URL = "https://uk-x-gov-software-community.github.io/xgov-opensource-repo-scraper/sbom"
+
+
+def fetch_sbom_dependencies(org: str, repo: str) -> Optional[str]:
+    """
+    Fetch SBOM from xgov-opensource-repo-scraper and extract dependency summary.
+    Returns a markdown section to append to the gitingest summary, or None if unavailable.
+    """
+    url = f"{SBOM_BASE_URL}/{org}/{repo}.json.gz"
+    try:
+        resp = http_requests.get(url, timeout=10)
+        if resp.status_code != 200:
+            return None
+
+        sbom = resp.json()
+        # Navigate SPDX 2.3 structure: wrapper has "sbom" key
+        spdx = sbom.get("sbom", sbom)
+        packages = spdx.get("packages", [])
+
+        if not packages:
+            return None
+
+        # First package is usually the root (the repo itself), skip it
+        deps = [p for p in packages if not p.get("name", "").startswith("com.github.")]
+
+        if not deps:
+            return None
+
+        # Extract key info per dependency
+        lines = []
+        for dep in deps[:100]:  # Cap at 100 to keep summary reasonable
+            name = dep.get("name", "unknown")
+            version = dep.get("versionInfo", "")
+            license_id = dep.get("licenseConcluded", "")
+            # Extract PURL if available
+            purl = ""
+            for ref in dep.get("externalRefs", []):
+                if ref.get("referenceType") == "purl":
+                    purl = ref.get("referenceLocator", "")
+                    break
+
+            parts = [f"- {name}"]
+            if version:
+                parts[0] += f" ({version})"
+            if license_id and license_id != "NOASSERTION":
+                parts[0] += f" [{license_id}]"
+            if purl:
+                parts[0] += f" `{purl}`"
+            lines.append(parts[0])
+
+        section = f"\n\n## SBOM Dependencies ({len(deps)} packages)\n\n"
+        section += f"Source: [SPDX 2.3 SBOM]({url})\n\n"
+        section += "\n".join(lines)
+        if len(deps) > 100:
+            section += f"\n\n... and {len(deps) - 100} more (see full SBOM)"
+
+        return section
+
+    except Exception as e:
+        logger.debug(
+            f"SBOM fetch failed for {org}/{repo}: {str(e)}",
+            extra={"metadata": {"org": org, "repo": repo, "error": str(e)}}
+        )
+        return None
 
 
 # Global state for graceful shutdown
@@ -327,6 +394,11 @@ def main():
                     # Upload to Cloud Storage
                     summary_content = result.get("summary", "")
                     if summary_content:
+                        # Enrich with SBOM dependency data
+                        sbom_section = fetch_sbom_dependencies(org, name)
+                        if sbom_section:
+                            summary_content += sbom_section
+
                         metadata = {
                             "url": repo_url,
                             "pushedAt": pushed_at,

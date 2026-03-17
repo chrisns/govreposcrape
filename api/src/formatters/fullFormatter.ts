@@ -90,6 +90,9 @@ export async function formatFull(
 				dependencies = extractDependencies(gitingestSummary);
 			}
 
+			// Build SBOM URL from xgov-opensource-repo-scraper published data
+			const sbomUrl = `https://uk-x-gov-software-community.github.io/xgov-opensource-repo-scraper/sbom/${org}/${repo}.json.gz`;
+
 			// Create full result object (extends SnippetResult)
 			const fullResult: FullResult = {
 				// Base fields from MinimalResult
@@ -100,6 +103,7 @@ export async function formatFull(
 				last_updated,
 				similarity_score,
 				github_link: githubLink,
+				sbom_url: sbomUrl,
 				metadata: {
 					stars: undefined,
 					license: undefined,
