@@ -27,7 +27,7 @@
 		"prepare": "husky"
 	},
 	"devDependencies": {
-		"@openapitools/openapi-generator-cli": "^2.25.0",
+		"@openapitools/openapi-generator-cli": "^2.34.0",
 		"@typescript-eslint/eslint-plugin": "^8.59.3",
 		"@typescript-eslint/parser": "^8.46.4",
 		"eslint": "^10.0.0",
