@@ -1,8 +1,10 @@
 # govreposcrape
 
-Semantic code search over 24,500+ UK government repositories. Exposes an [MCP](https://modelcontextprotocol.io) API so AI assistants like Claude can search government code directly.
+**Semantic code search _and_ dependency intelligence over 24,500+ UK government repositories.** Exposes an [MCP](https://modelcontextprotocol.io) API so AI assistants like Claude can search government code _and_ query its entire software supply chain (SBOM dependency graph) directly.
 
-Built on Google Cloud (Cloud Run, Vertex AI Search, Cloud Storage).
+Ask things like *"who's running a vulnerable Log4j?"*, *"who uses Express < 2?"*, *"what does HMRC build on?"*, or *"which departments share the most dependencies?"* — and get exhaustive, structured answers in seconds.
+
+Built on Google Cloud (Cloud Run, BigQuery, Vertex AI Search, Cloud Storage).
 
 **Production API:** `https://govreposcrape-api-1060386346356.us-central1.run.app`
 
@@ -21,7 +23,7 @@ Or install the plugin:
 /plugin install govreposcrape@govreposcrape
 ```
 
-Then ask Claude to search UK government code. The `search_uk_gov_code` tool becomes available automatically.
+Then ask Claude about UK government code — all nine tools (see [MCP tools](#mcp-tools)) become available automatically.
 
 ### Claude Desktop
 
@@ -57,6 +59,84 @@ curl -X POST https://govreposcrape-api-1060386346356.us-central1.run.app/mcp/sea
 ```
 
 No authentication required. See [`examples/`](./examples/) for Node.js and Python examples.
+
+## MCP tools
+
+Nine tools are exposed over the MCP endpoint. **Semantic search** answers "what does this code do"; the **dependency-intelligence** tools answer structured "who depends on what" questions that semantic search cannot.
+
+| Tool | What it answers |
+|------|-----------------|
+| `search_uk_gov_code` | Semantic code search — "show me NHS FHIR authentication code" |
+| `search_dependency` | Who depends on a package, with ecosystem-aware version ranges — "who uses express", "who runs express < 2" |
+| `vulnerability_exposure` | **CVE blast-radius** via live [OSV.dev](https://osv.dev) — "who is exposed to Log4Shell", "what CVEs is alphagov running" |
+| `package_popularity` | Most-depended-on packages + licence rollups — "top npm packages", "who uses GPL code" |
+| `dependency_landscape` | Per-org tech profile: ecosystems, top packages, frameworks with **end-of-life** flags ([endoflife.date](https://endoflife.date)), licences |
+| `dependency_compare` | Shared / unique dependencies + overlap % between two repos — spot duplicated effort across departments |
+| `repo_dependencies` | Full, untruncated dependency list for one repo |
+| `sbom_export` | Full dependency set + per-ecosystem counts + canonical SBOM URL |
+| `dependency_trends` | Package usage across daily snapshots (90-day retention) |
+
+> The dependency tools cover the ~15,600 repositories that have a generatable SBOM (semantic search covers all 24,500+). The aggregate SBOM carries direct dependencies only (no transitive graph).
+
+### Examples
+
+**Who uses Express, and is anyone on a pre-2.0 version?**
+
+```jsonc
+// search_dependency { "package": "express", "ecosystem": "npm" }
+{ "total_repo_count": 1830,
+  "top_versions": [["4.22.1", 277], ["5.2.1", 272], ["4.21.2", 258], ["4.17.1", 232]],
+  "excluded": { "declared_range": 131, "empty_version": 1 } }
+
+// search_dependency { "package": "express", "ecosystem": "npm", "version_range": "<2" }
+{ "total_repo_count": 1830, "matched_repo_count": 0, "range_exact": true }   // exhaustive, not fuzzy
+```
+
+**Who is exposed to a vulnerable Log4j?** (live OSV.dev cross-reference)
+
+```jsonc
+// vulnerability_exposure { "package": "org.apache.logging.log4j/log4j-core", "ecosystem": "maven" }
+{ "scope": "maven package \"org.apache.logging.log4j/log4j-core\"",
+  "osv_available": true, "vulnerable_versions": 19,
+  "findings": [
+    { "package": "org.apache.logging.log4j/log4j-core", "version": "2.25.3",
+      "affected_repo_count": 9,
+      "repos_sample": ["govuk-one-login/ipv-core-back", "dwp/ms-fitnote-controller",
+                       "nationalarchives/tdr-file-checks", "companieshouse/search.api.ch.gov.uk"],
+      "vulnerabilities": [{ "cve": "CVE-2026-34480", "severity": "MODERATE",
+                            "url": "https://osv.dev/vulnerability/GHSA-3pxv-7cmr-fjr4" }] }
+  ] }
+```
+
+> Scope `vulnerability_exposure` to a `package` (+`ecosystem`), a `repo_full_name`, or an `org`. Maven packages are keyed by `group/artifact` (e.g. `org.apache.logging.log4j/log4j-core`); use `package_popularity` with `name_contains` to find the exact key.
+
+**What does a department build on?**
+
+```jsonc
+// dependency_landscape { "org": "hmrc" }
+{ "org": "hmrc", "repo_count": 1655,
+  "ecosystems": [{ "ecosystem": "npm", "repos": 55, "dependencies": 25308 },
+                 { "ecosystem": "gem", "repos": 49, "dependencies": 3508 },
+                 { "ecosystem": "pypi", "repos": 47, "dependencies": 1558 }],
+  "eol_frameworks": [{ "package": "django", "version": "1.11.5", "repos": 2, "eol_date": "2020-04-01" }],
+  "licence_summary": { "copyleft_occurrences": 421, "unknown_or_missing": 1830 } }
+```
+
+**Where are departments duplicating effort?**
+
+```jsonc
+// dependency_compare { "repo_a": "alphagov/govuk-frontend", "repo_b": "hmrc/hmrc-frontend" }
+{ "shared_count": 931, "overlap_pct": 51.2, "deps_a": 1402, "deps_b": 1217 }
+```
+
+**What are the most-used packages across government?**
+
+```jsonc
+// package_popularity { "ecosystem": "npm", "top": 3 }
+{ "top_packages": [{ "package_name": "debug", "repo_count": 3132 },
+                   { "package_name": "ms", "repo_count": 3091 },
+                   { "package_name": "semver", "repo_count": 3023 }] }
+```
 
 ## API
 
@@ -96,34 +176,47 @@ The API uses semantic search (Vertex AI Search), not keyword matching. Descripti
 ## Architecture
 
 ```
-                    ┌─────────────────────────────────────────┐
-                    │            Google Cloud Platform         │
-                    │                                         │
-  MCP Clients ───> │  Cloud Run API (Express/TypeScript)      │
-                    │       │                                  │
-                    │       ├──> Vertex AI Search (semantic)   │
-                    │       └──> Cloud Storage (24,500+ repos) │
-                    │                                         │
-                    │  Cloud Run Jobs (Python ingestion)       │
-                    │       │                                  │
-                    │       ├──> GitHub gov repos feed         │
-                    │       ├──> gitingest (summarisation)     │
-                    │       └──> Cloud Storage (upload)        │
-                    └─────────────────────────────────────────┘
+                ┌───────────────────────────────────────────────────────────┐
+                │                   Google Cloud Platform                    │
+                │                                                            │
+  MCP clients ─>│  Cloud Run API (Express / TypeScript)                      │
+                │     ├─ search_uk_gov_code ───────────> Vertex AI Search    │
+                │     ├─ search_dependency / popularity /                    │
+                │     │  landscape / compare / sbom_export / trends ─> BigQuery
+                │     │                          (govreposcrape_deps ~2.9M)  │
+                │     └─ vulnerability_exposure ─> BigQuery + OSV.dev  (live) │
+                │        dependency_landscape  ─> + endoflife.date    (live) │
+                │                                                            │
+                │  Cloud Run Jobs (Python)                                   │
+                │     ├─ govreposcrape-ingestion  ─> gitingest ─> GCS ─>      │
+                │     │                                Vertex AI Search       │
+                │     └─ govreposcrape-deps-index ─> aggregate CycloneDX SBOM │
+                │                          ─> explode (~2.9M rows) ─> BigQuery │
+                └───────────────────────────────────────────────────────────┘
 ```
 
-**Read path:** MCP client -> Cloud Run API -> Vertex AI Search -> results
+**Read paths:**
+- Semantic: MCP client -> Cloud Run API -> Vertex AI Search -> results
+- Dependency: MCP client -> Cloud Run API -> BigQuery (`govreposcrape_deps`), with live enrichment from OSV.dev (CVEs) and endoflife.date (EOL)
 
-**Write path:** Cloud Run Jobs -> fetch repos -> gitingest summarise -> upload to GCS -> Vertex AI auto-indexes
+**Write paths (daily Cloud Run Jobs):**
+- Semantic: fetch repos -> gitingest summarise -> upload to GCS -> Vertex AI auto-indexes
+- Dependency: stream the aggregate CycloneDX SBOM -> explode to ~2.9M `(repo, library)` rows -> classify versions -> load BigQuery (date-partitioned, clustered) -> rebuild summary tables -> atomic view swap
+
+Cross-ecosystem version comparison (e.g. `express < 2`) uses a byte-identical Python+TS version-key implementation (`container/version_keys.py` / `api/src/services/versionKeys.ts`) validated against shared golden vectors. See [`docs/sbom-dependency-index-design.md`](docs/sbom-dependency-index-design.md).
 
 ### Google Cloud services
 
 | Service | Resource | Purpose |
 |---------|----------|---------|
-| Cloud Run | `govreposcrape-api` | MCP API server (Node.js 20, Express) |
-| Cloud Run Jobs | `govreposcrape-ingestion` | Daily ingestion (Python 3.11, 100 parallel tasks) |
-| Cloud Storage | `govreposcrape-summaries` | gitingest summaries (`{org}/{repo}.md`) |
+| Cloud Run | `govreposcrape-api` | MCP API server (Node.js, Express) |
+| Cloud Run Jobs | `govreposcrape-ingestion` | Daily semantic ingestion (gitingest -> GCS) |
+| Cloud Run Jobs | `govreposcrape-deps-index` | Daily dependency-index build (CycloneDX SBOM -> BigQuery, 04:00 UTC) |
+| Cloud Storage | `govreposcrape-summaries` | gitingest summaries (`{org}/{repo}.md`) + deps NDJSON staging |
 | Vertex AI Search | `govreposcrape-search` | Semantic search, auto-indexed from GCS |
+| BigQuery | `govreposcrape_deps` | Structured dependency index (~2.9M rows, date-partitioned, 90-day retention) |
+
+External services queried live (read-only, bounded): [OSV.dev](https://osv.dev) (CVEs) and [endoflife.date](https://endoflife.date) (framework EOL).
 
 ## Development
 
@@ -170,17 +263,23 @@ gcloud run jobs execute govreposcrape-ingestion --project=govreposcrape --region
 govreposcrape/
 ├── api/                        # Cloud Run API
 │   ├── src/
-│   │   ├── index.ts            # Express entry point
-│   │   ├── controllers/        # searchController, mcpController
-│   │   ├── services/           # Vertex AI Search, GCS, Gemini
-│   │   └── middleware/         # logging, errors, timeout, validation
+│   │   ├── index.ts            # Express entry point (+ rate limiter)
+│   │   ├── controllers/        # searchController, mcpController (9 tools)
+│   │   ├── services/           # vertexSearchService, depsQueryService,
+│   │   │                       #   versionKeys, osvService, endoflifeService,
+│   │   │                       #   safeFetch, concurrency, GCS, Gemini
+│   │   └── middleware/         # logging, errors, timeout, validation, rateLimit
 │   ├── test/                   # Vitest tests
 │   └── Dockerfile
-├── container/                  # Ingestion pipeline (Cloud Run Jobs)
-│   ├── orchestrator.py         # Batch processing orchestrator
+├── container/                  # Ingestion pipelines (Cloud Run Jobs)
+│   ├── orchestrator.py         # Semantic (gitingest) orchestrator
 │   ├── ingest.py               # gitingest processing
+│   ├── build_deps_index.py     # SBOM -> BigQuery dependency index
+│   ├── version_keys.py         # version classification (parity w/ versionKeys.ts)
+│   ├── deploy-deps-index.sh    # deploy the deps-index job + scheduler
 │   ├── gcs_client.py           # Cloud Storage client
 │   └── Dockerfile
+├── testdata/                   # shared Python<->TS version-key golden vectors
 ├── .claude-plugin/             # Claude Code plugin manifest
 ├── skills/                     # Claude Code skills
 ├── commands/                   # Claude Code slash commands
@@ -198,6 +297,7 @@ See [SECURITY.md](./SECURITY.md).
 ## Links
 
 - [Architecture](docs/architecture.md)
+- [Dependency index design & as-built notes](docs/sbom-dependency-index-design.md)
 - [PRD](docs/PRD.md)
 - [Deployment Guide](DEPLOYMENT.md)
 - [Claude Desktop Guide](docs/integration/claude-desktop.md)
