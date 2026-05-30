@@ -26,6 +26,9 @@ import {
 	RangeComparator,
 	VersionRangeError,
 } from "./versionKeys";
+import { resolveVulnIds, vulnDetails, OsvQuery, VulnRef } from "./osvService";
+import { eolStatus } from "./endoflifeService";
+import { mapLimit } from "./concurrency";
 
 const PROJECT = process.env.GOOGLE_PROJECT_ID || "govreposcrape";
 const DATASET = process.env.DEPS_DATASET || "govreposcrape_deps";
@@ -125,6 +128,24 @@ function validateRepo(r: unknown): string {
 	const s = r.trim();
 	if (!REPO_RE.test(s)) throw new DepsInputError('repo_full_name must look like "org/repo"');
 	return s;
+}
+
+const ORG_RE = /^[A-Za-z0-9._-]{1,100}$/;
+function validateOrg(o: unknown): string {
+	if (typeof o !== "string") throw new DepsInputError("org must be a string");
+	const s = o.trim();
+	if (!ORG_RE.test(s)) throw new DepsInputError("org has invalid characters");
+	return s;
+}
+
+/** Clustered-prefix range bounds for one org over dependencies_by_repo (repo_full_name = "org/repo"). */
+function orgBounds(org: string): { lo: string; hi: string } {
+	return { lo: `${org}/`, hi: `${org}0` }; // '0' (0x30) is the next code point after '/' (0x2F)
+}
+
+const COPYLEFT_RE = /^(a?gpl|lgpl|mpl|epl|cddl|eupl|osl|cecill)/i;
+function isCopyleft(licenseId: string | null | undefined): boolean {
+	return !!licenseId && COPYLEFT_RE.test(licenseId);
 }
 
 export const COVERAGE_NOTE =
@@ -609,7 +630,361 @@ export class DepsQueryService {
 		cacheSet(ck, result);
 		return result;
 	}
+
+	// ───────────────────────────── #198 capabilities ─────────────────────────────
+
+	/** Real-time CVE exposure for a bounded scope (package, repo, or org) via OSV.dev. */
+	async vulnerabilityExposure(args: {
+		package?: string;
+		ecosystem?: string;
+		org?: string;
+		repo_full_name?: string;
+	}): Promise<any> {
+		const ecosystem = validateEcosystem(args.ecosystem);
+		const hasOrg = args.org !== undefined && args.org !== null && args.org !== "";
+		const hasRepo =
+			args.repo_full_name !== undefined &&
+			args.repo_full_name !== null &&
+			args.repo_full_name !== "";
+		const hasPkg = args.package !== undefined && args.package !== null && args.package !== "";
+
+		let scopeRows: any[];
+		let scopeLabel: string;
+		const SAMPLE = "ARRAY_AGG(DISTINCT repo_full_name IGNORE NULLS LIMIT 25) AS repos";
+		const concrete = "version_kind IN ('release','prerelease')";
+
+		if (hasPkg) {
+			const pkg = validatePackage(args.package);
+			if (!ecosystem)
+				throw new DepsInputError("vulnerability_exposure by package requires an ecosystem");
+			const pkey = packageKey(ecosystem, pkg);
+			scopeRows = await this.query(
+				`SELECT ecosystem, ANY_VALUE(package_name) AS package_name, version_raw,
+				        COUNT(DISTINCT repo_full_name) AS n, ${SAMPLE}
+				 FROM ${this.current}
+				 WHERE ecosystem=@eco AND package_key=@pkey AND ${concrete}
+				 GROUP BY ecosystem, version_raw`,
+				{ eco: ecosystem, pkey },
+				MAX_BYTES_FACT,
+			);
+			scopeLabel = `${ecosystem} package "${pkg}"`;
+		} else if (hasRepo) {
+			const repo = validateRepo(args.repo_full_name);
+			scopeRows = await this.query(
+				`SELECT ecosystem, ANY_VALUE(package_name) AS package_name, version_raw,
+				        1 AS n, [@repo] AS repos
+				 FROM ${this.byRepo}
+				 WHERE repo_full_name=@repo AND ${concrete}
+				 GROUP BY ecosystem, package_key, version_raw`,
+				{ repo },
+				MAX_BYTES_FACT,
+			);
+			scopeLabel = `repo ${repo}`;
+		} else if (hasOrg) {
+			const org = validateOrg(args.org);
+			const { lo, hi } = orgBounds(org);
+			scopeRows = await this.query(
+				`SELECT ecosystem, ANY_VALUE(package_name) AS package_name, version_raw,
+				        COUNT(DISTINCT repo_full_name) AS n, ${SAMPLE}
+				 FROM ${this.byRepo}
+				 WHERE repo_full_name >= @lo AND repo_full_name < @hi AND ${concrete}
+				 GROUP BY ecosystem, package_key, version_raw
+				 LIMIT 5000`,
+				{ lo, hi },
+				MAX_BYTES_FACT,
+			);
+			scopeLabel = `org ${org}`;
+		} else {
+			throw new DepsInputError(
+				"vulnerability_exposure requires a scope: package + ecosystem, repo_full_name, or org",
+			);
+		}
+
+		const queries: OsvQuery[] = scopeRows.map((r) => ({
+			ecosystem: r.ecosystem,
+			name: r.package_name,
+			version: r.version_raw,
+		}));
+		const { perQuery, osvAvailable, truncated } = await resolveVulnIds(queries);
+		const allIds = new Set<string>();
+		perQuery.forEach((ids) => ids.forEach((id) => allIds.add(id)));
+		const details = await vulnDetails([...allIds]);
+
+		const findings: any[] = [];
+		scopeRows.forEach((r, i) => {
+			const ids = perQuery[i];
+			if (!ids || ids.length === 0) return;
+			const vulns = ids.map((id) => details[id]).filter(Boolean) as VulnRef[];
+			findings.push({
+				ecosystem: r.ecosystem,
+				package: r.package_name,
+				version: r.version_raw,
+				affected_repo_count: Number(r.n),
+				repos_sample: (r.repos || []).slice(0, 25),
+				vulnerabilities: vulns.map((v) => ({
+					id: v.id,
+					cve: v.cve,
+					severity: v.severity,
+					summary: v.summary,
+					url: v.url,
+				})),
+			});
+		});
+		findings.sort((a, b) => b.affected_repo_count - a.affected_repo_count);
+
+		return {
+			scope: scopeLabel,
+			osv_available: osvAvailable,
+			vulnerable_versions: findings.length,
+			findings: findings.slice(0, 200),
+			...(truncated
+				? {
+						truncated: true,
+						note: "Scope exceeded the OSV query cap; results are partial — narrow to a package or repo.",
+					}
+				: {}),
+			...(osvAvailable
+				? {}
+				: { osv_note: "OSV.dev was unreachable; vulnerability data is incomplete." }),
+			coverage_note: COVERAGE_NOTE,
+		};
+	}
+
+	/** Technology profile for one org/department: ecosystems, top packages, frameworks (+EOL), licences. */
+	async dependencyLandscape(args: { org: string }): Promise<any> {
+		const org = validateOrg(args.org);
+		const ck = `ls:${org}`;
+		const hit = cacheGet(ck);
+		if (hit) return hit;
+		const { lo, hi } = orgBounds(org);
+		const p = { lo, hi };
+
+		const ecos = await this.query(
+			`SELECT ecosystem, COUNT(DISTINCT repo_full_name) AS repos, COUNT(*) AS deps
+			 FROM ${this.byRepo} WHERE repo_full_name >= @lo AND repo_full_name < @hi
+			 GROUP BY ecosystem ORDER BY deps DESC`,
+			p,
+			MAX_BYTES_FACT,
+		);
+		if (ecos.length === 0) {
+			const empty = {
+				org,
+				repo_count: 0,
+				note: `No SBOM-indexed repositories found for org "${org}".`,
+				coverage_note: COVERAGE_NOTE,
+			};
+			cacheSet(ck, empty);
+			return empty;
+		}
+		const top = await this.query(
+			`SELECT ecosystem, package_name, COUNT(DISTINCT repo_full_name) AS c
+			 FROM ${this.byRepo} WHERE repo_full_name >= @lo AND repo_full_name < @hi
+			   AND ecosystem NOT IN ('github','githubactions')
+			 GROUP BY ecosystem, package_name ORDER BY c DESC LIMIT 25`,
+			p,
+			MAX_BYTES_FACT,
+		);
+		const lic = await this.query(
+			`SELECT IFNULL(license_id, 'NONE') AS lic, COUNT(*) AS c
+			 FROM ${this.byRepo} WHERE repo_full_name >= @lo AND repo_full_name < @hi
+			 GROUP BY lic ORDER BY c DESC`,
+			p,
+			MAX_BYTES_FACT,
+		);
+		// frameworks present (mapped to endoflife) + their versions → EOL flags
+		const fwKeys = FRAMEWORK_KEYS;
+		const fwRows = await this.query(
+			`SELECT ecosystem, package_key, ANY_VALUE(package_name) AS package_name, version_raw,
+			        COUNT(DISTINCT repo_full_name) AS c
+			 FROM ${this.byRepo} WHERE repo_full_name >= @lo AND repo_full_name < @hi
+			   AND version_kind='release' AND CONCAT(ecosystem,'|',package_key) IN UNNEST(@fw)
+			 GROUP BY ecosystem, package_key, version_raw LIMIT 500`,
+			{ ...p, fw: fwKeys },
+			MAX_BYTES_FACT,
+			{ fw: ["STRING"] },
+		);
+		// accurate distinct repo count (a repo can span multiple ecosystems → MAX/SUM are wrong)
+		const cnt = await this.query(
+			`SELECT COUNT(DISTINCT repo_full_name) AS n
+			 FROM ${this.byRepo} WHERE repo_full_name >= @lo AND repo_full_name < @hi`,
+			p,
+			MAX_BYTES_FACT,
+		);
+		const repoCount = Number((cnt[0] as any)?.n || 0);
+		// EOL lookups hit endoflife.date → cap outbound concurrency.
+		const eolFindings: any[] = [];
+		await mapLimit(fwRows as any[], 8, async (r: any) => {
+			const st = await eolStatus(r.ecosystem, r.package_key, r.version_raw);
+			if (st && st.is_eol === true) {
+				eolFindings.push({
+					package: r.package_name,
+					version: r.version_raw,
+					repos: Number(r.c),
+					eol_date: st.eol,
+					product: st.product,
+				});
+			}
+			return null;
+		});
+		eolFindings.sort((a, b) => b.repos - a.repos);
+
+		let copyleft = 0;
+		let unknownLic = 0;
+		for (const r of lic as any[]) {
+			if (r.lic === "NONE" || r.lic === "NOASSERTION") unknownLic += Number(r.c);
+			else if (isCopyleft(r.lic)) copyleft += Number(r.c);
+		}
+		const result = {
+			org,
+			repo_count: repoCount,
+			ecosystems: (ecos as any[]).map((e) => ({
+				ecosystem: e.ecosystem,
+				repos: Number(e.repos),
+				dependencies: Number(e.deps),
+			})),
+			top_packages: (top as any[]).map((t) => ({
+				ecosystem: t.ecosystem,
+				package_name: t.package_name,
+				repos: Number(t.c),
+			})),
+			licence_summary: {
+				copyleft_occurrences: copyleft,
+				unknown_or_missing: unknownLic,
+				top_licences: (lic as any[])
+					.slice(0, 8)
+					.map((l) => ({ licence: l.lic, occurrences: Number(l.c) })),
+			},
+			eol_frameworks: eolFindings,
+			coverage_note: COVERAGE_NOTE,
+		};
+		cacheSet(ck, result);
+		return result;
+	}
+
+	/** Compare two repositories' dependency profiles (shared / unique / overlap). */
+	async dependencyCompare(args: { repo_a: string; repo_b: string }): Promise<any> {
+		const a = validateRepo(args.repo_a);
+		const b = validateRepo(args.repo_b);
+		const rows = await this.query(
+			`SELECT repo_full_name, ecosystem, package_key, ANY_VALUE(package_name) AS package_name
+			 FROM ${this.byRepo} WHERE repo_full_name IN (@a, @b)
+			 GROUP BY repo_full_name, ecosystem, package_key`,
+			{ a, b },
+			MAX_BYTES_FACT,
+		);
+		const setA = new Map<string, string>();
+		const setB = new Map<string, string>();
+		for (const r of rows as any[]) {
+			const key = `${r.ecosystem}|${r.package_key}`;
+			const label = `${r.ecosystem}:${r.package_name}`;
+			if (r.repo_full_name === a) setA.set(key, label);
+			if (r.repo_full_name === b) setB.set(key, label);
+		}
+		const shared: string[] = [];
+		const onlyA: string[] = [];
+		const onlyB: string[] = [];
+		for (const [k, label] of setA) (setB.has(k) ? shared : onlyA).push(label);
+		for (const [k, label] of setB) if (!setA.has(k)) onlyB.push(label);
+		const union = setA.size + onlyB.length;
+		return {
+			repo_a: a,
+			repo_b: b,
+			deps_a: setA.size,
+			deps_b: setB.size,
+			shared_count: shared.length,
+			overlap_pct: union ? Math.round((shared.length / union) * 1000) / 10 : 0,
+			shared: shared.sort().slice(0, 100),
+			only_in_a: onlyA.sort().slice(0, 100),
+			only_in_b: onlyB.sort().slice(0, 100),
+			coverage_note: COVERAGE_NOTE,
+		};
+	}
+
+	/** Export the full dependency set for one repo, with the canonical SBOM source URL. */
+	async sbomExport(args: { repo_full_name: string; limit?: number }): Promise<any> {
+		const repo = validateRepo(args.repo_full_name);
+		const limit = clampInt(args.limit, 5000, 1, 20000);
+		const rows = await this.query(
+			`SELECT ecosystem, package_name, version_raw, version_kind, license_id, COUNT(*) OVER() AS total
+			 FROM ${this.byRepo} WHERE repo_full_name=@repo
+			 ORDER BY ecosystem, package_name LIMIT ${limit}`,
+			{ repo },
+			MAX_BYTES_FACT,
+		);
+		const total = rows.length ? Number((rows[0] as any).total) : 0;
+		const byEco: Record<string, number> = {};
+		for (const r of rows as any[]) byEco[r.ecosystem] = (byEco[r.ecosystem] || 0) + 1;
+		const [org, name] = repo.split("/");
+		return {
+			repo_full_name: repo,
+			sbom_source_url: `https://uk-x-gov-software-community.github.io/xgov-opensource-repo-scraper/sbom/${org}/${name}.json.gz`,
+			dependency_count: total,
+			returned: rows.length,
+			truncated: rows.length < total,
+			by_ecosystem: byEco,
+			dependencies: rows.map((r: any) => ({
+				ecosystem: r.ecosystem,
+				package_name: r.package_name,
+				version: r.version_raw,
+				version_kind: r.version_kind,
+				license: r.license_id,
+			})),
+			coverage_note:
+				total === 0
+					? `No SBOM dependencies indexed for "${repo}". ${COVERAGE_NOTE}`
+					: COVERAGE_NOTE,
+		};
+	}
+
+	/** Usage trend of a package across the retained daily snapshots. */
+	async dependencyTrends(args: { package: string; ecosystem?: string }): Promise<any> {
+		const pkg = validatePackage(args.package);
+		const ecosystem = validateEcosystem(args.ecosystem, true)!;
+		const pkey = packageKey(ecosystem, pkg);
+		const rows = await this.query(
+			`SELECT ingested_date, COUNT(DISTINCT repo_full_name) AS repos
+			 FROM \`${PROJECT}.${DATASET}.dependencies\`
+			 WHERE ecosystem=@eco AND package_key=@pkey
+			 GROUP BY ingested_date ORDER BY ingested_date`,
+			{ eco: ecosystem, pkey },
+			MAX_BYTES_FACT,
+		);
+		const snaps = (rows as any[]).map((r) => ({
+			date:
+				r.ingested_date?.value ??
+				(r.ingested_date instanceof Date
+					? r.ingested_date.toISOString().slice(0, 10)
+					: String(r.ingested_date)),
+			repo_count: Number(r.repos),
+		}));
+		return {
+			package: pkg,
+			ecosystem,
+			snapshots: snaps,
+			note:
+				snaps.length < 2
+					? "Only one snapshot retained so far; trend builds up daily (≤90-day retention)."
+					: `${snaps[snaps.length - 1].repo_count - snaps[0].repo_count >= 0 ? "+" : ""}${snaps[snaps.length - 1].repo_count - snaps[0].repo_count} repos over ${snaps.length} snapshots.`,
+			coverage_note: COVERAGE_NOTE,
+		};
+	}
 }
+
+// (ecosystem|package_key) pairs we can resolve EOL status for (mirrors endoflifeService map).
+const FRAMEWORK_KEYS = [
+	"pypi|django",
+	"pypi|flask",
+	"pypi|fastapi",
+	"gem|rails",
+	"npm|@angular/core",
+	"npm|vue",
+	"npm|express",
+	"npm|next",
+	"maven|org.springframework/spring-core",
+	"maven|org.springframework.boot/spring-boot",
+	"composer|laravel/framework",
+	"composer|symfony/symfony",
+];
 
 let singleton: DepsQueryService | null = null;
 export function getDepsQueryService(): DepsQueryService {

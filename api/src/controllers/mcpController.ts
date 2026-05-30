@@ -139,6 +139,82 @@ const TOOL_DEFINITIONS = [
 			required: ["repo_full_name"],
 		},
 	},
+	{
+		name: "vulnerability_exposure",
+		description:
+			"CVE blast-radius: find which UK government repositories run dependency versions with known vulnerabilities, cross-referenced live against OSV.dev. Scope to a package (+ecosystem), a single repo, or an org/department. Answers 'who is exposed to Log4Shell' or 'what CVEs is alphagov running'.",
+		inputSchema: {
+			type: "object",
+			properties: {
+				package: { type: "string", description: "Package name (requires `ecosystem`)." },
+				ecosystem: {
+					type: "string",
+					description: "PURL ecosystem for the package.",
+					enum: DEPS_ECOSYSTEMS,
+				},
+				org: {
+					type: "string",
+					description:
+						"GitHub org/department, e.g. 'alphagov' — scans all its repos' dependencies.",
+				},
+				repo_full_name: { type: "string", description: "Single repo as 'org/repo'." },
+			},
+		},
+	},
+	{
+		name: "dependency_landscape",
+		description:
+			"Technology profile for a UK government org/department: ecosystem breakdown, most-used packages, detected frameworks with end-of-life flags (via endoflife.date), and a copyleft/unknown licence summary.",
+		inputSchema: {
+			type: "object",
+			properties: {
+				org: {
+					type: "string",
+					description: "GitHub org/department, e.g. 'alphagov', 'hmrc', 'nhsdigital'.",
+				},
+			},
+			required: ["org"],
+		},
+	},
+	{
+		name: "dependency_compare",
+		description:
+			"Compare two repositories' dependency profiles — shared dependencies, those unique to each, and an overlap percentage. Useful for spotting duplicated effort across departments.",
+		inputSchema: {
+			type: "object",
+			properties: {
+				repo_a: { type: "string", description: "First repo as 'org/repo'." },
+				repo_b: { type: "string", description: "Second repo as 'org/repo'." },
+			},
+			required: ["repo_a", "repo_b"],
+		},
+	},
+	{
+		name: "sbom_export",
+		description:
+			"Export the full (untruncated) dependency set for one repository, with per-ecosystem counts and the canonical SBOM source URL.",
+		inputSchema: {
+			type: "object",
+			properties: {
+				repo_full_name: { type: "string", description: "Repository as 'org/repo'." },
+				limit: { type: "number", minimum: 1, maximum: 20000, default: 5000 },
+			},
+			required: ["repo_full_name"],
+		},
+	},
+	{
+		name: "dependency_trends",
+		description:
+			"Track how many UK government repositories depend on a package over time, across the retained daily snapshots (drift/adoption monitoring).",
+		inputSchema: {
+			type: "object",
+			properties: {
+				package: { type: "string", description: "Package name." },
+				ecosystem: { type: "string", description: "PURL ecosystem.", enum: DEPS_ECOSYSTEMS },
+			},
+			required: ["package", "ecosystem"],
+		},
+	},
 ];
 
 interface MCPRequest {
@@ -289,6 +365,21 @@ export async function handleMCP(req: Request, res: Response): Promise<void> {
 							break;
 						case "repo_dependencies":
 							text = formatJsonResult(await getDepsQueryService().repoDependencies(toolArgs));
+							break;
+						case "vulnerability_exposure":
+							text = formatJsonResult(await getDepsQueryService().vulnerabilityExposure(toolArgs));
+							break;
+						case "dependency_landscape":
+							text = formatJsonResult(await getDepsQueryService().dependencyLandscape(toolArgs));
+							break;
+						case "dependency_compare":
+							text = formatJsonResult(await getDepsQueryService().dependencyCompare(toolArgs));
+							break;
+						case "sbom_export":
+							text = formatJsonResult(await getDepsQueryService().sbomExport(toolArgs));
+							break;
+						case "dependency_trends":
+							text = formatJsonResult(await getDepsQueryService().dependencyTrends(toolArgs));
 							break;
 						default:
 							response = {

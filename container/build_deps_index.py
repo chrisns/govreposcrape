@@ -243,9 +243,9 @@ def load_to_bigquery(project: str, dataset: str, bucket: str, ndjson_path: str,
     table.time_partitioning = bigquery.TimePartitioning(
         type_=bigquery.TimePartitioningType.DAY,
         field="ingested_date",
-        # keep ~10 days of partitions for cheap rollback + short trend history; old
-        # partitions auto-expire so storage/cost stays bounded.
-        expiration_ms=10 * 24 * 60 * 60 * 1000,
+        # keep ~90 days of partitions for cheap rollback + dependency-trend history;
+        # old partitions auto-expire so storage/cost stays bounded.
+        expiration_ms=90 * 24 * 60 * 60 * 1000,
     )
     table.clustering_fields = ["ecosystem", "package_key"]
     bq.create_table(table, exists_ok=True)
@@ -336,7 +336,7 @@ def refresh_views_and_summaries(bq, project: str, dataset: str, ingested_date: s
         # prune a repo-only filter).
         f"""CREATE OR REPLACE TABLE {fq}.dependencies_by_repo
             CLUSTER BY repo_full_name AS
-            SELECT repo_full_name, ecosystem, package_name,
+            SELECT repo_full_name, ecosystem, package_name, package_key,
                    version_raw, version_kind, license_id
             FROM {src}""",
     ]
