@@ -6,6 +6,7 @@ import { loggingMiddleware } from "./middleware/logging";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 import { timeoutMiddleware } from "./middleware/timeout";
 import { validateResultMode } from "./middleware/validateRequest";
+import { rateLimit } from "./middleware/rateLimit";
 
 // Create Express app
 const app = express();
@@ -17,12 +18,13 @@ const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
 	: ["*"];
 
 // Middleware
-app.use(express.json());
+app.use(express.json({ limit: "64kb" })); // bound request body size
 app.use(
 	cors({
 		origin: ALLOWED_ORIGINS,
 		methods: ["GET", "POST", "OPTIONS"],
-		credentials: true,
+		// No credentials: this is a public, unauthenticated API, and `origin: *`
+		// combined with `credentials: true` is rejected by browsers anyway.
 	}),
 );
 app.use(loggingMiddleware);
@@ -41,11 +43,11 @@ app.get("/health", (_req: Request, res: Response) => {
 	});
 });
 
-// MCP Search endpoint (with validation middleware)
-app.post("/mcp/search", validateResultMode, search);
+// MCP Search endpoint (with rate limit + validation middleware)
+app.post("/mcp/search", rateLimit, validateResultMode, search);
 
 // MCP HTTP endpoint (SSE-based for remote MCP)
-app.post("/mcp", handleMCP);
+app.post("/mcp", rateLimit, handleMCP);
 
 // 404 handler (must be after all routes)
 app.use(notFoundHandler);

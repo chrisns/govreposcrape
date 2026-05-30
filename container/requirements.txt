@@ -13,6 +13,12 @@ google-genai>=0.3.0
 # HTTP library for fetching repos.json feed
 requests>=2.31.0
 
+# Streaming JSON parser for the 412 MB aggregate CycloneDX SBOM (build_deps_index.py)
+ijson>=3.2.0
+
+# BigQuery client for the structured dependency index load
+google-cloud-bigquery>=3.20.0
+
 # Testing framework
 pytest>=8.0.0
 pytest-mock>=3.12.0

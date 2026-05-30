@@ -31,6 +31,8 @@ COPY ingest.py .
 COPY google_filesearch_client.py .
 COPY gcs_client.py .
 COPY orchestrator.py .
+COPY version_keys.py .
+COPY build_deps_index.py .
 COPY test_ingest.py .
 COPY test_orchestrator.py .
 COPY test_gcs_client.py .
