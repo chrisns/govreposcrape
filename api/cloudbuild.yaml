@@ -4,7 +4,7 @@
 
 steps:
   # Step 1: Build the Docker image
-  - name: 'gcr.io/cloud-builders/docker@sha256:26b8fc76be1fbbf478fff90fd3ea11557ee5016339bc8931180d8576cc365c5d'
+  - name: 'gcr.io/cloud-builders/docker@sha256:63e9105ae9c7928249a758d03751ad2c69b543f58b70328fa18dc138b5690ff7'
     args:
       - 'build'
       - '-t'
@@ -17,7 +17,7 @@ steps:
     id: 'build-image'
 
   # Step 2: Push the Docker image to Container Registry
-  - name: 'gcr.io/cloud-builders/docker@sha256:26b8fc76be1fbbf478fff90fd3ea11557ee5016339bc8931180d8576cc365c5d'
+  - name: 'gcr.io/cloud-builders/docker@sha256:63e9105ae9c7928249a758d03751ad2c69b543f58b70328fa18dc138b5690ff7'
     args:
       - 'push'
       - 'gcr.io/$PROJECT_ID/govreposcrape-api:$COMMIT_SHA'
@@ -25,7 +25,7 @@ steps:
     waitFor: ['build-image']
 
   # Step 3: Push latest tag
-  - name: 'gcr.io/cloud-builders/docker@sha256:26b8fc76be1fbbf478fff90fd3ea11557ee5016339bc8931180d8576cc365c5d'
+  - name: 'gcr.io/cloud-builders/docker@sha256:63e9105ae9c7928249a758d03751ad2c69b543f58b70328fa18dc138b5690ff7'
     args:
       - 'push'
       - 'gcr.io/$PROJECT_ID/govreposcrape-api:latest'
