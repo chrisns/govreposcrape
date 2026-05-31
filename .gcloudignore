@@ -1,0 +1,13 @@
+# Keep Cloud Build source uploads lean.
+.git/
+**/node_modules/
+**/__pycache__/
+**/*.pyc
+container/.venv*/
+**/.venv*/
+**/dist/
+**/coverage/
+.DS_Store
+**/.DS_Store
+.bmad*/
+node_modules/

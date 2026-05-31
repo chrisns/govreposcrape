@@ -12,6 +12,13 @@ node_modules
 *.swp
 .bmad-ephemaral
 
+# Python
+__pycache__/
+*.pyc
+.venv*/
+**/.venv*/
+container/.venv-deps/
+
 # Logs directory (ingestion logs, debug output)
 logs/
 
