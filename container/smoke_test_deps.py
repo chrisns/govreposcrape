@@ -50,11 +50,11 @@ def main():
     # tools/list advertises the 4 tools
     lst = call("tools/list")
     names = {t["name"] for t in lst["result"]["tools"]}
-    check("tools/list has 4 tools", names == {"search_uk_gov_code", "search_dependency", "package_popularity", "repo_dependencies"}, str(sorted(names)))
+    check("tools/list advertises >= 9 tools", len(names) >= 9 and {"search_dependency","package_popularity","repo_dependencies"} <= names, str(sorted(names)))
 
     # who uses express (npm) → 1830
     r = tool("search_dependency", {"package": "express", "ecosystem": "npm"})
-    check("express npm total_repo_count == 1830", r.get("total_repo_count") == 1830, f"got {r.get('total_repo_count')}")
+    check("express npm total_repo_count ~1800 (drifts daily)", 1700 <= (r.get("total_repo_count") or 0) <= 2000, f"got {r.get('total_repo_count')}")
     check("express returns a repos page", len(r.get("repos", [])) > 0, f"{len(r.get('repos', []))} repos")
 
     # express < 2 → 0
