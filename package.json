@@ -28,18 +28,18 @@
 	},
 	"devDependencies": {
 		"@openapitools/openapi-generator-cli": "^2.34.0",
-		"@typescript-eslint/eslint-plugin": "^8.59.3",
+		"@typescript-eslint/eslint-plugin": "^8.60.1",
 		"@typescript-eslint/parser": "^8.46.4",
 		"eslint": "^10.4.0",
 		"husky": "^9.1.7",
-		"lint-staged": "^17.0.0",
+		"lint-staged": "^17.0.7",
 		"prettier": "^3.6.2",
-		"tsx": "^4.20.6",
+		"tsx": "^4.22.4",
 		"typescript": "^6.0.0",
-		"vitest": "~4.1.6"
+		"vitest": "~4.1.8"
 	},
 	"dependencies": {
-		"@anthropic-ai/claude-code": "^2.1.143",
+		"@anthropic-ai/claude-code": "^2.1.159",
 		"@modelcontextprotocol/sdk": "^1.22.0"
 	}
 }
