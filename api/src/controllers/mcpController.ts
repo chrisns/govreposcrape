@@ -288,17 +288,49 @@ async function handleSearchUkGovCode(args: any): Promise<string> {
 }
 
 /**
- * MCP HTTP endpoint handler using Server-Sent Events (SSE)
- * Implements the MCP protocol over HTTP as per the spec
+ * MCP HTTP endpoint handler (Streamable HTTP transport).
+ *
+ * Responses are framed per the client's `Accept` header: plain `application/json`
+ * for a single JSON-RPC reply (the broadly-compatible default, expected by clients
+ * such as Microsoft Copilot Studio), or an SSE `text/event-stream` frame for
+ * clients that only speak event-stream. The official MCP SDK clients (Claude Code,
+ * Cursor) accept both.
  */
 export async function handleMCP(req: Request, res: Response): Promise<void> {
-	// Set SSE headers
-	res.setHeader("Content-Type", "text/event-stream");
-	res.setHeader("Cache-Control", "no-cache");
-	res.setHeader("Connection", "keep-alive");
-	res.setHeader("X-Accel-Buffering", "no"); // Disable nginx buffering
-
 	const mcpRequest = req.body as MCPRequest;
+
+	// A JSON-RPC *notification* has a method but no `id` (e.g. the
+	// `notifications/initialized` every compliant client sends right after
+	// `initialize`). Per the Streamable HTTP transport, a POST carrying only
+	// notifications MUST get HTTP 202 with an empty body — NOT a JSON-RPC reply.
+	// Returning an error frame here makes strict clients (Copilot Studio) treat the
+	// handshake as failed and abort before they ever reach tools/list.
+	if (mcpRequest && typeof mcpRequest.method === "string" && mcpRequest.id === undefined) {
+		res.status(202).end();
+		return;
+	}
+
+	// Content negotiation: default to JSON; use SSE only for clients that ask for
+	// text/event-stream and do NOT accept application/json.
+	const accept = String(req.headers["accept"] || "");
+	const useSse =
+		accept.includes("text/event-stream") &&
+		!accept.includes("application/json") &&
+		!accept.includes("*/*");
+
+	const send = (payload: MCPResponse): void => {
+		if (useSse) {
+			res.setHeader("Content-Type", "text/event-stream");
+			res.setHeader("Cache-Control", "no-cache");
+			res.setHeader("Connection", "keep-alive");
+			res.setHeader("X-Accel-Buffering", "no"); // Disable nginx buffering
+			res.write(`data: ${JSON.stringify(payload)}\n\n`);
+			res.end();
+		} else {
+			res.setHeader("Content-Type", "application/json");
+			res.status(200).json(payload);
+		}
+	};
 
 	// D8: validate the JSON-RPC envelope before dispatch. express.json() accepts an
 	// empty/garbage body, which would otherwise produce responses with id: undefined
@@ -306,14 +338,11 @@ export async function handleMCP(req: Request, res: Response): Promise<void> {
 	const validId =
 		mcpRequest && (typeof mcpRequest.id === "string" || typeof mcpRequest.id === "number");
 	if (!mcpRequest || typeof mcpRequest.method !== "string" || !validId) {
-		res.write(
-			`data: ${JSON.stringify({
-				jsonrpc: "2.0",
-				id: validId ? mcpRequest.id : null,
-				error: { code: -32600, message: "Invalid Request" },
-			})}\n\n`,
-		);
-		res.end();
+		send({
+			jsonrpc: "2.0",
+			id: validId ? mcpRequest.id : (null as unknown as number),
+			error: { code: -32600, message: "Invalid Request" },
+		});
 		return;
 	}
 
@@ -323,12 +352,19 @@ export async function handleMCP(req: Request, res: Response): Promise<void> {
 		let response!: MCPResponse;
 
 		switch (mcpRequest.method) {
-			case "initialize":
+			case "initialize": {
+				// Echo the client's requested protocol version when present (version
+				// negotiation); fall back to the baseline we implement. Avoids strict
+				// clients rejecting a version they didn't ask for.
+				const requestedVersion = mcpRequest.params?.protocolVersion;
 				response = {
 					jsonrpc: "2.0",
 					id: mcpRequest.id,
 					result: {
-						protocolVersion: "2024-11-05",
+						protocolVersion:
+							typeof requestedVersion === "string" && requestedVersion
+								? requestedVersion
+								: "2024-11-05",
 						capabilities: {
 							tools: {},
 						},
@@ -339,6 +375,7 @@ export async function handleMCP(req: Request, res: Response): Promise<void> {
 					},
 				};
 				break;
+			}
 
 			case "tools/list":
 				response = {
@@ -420,9 +457,7 @@ export async function handleMCP(req: Request, res: Response): Promise<void> {
 				};
 		}
 
-		// Send SSE message
-		res.write(`data: ${JSON.stringify(response)}\n\n`);
-		res.end();
+		send(response);
 	} catch (error: any) {
 		// D4: never leak internal detail (BigQuery errors expose project/dataset/table
 		// names) to an unauthenticated client. Log server-side; return a generic message.
@@ -437,14 +472,13 @@ export async function handleMCP(req: Request, res: Response): Promise<void> {
 		);
 		const errorResponse: MCPResponse = {
 			jsonrpc: "2.0",
-			id: mcpRequest?.id ?? null,
+			id: mcpRequest?.id ?? (null as unknown as number),
 			error: {
 				code: -32603,
 				message: "Internal server error",
 			},
 		};
 
-		res.write(`data: ${JSON.stringify(errorResponse)}\n\n`);
-		res.end();
+		send(errorResponse);
 	}
 }

@@ -46,8 +46,16 @@ app.get("/health", (_req: Request, res: Response) => {
 // MCP Search endpoint (with rate limit + validation middleware)
 app.post("/mcp/search", rateLimit, validateResultMode, search);
 
-// MCP HTTP endpoint (SSE-based for remote MCP)
+// MCP HTTP endpoint (Streamable HTTP transport)
 app.post("/mcp", rateLimit, handleMCP);
+
+// This server does not offer a server→client GET stream. Per the Streamable HTTP
+// transport, advertise that explicitly with 405 (not the generic 404) so strict
+// clients don't mistake it for a missing endpoint.
+app.get("/mcp", (_req: Request, res: Response) => {
+	res.setHeader("Allow", "POST");
+	res.status(405).json({ error: { code: "METHOD_NOT_ALLOWED", message: "Use POST for /mcp" } });
+});
 
 // 404 handler (must be after all routes)
 app.use(notFoundHandler);
