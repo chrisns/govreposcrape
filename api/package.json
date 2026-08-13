@@ -23,7 +23,7 @@
   "dependencies": {
     "@google-cloud/bigquery": "^9.0.0",
     "@google-cloud/discoveryengine": "^3.0.0",
-    "@google-cloud/storage": "^7.7.0",
+    "@google-cloud/storage": "^8.0.0",
     "@google/generative-ai": "^0.24.1",
     "cors": "^2.8.5",
     "express": "^5.0.0"
