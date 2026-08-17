@@ -34,12 +34,12 @@
 		"husky": "^9.1.7",
 		"lint-staged": "^17.0.0",
 		"prettier": "^3.9.6",
-		"tsx": "^4.23.1",
+		"tsx": "^4.23.12",
 		"typescript": "^7.0.0",
 		"vitest": "~4.1.6"
 	},
 	"dependencies": {
-		"@anthropic-ai/claude-code": "^2.1.220",
+		"@anthropic-ai/claude-code": "^2.1.232",
 		"@modelcontextprotocol/sdk": "^1.22.0"
 	}
 }
