@@ -1,6 +1,6 @@
 # Multi-stage build for Google Cloud Run API
 # Stage 1: Build
-FROM node:26-alpine@sha256:40cd011b55415bc894e45b02fdd5a5dfde056921b7d23a64c74f80497af48797 AS builder
+FROM node:26-alpine@sha256:c6ad9e9c1d80f6eb607c26b4b0a132ff7a2344fad1c78ea3baa2a7d4c8de6d94 AS builder
 
 WORKDIR /app
 
@@ -19,7 +19,7 @@ COPY src ./src
 RUN npm run build
 
 # Stage 2: Production
-FROM node:26-alpine@sha256:40cd011b55415bc894e45b02fdd5a5dfde056921b7d23a64c74f80497af48797
+FROM node:26-alpine@sha256:c6ad9e9c1d80f6eb607c26b4b0a132ff7a2344fad1c78ea3baa2a7d4c8de6d94
 
 WORKDIR /app
 
