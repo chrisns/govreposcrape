@@ -36,7 +36,7 @@
 		"prettier": "^3.9.10",
 		"tsx": "^4.23.15",
 		"typescript": "^7.0.0",
-		"vitest": "~5.0.0"
+		"vitest": "~5.1.0"
 	},
 	"dependencies": {
 		"@anthropic-ai/claude-code": "^2.1.314",
