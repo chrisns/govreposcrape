@@ -27,7 +27,7 @@
 		"prepare": "husky"
 	},
 	"devDependencies": {
-		"@openapitools/openapi-generator-cli": "^2.42.0",
+		"@openapitools/openapi-generator-cli": "^2.42.2",
 		"@typescript-eslint/eslint-plugin": "^8.59.3",
 		"@typescript-eslint/parser": "^8.66.0",
 		"eslint": "^10.13.0",
@@ -39,7 +39,7 @@
 		"vitest": "~5.1.0"
 	},
 	"dependencies": {
-		"@anthropic-ai/claude-code": "^2.1.314",
+		"@anthropic-ai/claude-code": "^2.1.323",
 		"@modelcontextprotocol/sdk": "^1.32.2"
 	}
 }
